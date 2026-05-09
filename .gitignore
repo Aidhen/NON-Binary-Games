@@ -134,3 +134,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# draft file
+README.md
+ROADMAP.md
+PRACTICE.md

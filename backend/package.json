@@ -1,0 +1,20 @@
+{
+  "name": "a-non-binary-games-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx tsx watch index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Aidhen",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "@types/node": "^25.6.2",
+    "@types/redis": "^4.0.10",
+    "redis": "^5.12.1",
+    "socket.io": "^4.8.3",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,7 +1,10 @@
 {
-  "name": "a-non-binary-games-shared",
+  "name": "non-binary-games-shared",
   "version": "1.0.0",
   "type": "module",
   "author": "Aidhen",
-  "license": "GPL-3.0-or-later"
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "vitest": "^4.1.7"
+  }
 }

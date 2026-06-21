@@ -1,5 +1,5 @@
 {
-  "name": "non-binary-games-shared",
+  "name": "@nbg/shared",
   "version": "1.0.0",
   "type": "module",
   "author": "Aidhen",

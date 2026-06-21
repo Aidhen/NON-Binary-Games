@@ -13,6 +13,6 @@
     "@types/redis": "^4.0.10",
     "redis": "^5.12.1",
     "socket.io": "^4.8.3",
-    "non-binary-games-shared": "*"
+    "@nbg/shared": "*"
   }
 }

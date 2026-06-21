@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "next": "16.2.6",
-    "non-binary-games-shared": "*",
+    "@nbg/shared": "*",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

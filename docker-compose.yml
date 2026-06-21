@@ -1,18 +1,23 @@
 services:
+  # Utility per lanciare comandi NPM sulla root del monorepo
+  node-cli:
+    image: node:24-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+
   redis:
     image: redis:alpine
     container_name: nbg_redis
     ports:
       - "6379:6379"
 
-  # Backend Node.js + Socket.io
   backend:
-    image: node:20-alpine
+    image: node:24-slim
     container_name: nbg_backend
+    working_dir: /app/backend
     volumes:
-      - ./backend:/app
-      - ./shared:/shared
-    working_dir: /app
+      - .:/app
     ports:
       - "4000:4000"
     command: npm run dev
@@ -21,14 +26,12 @@ services:
     depends_on:
       - redis
 
-  # Frontend Next.js
   frontend:
-    image: node:20-alpine
+    image: node:24-slim
     container_name: nbg_frontend
+    working_dir: /app/frontend
     volumes:
-      - ./frontend:/app
-      - ./shared:/shared
-    working_dir: /app
+      - .:/app
     ports:
       - "3000:3000"
     command: npm run dev

@@ -142,4 +142,4 @@ PRACTICE.md
 
 # agents
 .continue
-.gemini
+shared/scripts/print.ts

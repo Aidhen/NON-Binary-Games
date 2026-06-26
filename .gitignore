@@ -136,7 +136,7 @@ dist
 .pnp.*
 
 # draft file
-README.md
+frontend/README.md
 ROADMAP.md
 PRACTICE.md
 

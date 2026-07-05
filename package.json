@@ -7,10 +7,10 @@
     "shared"
   ],
   "devDependencies": {
-    "@types/node": "^25.6.2",
+    "@types/node": "^26.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.7"
   },

@@ -20,7 +20,7 @@ This project is built with a focus on Developer Experience (DX), modularity, and
 * **Testing:** Comprehensive unit testing with **Vitest** (configured for monorepo workspaces and parallel execution).
 * **Containerization:** **Docker & Docker Compose** for reproducible development environments.
 * **CI/CD:** Automated pipelines via **GitHub Actions** enforcing code quality on every push.
-* **Git Hygiene:** Strict pre-commit and pre-push hooks via **Husky** and `lint-staged`. Enforced LF line endings for consistent cross-platform deployments.
+* **Git Hygiene:** Automated pre-commit linting (`lint-staged`) and pre-push testing via **Husky** to guarantee branch stability without aggressive commit message blocking.
 
 ---
 
@@ -34,6 +34,14 @@ The project is in its foundational stage. The current focus is on building a rob
 - [x] Core Sudoku engine (Generation, Validation, Hole-punching for difficulty) 
 
 ---
+
+## Roadmap & Upcoming Architecture
+
+The next major milestone is implementing the multiplayer connectivity layer to allow real-time co-op gameplay.
+
+- **Real-Time Backend:** Node.js server utilizing WebSockets for low-latency, bidirectional state synchronization between clients.
+- **In-Memory Datastore:** Redis integration to handle active session states and temporary match data efficiently without overloading a traditional SQL database.
+- **Container Orchestration:** Expanding the `docker-compose` setup to link the frontend client, Node.js server, and Redis instance seamlessly for local development.
 
 ## Getting Started (Local Development)
 

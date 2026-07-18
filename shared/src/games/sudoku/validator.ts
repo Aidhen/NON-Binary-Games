@@ -1,4 +1,4 @@
-import type { SudokuGrid } from './types.js';
+import type { SudokuGrid } from './types';
 
 /**
  * Checks if a given number is valid in a specific cell.

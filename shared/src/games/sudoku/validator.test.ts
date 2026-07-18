@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isValid } from './validator.js';
-import type { SudokuGrid } from './types.js';
+import { isValid } from './validator';
+import type { SudokuGrid } from './types';
 
 describe('Sudoku Logic - isValid', () => {
     const size = 4;

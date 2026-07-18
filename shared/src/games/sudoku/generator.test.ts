@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generateSudoku, countSolutions } from './generator.js';
-import { isValid } from './validator.js';
+import { generateSudoku, countSolutions } from './generator';
+import { isValid } from './validator';
 
 describe('Sudoku Generator Engine', () => {
     it('should generate a grid with the exact specified dimensions', () => {
@@ -30,7 +30,7 @@ describe('Sudoku Generator Engine', () => {
                 if (!isValid(solution, r, c, value, size, boxSize)) {
                     isBoardValid = false;
                 }
-                solution[r][c] = value; // Ripristino
+                solution[r][c] = value; 
             }
         }
         expect(isBoardValid).toBe(true);

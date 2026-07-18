@@ -1,2 +1,2 @@
-export * from './games/sudoku/index.js';
-export * from './sockets/events.js';
+export * from './games/sudoku/index';
+export * from './sockets/events';

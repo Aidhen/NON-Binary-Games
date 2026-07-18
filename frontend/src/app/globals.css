@@ -1,26 +1,149 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-title: var(--title-text);
+  --color-subtitle: var(--subtitle-text);
+  
+  --color-grid-outer: var(--grid-border-outer);
+  --color-grid-inner: var(--grid-border-inner);
+  
+  --color-cell-bg: var(--cell-background);
+  --color-cell-bg-initial: var(--cell-background-initial);
+  --color-cell-bg-selected: var(--cell-background-selected);
+  --color-cell-bg-highlight: var(--cell-background-highlight);
+  
+  --color-num-initial: var(--number-initial);
+  --color-num-player: var(--number-player);
+  
+  --color-numpad-bg: var(--numpad-background);
+  --color-numpad-text: var(--numpad-text);
+  --color-numpad-hover: var(--numpad-hover);
+  --color-numpad-active: var(--numpad-active);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Theme: LIGHT (Default) */
+:root, [data-theme="light"] {
+  --bg: #ffffff;
+  --title-text: #0f172a;
+  --subtitle-text: #64748b;
+  
+  --grid-border-outer: #0f172a;
+  --grid-border-inner: #cbd5e1;
+  
+  --cell-background: #ffffff;
+  --cell-background-initial: #f8fafc;
+  --cell-background-selected: #bfdbfe;
+  --cell-background-highlight: #e2e8f0;
+  
+  --number-initial: #0f172a;
+  --number-player: #2563eb;
+  
+  --numpad-background: #f1f5f9;
+  --numpad-text: #0f172a;
+  --numpad-hover: #e2e8f0;
+  --numpad-active: #cbd5e1;
+}
+
+/* Theme: DARK */
+[data-theme="dark"] {
+  --bg: #020617;
+  --title-text: #f8fafc;
+  --subtitle-text: #94a3b8;
+  
+  --grid-border-outer: #f8fafc;
+  --grid-border-inner: #334155;
+  
+  --cell-background: #0f172a;
+  --cell-background-initial: #1e293b;
+  --cell-background-selected: #1e3a8a;
+  --cell-background-highlight: #22334d;
+  
+  --number-initial: #f8fafc;
+  --number-player: #60a5fa;
+  
+  --numpad-background: #1e293b;
+  --numpad-text: #f8fafc;
+  --numpad-hover: #334155;
+  --numpad-active: #475569;
+}
+
+/* Theme: RETRO */
+[data-theme="retro"] {
+  --bg: #f4ecd8;
+  --title-text: #4a3c31;
+  --subtitle-text: #7d6b5d;
+  
+  --grid-border-outer: #4a3c31;
+  --grid-border-inner: #d1bfae;
+  
+  --cell-background: #f4ecd8;
+  --cell-background-initial: #e9dec1;
+  --cell-background-selected: #d1bfae;
+  --cell-background-highlight: #e7d395;
+  
+  --number-initial: #4a3c31;
+  --number-player: #b45309;
+  
+  --numpad-background: #e9dec1;
+  --numpad-text: #4a3c31;
+  --numpad-hover: #d1bfae;
+  --numpad-active: #a89f91;
+}
+
+/* Theme: OLED */
+[data-theme="oled"] {
+  --bg: #000000;
+  --title-text: #ffffff;
+  --subtitle-text: #666666;
+  
+  --grid-border-outer: #444444;
+  --grid-border-inner: #222222;
+  
+  --cell-background: #000000;
+  --cell-background-initial: #0a0a0a;
+  --cell-background-selected: #1a1a1a;
+  --cell-background-highlight: #1b1b1b;
+  
+  --number-initial: #ffffff;
+  --number-player: #aaaaaa;
+  
+  --numpad-background: #0a0a0a;
+  --numpad-text: #ffffff;
+  --numpad-hover: #1a1a1a;
+  --numpad-active: #333333;
+}
+
+/* Theme: NON-BINARY */
+[data-theme="non-binary"] {
+  --bg: #1a1a1a;
+  
+  --title-text: #9c59d1; 
+  --subtitle-text: #fcf434;
+  
+  --grid-border-outer: #ffffff;
+  --grid-border-inner: #ffffff; 
+  
+  --cell-background: #2c2c2c;
+  --cell-background-initial: #383838;
+  --cell-background-selected: #502d6b;
+  --cell-background-highlight: #412656;
+  
+  --number-initial: #ffffff;
+  --number-player: #fcf434;
+  
+  --numpad-background: #9c59d1;
+  --numpad-text: #ffffff;
+  --numpad-hover: #8347b5;
+  --numpad-active: #6b3a94;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  transition: background-color 0.3s ease;
 }

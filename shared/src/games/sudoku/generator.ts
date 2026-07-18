@@ -1,5 +1,5 @@
-import type { Difficulty, SudokuBoard, SudokuGrid } from './types.js';
-import { isValid } from './validator.js';
+import type { Difficulty, SudokuBoard, SudokuGrid } from './types';
+import { isValid } from './validator';
 
 export function generateSudoku(difficulty: Difficulty, size: number = 9): SudokuBoard {
     const boxSize = Math.sqrt(size);

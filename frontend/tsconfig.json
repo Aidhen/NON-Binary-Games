@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@shared/*": ["../shared/*"]
+      "@nbg/shared": ["../shared/src/index.ts"],
+      "@nbg/shared/*": ["../shared/src/*"]
     }
   },
   "include": [

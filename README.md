@@ -24,24 +24,20 @@ This project is built with a focus on Developer Experience (DX), modularity, and
 
 ---
 
-## Current Status: Active Development
+## Current Status: v0.1.0-alpha
 
 The project is in its foundational stage. The current focus is on building a robust, mathematically sound Sudoku engine before wiring up the multiplayer layer.
 
 **Completed Milestones:**
-- [x] Monorepo setup and Dockerization
-- [x] CI/CD pipeline and Git hooks configuration
-- [x] Core Sudoku engine (Generation, Validation, Hole-punching for difficulty) 
+- [x] Monorepo setup and Dockerization.
+- [x] CI/CD pipeline and Git hooks configuration.
+- [x] Core Sudoku engine (Generation, Validation, Hole-punching for difficulty).
+- [x] UI Refactor: Migration to a component-driven structure (/components/ui for primitives, /components/game for domain logic).
+- [x] Custom Design System: Implementation of a generic Dropdown primitive for consistent theming and language selection.
+- [x] i18n Engine: Custom implementation for seamless multi-language support.
+- [x] Gameplay: Implemented complete player interaction, error validation, and win-state detection.
 
 ---
-
-## Roadmap & Upcoming Architecture
-
-The next major milestone is implementing the multiplayer connectivity layer to allow real-time co-op gameplay.
-
-- **Real-Time Backend:** Node.js server utilizing WebSockets for low-latency, bidirectional state synchronization between clients.
-- **In-Memory Datastore:** Redis integration to handle active session states and temporary match data efficiently without overloading a traditional SQL database.
-- **Container Orchestration:** Expanding the `docker-compose` setup to link the frontend client, Node.js server, and Redis instance seamlessly for local development.
 
 ## Getting Started (Local Development)
 
@@ -49,7 +45,7 @@ The repository is fully containerized. You don't need Node.js installed locally.
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/Aidhen/non-binary-games.git](https://github.com/Aidhen/non-binary-games.git)
+git clone https://https://github.com/Aidhen/NON-Binary-Games
 cd non-binary-games
 
 # 2. Install monorepo dependencies via the CLI container

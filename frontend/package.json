@@ -12,21 +12,21 @@
   },
   "dependencies": {
     "@nbg/shared": "*",
-    "next": "16.2.6",
+    "next": "16.2.12",
     "next-themes": "^0.4.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^6.0.2",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.6",
-    "jsdom": "^29.1.1",
+    "@vitejs/plugin-react": "^6.0.4",
+    "eslint": "^10",
+    "eslint-config-next": "16.2.12",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4"
   }
 }

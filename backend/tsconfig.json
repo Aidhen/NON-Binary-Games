@@ -12,8 +12,10 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "paths": {
-      "@shared/*": ["../shared/*"] 
-    }
+      "@shared/*.js": ["../shared/*.ts"],
+      "@shared/*": ["../shared/*"],
+      "@nbg/shared": ["../shared/src/index.ts"]
+}
   },
   "include": ["**/*.ts", "../shared/**/*.ts"],
   "exclude": ["node_modules"]

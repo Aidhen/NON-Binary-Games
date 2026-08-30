@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import { createClient } from "redis";
-import { canJoinGame, GameState } from "@shared/gameLogic.js";
+import { canJoinGame, GameState } from "@shared/src/gameLogic"; 
+import { setupSocketHandlers } from "./src/sockets/event";
 
 const io = new Server(4000, {
   cors: { origin: "*" }
@@ -11,8 +12,6 @@ const mockState: GameState = {
   status: "waiting"
 };
 
-
-
 const redisClient = createClient({ url: process.env.REDIS_URL });
 
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
@@ -22,6 +21,8 @@ async function start() {
   // await redisClient.connect(); 
   
   console.log("Socket.io server listening on port 4000");
+
+  setupSocketHandlers(io);
 
   io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);

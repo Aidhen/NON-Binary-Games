@@ -4,6 +4,15 @@ import { GameSettings } from './SudokuContainer';
 import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils'; 
 
+//Default palette for co-op players
+const MULTIPLAYER_COLORS = [
+    'ring-blue-500 bg-blue-500/10',     // P1 
+    'ring-green-500 bg-green-500/10',   // P2
+    'ring-purple-500 bg-purple-500/10', // P3
+    'ring-pink-500 bg-pink-500/10',     // P4
+    'ring-orange-500 bg-orange-500/10'  // P5
+];
+
 interface SudokuBoardUIProps {
     board: SudokuBoard;
     playerGrid: number[][];
@@ -12,6 +21,7 @@ interface SudokuBoardUIProps {
     isGameWon: boolean;
     onCellClick: (r: number, c: number) => void;
     isErrorPlacement: (r: number, c: number, value: number) => boolean;
+    othersSelections?: Record<string, [number, number]>;
 }
 
 export function SudokuBoardUI({
@@ -21,13 +31,15 @@ export function SudokuBoardUI({
     settings,
     isGameWon,
     onCellClick,
-    isErrorPlacement
+    isErrorPlacement,
+    othersSelections = {}
 }: SudokuBoardUIProps) {
-
 
     const isCellInitial = (r: number, c: number) => board.initial[r][c] !== 0;
     const isCellSelected = (r: number, c: number) => selectedCell?.[0] === r && selectedCell?.[1] === c;
     const isCellEmpty = (r: number, c: number) => playerGrid[r][c] === 0;
+
+    const activePlayerIds = Object.keys(othersSelections).sort();
 
     const shouldDisplayError = (r: number, c: number, value: number): boolean => {
         if (!settings.showErrors) return false;
@@ -67,7 +79,6 @@ export function SudokuBoardUI({
         const selectedValue = playerGrid[selectedR][selectedC];
         
         if (selectedValue === 0) return false;
-        
         if (shouldDisplayError(selectedR, selectedC, selectedValue)) return false;
 
         return cellValue === selectedValue;
@@ -82,7 +93,7 @@ export function SudokuBoardUI({
         if (isSelected || showSameNumbers) return 'bg-[var(--cell-background-selected)]';
         if (showCrosshair) return 'bg-[var(--cell-background-highlight)]';
         if (isInitial) return 'bg-[var(--cell-background-initial)]';
-        return 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)]';
+        return 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)] transition-colors';
     };
 
     const resolveTextClass = (
@@ -119,11 +130,23 @@ export function SudokuBoardUI({
                         const bgClass = resolveBackgroundClass(initial, selected, showCrosshair, showSameNumbers);
                         const textClass = resolveTextClass(cellValue, initial, displayError);
 
+                        const occupantId = activePlayerIds.find(id => 
+                            othersSelections[id]?.[0] === rIndex && othersSelections[id]?.[1] === cIndex
+                        );
+
+                        let ringClass = "";
+                        if (occupantId) {
+                            const colorIndex = activePlayerIds.indexOf(occupantId) % MULTIPLAYER_COLORS.length;
+                            ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[colorIndex]}`;
+                        }
+
+                        const finalBgClass = cn(bgClass, ringClass);
+
                         return (
                             <SudokuCell
                                 key={`${rIndex}-${cIndex}`}
                                 value={cellValue}
-                                bgClass={bgClass}
+                                bgClass={finalBgClass}
                                 textClass={textClass}
                                 isRightBorder={isRightBorder}
                                 isBottomBorder={isBottomBorder}

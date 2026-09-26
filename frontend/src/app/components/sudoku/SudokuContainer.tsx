@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { generateSudoku, SudokuBoard, isValid, DifficultyLevel } from '@nbg/shared';
+import { generateSudoku, SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
 import { cn } from '@/lib/utils';
@@ -13,14 +13,14 @@ export interface GameSettings {
     showErrors: boolean;
 }
 
-
-
 export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     const [board, setBoard] = useState<SudokuBoard>();
     const [playerGrid, setPlayerGrid] = useState<number[][]>();
     const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isGameWon, setIsGameWon] = useState<boolean>(false);
+    const [notesGrid, setNotesGrid] = useState<NotesGrid>({});
+    const [isNotesMode, setIsNotesMode] = useState(false);
 
     const { t } = useTranslation();
 
@@ -37,6 +37,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
         setBoard(newBoard);
         setPlayerGrid(newBoard.initial.map(row => [...row]));
         setSelectedCell(null);
+        setNotesGrid({});
     }, [difficulty]);
 
     const [othersSelections, setOthersSelections] = useState<Record<string, [number, number]>>({});
@@ -67,36 +68,52 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     }, [playerGrid, board]);
 
 
-    const handleInput = useCallback((value: number) => {
-        if (!selectedCell || !playerGrid) return;
+    const handleInput = useCallback((value: number, asNote: boolean = isNotesMode) => {
+        if (!selectedCell || !playerGrid || !board) return;
         const [r, c] = selectedCell;
+        
         if (!canAcceptInput(r, c)) return;
+
+        if (asNote && value !== 0) {
+            getSocket().emit("toggle-note", roomId, { r, c, v: value });
+            return;
+        }
 
         const newGrid = [...playerGrid];
         newGrid[r] = [...newGrid[r]];
         newGrid[r][c] = value;
 
         setPlayerGrid(newGrid);
-
         getSocket().emit("cell-update", roomId, { r, c, v: value });
-    }, [selectedCell, playerGrid, canAcceptInput, roomId]);
+    }, [selectedCell, playerGrid, board, canAcceptInput, roomId, isNotesMode]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!selectedCell || !board) return;
-            const key = e.key;
-            if (key === 'Backspace' || key === 'Delete') {
-                handleInput(0);
+            
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                handleInput(0, false);
                 return;
             }
-            const num = parseInt(key);
+            
+            let num = parseInt(e.key);
+            if (isNaN(num)) {
+                if (e.code.startsWith('Digit')) {
+                    num = parseInt(e.code.replace('Digit', ''));
+                } else if (e.code.startsWith('Numpad')) {
+                    num = parseInt(e.code.replace('Numpad', ''));
+                }
+            }
+            
             if (!isNaN(num) && num >= 1 && num <= board.size) {
-                handleInput(num);
+                const asNote = isNotesMode || e.shiftKey;
+                handleInput(num, asNote);
             }
         };
+        
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedCell, board, handleInput]);
+    }, [selectedCell, board, handleInput, isNotesMode]);
 
     const toggleSetting = (key: keyof GameSettings) => {
         setSettings(prev => ({ ...prev, [key]: !prev[key] }));
@@ -122,6 +139,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             console.log("🔵 [Frontend] 'game-started' received! Payload:", payload);
             setBoard(payload.board);
             setPlayerGrid(payload.currentGrid);
+            setNotesGrid(payload.notesGrid || {});
             setIsGameWon(false);
         });
 
@@ -168,6 +186,24 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             setSelectedCell(null);
         });
 
+        socket.on("note-toggled", ({ r, c, v, playerId }) => {
+            setNotesGrid((prev) => {
+                const next = { ...prev };
+                const key = `${r}-${c}`;
+                
+                if (!next[key]) next[key] = {};
+                
+                if (playerId === null) {
+                    delete next[key][v];
+                    if (Object.keys(next[key]).length === 0) {
+                        delete next[key];
+                    }
+                } else {
+                    next[key][v] = playerId;
+                }
+                return next;
+            });
+        });
 
         return () => {
             console.log("🧹 [Frontend] Cleanup: unmounting listeners");
@@ -177,9 +213,9 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             socket.off("player-selected-cell");
             socket.off("player-disconnected");
             socket.off("game-won");
+            socket.off("note-toggled");
         };
-    }, [difficulty]);
-
+    }, [difficulty, roomId]);
 
     if (!board || !playerGrid) {
         return (
@@ -196,12 +232,10 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
 
     return (
         <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
-
             <div className="w-full flex justify-between items-center">
                 <div className="text-[var(--subtitle-text)] text-sm font-bold uppercase tracking-wider">
                     {t('sudoku.mode')}: {t(`sudoku.${difficulty}`)}
                 </div>
-
                 <button
                     onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                     className="text-[var(--subtitle-text)] hover:text-[var(--title-text)] text-sm font-bold uppercase transition-colors"
@@ -259,36 +293,57 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
                     onCellClick={handleCellClick}
                     isErrorPlacement={isErrorPlacement}
                     othersSelections={othersSelections}
+                    notesGrid={notesGrid}
                 />
             </div>
 
-            <div className="grid grid-cols-5 gap-2 w-full mt-2">
-                {Array.from({ length: board.size }, (_, i) => i + 1).map((num) => (
+            {/* Controls Area (Toggle + Numpad) */}
+            <div className="w-full flex flex-col gap-3 mt-2">
+                <div className="flex justify-end w-full">
                     <button
-                        key={num}
-                        onClick={() => handleInput(num)}
+                        onClick={() => setIsNotesMode(!isNotesMode)}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200",
+                            isNotesMode 
+                                ? "bg-blue-500/20 text-blue-500 border-2 border-blue-500/50" 
+                                : "bg-[var(--numpad-background)] text-[var(--subtitle-text)] border-2 border-transparent hover:bg-[var(--numpad-hover)]"
+                        )}
+                    >
+                        <span className="text-lg">✎</span>
+                        {t('sudoku.notesMode')} {isNotesMode ? 'ON' : 'OFF'}
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-5 gap-2 w-full">
+                    {Array.from({ length: board.size }, (_, i) => i + 1).map((num) => (
+                        <button
+                            key={num}
+                            onClick={() => handleInput(num, isNotesMode)}
+                            disabled={!selectedCell || isGameWon}
+                            className={cn(
+                                "p-3 text-xl font-bold rounded-lg transition-all duration-200",
+                                isNotesMode 
+                                    ? "bg-[var(--cell-background)] text-blue-500 border border-blue-500/30" 
+                                    : "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
+                                "hover:opacity-80 active:scale-95",
+                                "disabled:opacity-50 disabled:cursor-not-allowed"
+                            )}
+                        >
+                            {num}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => handleInput(0, false)}
                         disabled={!selectedCell || isGameWon}
                         className={cn(
                             "p-3 text-xl font-bold rounded-lg transition-all duration-200",
-                            "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
-                            "hover:bg-[var(--numpad-hover)] active:bg-[var(--numpad-active)]",
+                            "bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95",
                             "disabled:opacity-50 disabled:cursor-not-allowed"
                         )}
                     >
-                        {num}
+                        ⌫
                     </button>
-                ))}
-                <button
-                    onClick={() => handleInput(0)}
-                    disabled={!selectedCell || isGameWon}
-                    className={cn(
-                        "p-3 text-xl font-bold rounded-lg transition-all duration-200",
-                        "bg-red-500/10 text-red-500 hover:bg-red-500/20",
-                        "disabled:opacity-50 disabled:cursor-not-allowed"
-                    )}
-                >
-                    ⌫
-                </button>
+                </div>
             </div>
         </div>
     );

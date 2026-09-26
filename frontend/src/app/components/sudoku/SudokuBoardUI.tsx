@@ -1,10 +1,10 @@
 'use client';
-import { SudokuBoard } from '@nbg/shared';
+import { useMemo } from 'react';
+import { NotesGrid, SudokuBoard } from '@nbg/shared';
 import { GameSettings } from './SudokuContainer';
 import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils'; 
 
-//Default palette for co-op players
 const MULTIPLAYER_COLORS = [
     'ring-blue-500 bg-blue-500/10',     // P1 
     'ring-green-500 bg-green-500/10',   // P2
@@ -12,6 +12,22 @@ const MULTIPLAYER_COLORS = [
     'ring-pink-500 bg-pink-500/10',     // P4
     'ring-orange-500 bg-orange-500/10'  // P5
 ];
+
+const MULTIPLAYER_TEXT_COLORS = [
+    'text-blue-500',
+    'text-green-500',
+    'text-purple-500',
+    'text-pink-500',
+    'text-orange-500'
+];
+
+const getStableColorIndex = (id: string): number => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+        hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash) % MULTIPLAYER_COLORS.length;
+};
 
 interface SudokuBoardUIProps {
     board: SudokuBoard;
@@ -22,6 +38,7 @@ interface SudokuBoardUIProps {
     onCellClick: (r: number, c: number) => void;
     isErrorPlacement: (r: number, c: number, value: number) => boolean;
     othersSelections?: Record<string, [number, number]>;
+    notesGrid?: NotesGrid;
 }
 
 export function SudokuBoardUI({
@@ -32,7 +49,8 @@ export function SudokuBoardUI({
     isGameWon,
     onCellClick,
     isErrorPlacement,
-    othersSelections = {}
+    othersSelections = {},
+    notesGrid = {}
 }: SudokuBoardUIProps) {
 
     const isCellInitial = (r: number, c: number) => board.initial[r][c] !== 0;
@@ -107,8 +125,16 @@ export function SudokuBoardUI({
         return 'text-[var(--number-player)] font-medium';
     };
 
+    const cellOccupantsMap = useMemo(() => {
+        const map = new Map<string, string>();
+        Object.entries(othersSelections).forEach(([playerId, [r, c]]) => {
+            map.set(`${r}-${c}`, playerId);
+        });
+        return map;
+    }, [othersSelections]);
+
     return (
-        <div className={cn("relative w-full aspect-square")}>
+        <div className="relative w-full aspect-square">
             <div 
                 className={cn(
                     "w-full h-full grid shadow-xl transition-colors duration-300",
@@ -130,17 +156,24 @@ export function SudokuBoardUI({
                         const bgClass = resolveBackgroundClass(initial, selected, showCrosshair, showSameNumbers);
                         const textClass = resolveTextClass(cellValue, initial, displayError);
 
-                        const occupantId = activePlayerIds.find(id => 
-                            othersSelections[id]?.[0] === rIndex && othersSelections[id]?.[1] === cIndex
-                        );
-
+                        const occupantId = cellOccupantsMap.get(`${rIndex}-${cIndex}`);
+                        
                         let ringClass = "";
                         if (occupantId) {
-                            const colorIndex = activePlayerIds.indexOf(occupantId) % MULTIPLAYER_COLORS.length;
-                            ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[colorIndex]}`;
+                            ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[getStableColorIndex(occupantId)]}`;
                         }
 
                         const finalBgClass = cn(bgClass, ringClass);
+
+                        const rawNotes = notesGrid[`${rIndex}-${cIndex}`];
+                        let parsedNotes: Record<number, string> | undefined;
+                        
+                        if (rawNotes) {
+                            parsedNotes = {};
+                            for (const [noteVal, pid] of Object.entries(rawNotes)) {
+                                parsedNotes[Number(noteVal)] = MULTIPLAYER_TEXT_COLORS[getStableColorIndex(pid)];
+                            }
+                        }
 
                         return (
                             <SudokuCell
@@ -151,6 +184,9 @@ export function SudokuBoardUI({
                                 isRightBorder={isRightBorder}
                                 isBottomBorder={isBottomBorder}
                                 onClick={() => !isGameWon && onCellClick(rIndex, cIndex)}
+                                notes={parsedNotes}
+                                boardSize={board.size}
+                                boxSize={board.boxSize}
                             />
                         );
                     })

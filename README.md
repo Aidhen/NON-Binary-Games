@@ -13,7 +13,8 @@ I had this idea while looking for ways to pass the time with my long-distance pa
 This project is built with a focus on Developer Experience (DX), modularity, and clean code. It relies on a **Monorepo** architecture managed via `npm workspaces`, separating the client interface from the core game engines.
 
 ### Workspace Structure
-* **`@nbg/shared`**: Agnostic, pure TypeScript core logic. Currently houses the custom Sudoku Engine (backtracking generator, validator, difficulty scaler).
+* **`@nbg/shared`**: Agnostic, pure TypeScript core logic. Houses the custom Sudoku Engine (generator, validator), shared types, and Socket.io payload contracts.
+* **`@nbg/backend`**: Node.js & Socket.io authoritative server. Handles room management, real-time state synchronization, payload bound validation, and hybrid win-state detection.
 * **`@nbg/frontend`**: Next.js/React interface. Built with a native, headless approach using **Tailwind CSS**, favoring complete DOM control over heavy pre-styled component libraries.
 
 ### Infrastructure & Developer Experience (DX)
@@ -24,20 +25,21 @@ This project is built with a focus on Developer Experience (DX), modularity, and
 
 ---
 
-## Current Status: v0.1.0-alpha
+## Current Status: v0.2.0-alpha
 
-The project is in its foundational stage. The current focus is on building a robust, mathematically sound Sudoku engine before wiring up the multiplayer layer.
+The project is currently finalizing its core gameplay loop. The backend real-time multiplayer architecture is fully operational, and the current focus is on polishing the frontend collaborative UI.
 
 **Completed Milestones:**
 - [x] Monorepo setup and Dockerization.
 - [x] CI/CD pipeline and Git hooks configuration.
 - [x] Core Sudoku engine (Generation, Validation, Hole-punching for difficulty).
-- [x] UI Refactor: Migration to a component-driven structure (/components/ui for primitives, /components/game for domain logic).
-- [x] Custom Design System: Implementation of a generic Dropdown primitive for consistent theming and language selection.
+- [x] UI Refactor & Custom Design System: Component-driven structure and themable primitives.
 - [x] i18n Engine: Custom implementation for seamless multi-language support.
-- [x] Gameplay: Implemented complete player interaction, error validation, and win-state detection.
+- [x] **Backend Multiplayer:** Socket.io room management, real-time state sync, and strict payload defense.
+- [x] **Authoritative Validation:** Hybrid Broad/Narrow phase win-state detection to prevent desyncs.
 
----
+**In Progress:**
+- [ ] **Frontend Presence:** Multiplayer cursors, live visual error feedback, and game-over UI.
 
 ## Getting Started (Local Development)
 

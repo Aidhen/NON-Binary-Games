@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { generateSudoku, SudokuBoard, isValid } from '@nbg/shared';
+import { generateSudoku, SudokuBoard, isValid, DifficultyLevel } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
 import { cn } from '@/lib/utils';
@@ -13,13 +13,14 @@ export interface GameSettings {
     showErrors: boolean;
 }
 
-export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+
 
 export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     const [board, setBoard] = useState<SudokuBoard>();
     const [playerGrid, setPlayerGrid] = useState<number[][]>();
     const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isGameWon, setIsGameWon] = useState<boolean>(false);
 
     const { t } = useTranslation();
 
@@ -65,16 +66,6 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
         return !isValid(tempGrid, r, c, value, board.size, board.boxSize);
     }, [playerGrid, board]);
 
-    const checkWinCondition = useCallback((): boolean => {
-        if (!playerGrid) return false;
-        const hasEmptyCells = playerGrid.some(row => row.some(cell => cell === 0));
-        if (hasEmptyCells) return false;
-        const hasRuleViolations = playerGrid.some((row, rIndex) =>
-            row.some((cell, cIndex) => isErrorPlacement(rIndex, cIndex, cell))
-        );
-        if (hasRuleViolations) return false;
-        return true;
-    }, [playerGrid, isErrorPlacement]);
 
     const handleInput = useCallback((value: number) => {
         if (!selectedCell || !playerGrid) return;
@@ -131,6 +122,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             console.log("🔵 [Frontend] 'game-started' received! Payload:", payload);
             setBoard(payload.board);
             setPlayerGrid(payload.currentGrid);
+            setIsGameWon(false);
         });
 
         if (socket.connected) {
@@ -170,6 +162,12 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             });
         });
 
+        socket.on("game-won", () => {
+            console.log("🎉 [Frontend] 'game-won' received!");
+            setIsGameWon(true);
+            setSelectedCell(null);
+        });
+
 
         return () => {
             console.log("🧹 [Frontend] Cleanup: unmounting listeners");
@@ -178,6 +176,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             socket.off("cell-updated");
             socket.off("player-selected-cell");
             socket.off("player-disconnected");
+            socket.off("game-won");
         };
     }, [difficulty]);
 
@@ -194,8 +193,6 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             </div>
         );
     }
-
-    const isGameWon = checkWinCondition();
 
     return (
         <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
@@ -240,7 +237,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
                                 {t('sudoku.compliment')}
                             </p>
                             <button
-                                onClick={() => initGame(difficulty)}
+                                onClick={() => getSocket().emit("restart-game", roomId, difficulty)}
                                 className={cn(
                                     "px-6 py-3 rounded-lg font-bold transition-all duration-200",
                                     "bg-[var(--numpad-background)] text-[var(--numpad-text)]",

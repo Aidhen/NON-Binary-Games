@@ -16,7 +16,8 @@ export const en = {
         visualHelpers: "Visual helpers",
         highlightCrosshairs: "Highlight crosshairs & box",
         highlightSame: "Highlight same numbers",
-        showErrors: "Show error clashes (red)"
+        showErrors: "Show error clashes (red)",
+        notesMode: "Notes"
     }
 };
 

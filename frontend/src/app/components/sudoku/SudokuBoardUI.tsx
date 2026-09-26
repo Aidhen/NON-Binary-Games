@@ -1,6 +1,6 @@
 'use client';
 import { useMemo } from 'react';
-import { SudokuBoard } from '@nbg/shared';
+import { NotesGrid, SudokuBoard } from '@nbg/shared';
 import { GameSettings } from './SudokuContainer';
 import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils'; 
@@ -11,6 +11,14 @@ const MULTIPLAYER_COLORS = [
     'ring-purple-500 bg-purple-500/10', // P3
     'ring-pink-500 bg-pink-500/10',     // P4
     'ring-orange-500 bg-orange-500/10'  // P5
+];
+
+const MULTIPLAYER_TEXT_COLORS = [
+    'text-blue-500',
+    'text-green-500',
+    'text-purple-500',
+    'text-pink-500',
+    'text-orange-500'
 ];
 
 const getStableColorIndex = (id: string): number => {
@@ -30,6 +38,7 @@ interface SudokuBoardUIProps {
     onCellClick: (r: number, c: number) => void;
     isErrorPlacement: (r: number, c: number, value: number) => boolean;
     othersSelections?: Record<string, [number, number]>;
+    notesGrid?: NotesGrid;
 }
 
 export function SudokuBoardUI({
@@ -40,7 +49,8 @@ export function SudokuBoardUI({
     isGameWon,
     onCellClick,
     isErrorPlacement,
-    othersSelections = {}
+    othersSelections = {},
+    notesGrid = {}
 }: SudokuBoardUIProps) {
 
     const isCellInitial = (r: number, c: number) => board.initial[r][c] !== 0;
@@ -150,11 +160,20 @@ export function SudokuBoardUI({
                         
                         let ringClass = "";
                         if (occupantId) {
-                            const colorIndex = getStableColorIndex(occupantId);
-                            ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[colorIndex]}`;
+                            ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[getStableColorIndex(occupantId)]}`;
                         }
 
                         const finalBgClass = cn(bgClass, ringClass);
+
+                        const rawNotes = notesGrid[`${rIndex}-${cIndex}`];
+                        let parsedNotes: Record<number, string> | undefined;
+                        
+                        if (rawNotes) {
+                            parsedNotes = {};
+                            for (const [noteVal, pid] of Object.entries(rawNotes)) {
+                                parsedNotes[Number(noteVal)] = MULTIPLAYER_TEXT_COLORS[getStableColorIndex(pid)];
+                            }
+                        }
 
                         return (
                             <SudokuCell
@@ -165,6 +184,9 @@ export function SudokuBoardUI({
                                 isRightBorder={isRightBorder}
                                 isBottomBorder={isBottomBorder}
                                 onClick={() => !isGameWon && onCellClick(rIndex, cIndex)}
+                                notes={parsedNotes}
+                                boardSize={board.size}
+                                boxSize={board.boxSize}
                             />
                         );
                     })

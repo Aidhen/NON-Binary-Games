@@ -18,6 +18,7 @@ export const it: Translations = {
         visualHelpers: "Aiuti visivi",
         highlightCrosshairs: "Evidenzia croce e quadrante",
         highlightSame: "Evidenzia numeri uguali",
-        showErrors: "Mostra errori (rosso)"
+        showErrors: "Mostra errori (rosso)",
+        notesMode: "Note",
     }
 };

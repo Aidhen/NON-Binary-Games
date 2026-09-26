@@ -1,5 +1,5 @@
 'use client';
-import { cn } from '@/lib/utils'; // Assicurati che l'alias @ funzioni, altrimenti usa percorsi relativi come '../../lib/utils'
+import { cn } from '@/lib/utils';
 
 interface SudokuCellProps {
     value: number;
@@ -8,6 +8,10 @@ interface SudokuCellProps {
     isRightBorder: boolean;
     isBottomBorder: boolean;
     onClick: () => void;
+    // Nuove prop generiche
+    notes?: Record<number, string>;
+    boardSize?: number;
+    boxSize?: number;
 }
 
 export function SudokuCell({ 
@@ -16,14 +20,17 @@ export function SudokuCell({
     textClass, 
     isRightBorder, 
     isBottomBorder, 
-    onClick 
+    onClick,
+    notes,
+    boardSize = 9,
+    boxSize = 3
 }: SudokuCellProps) {
     return (
         <div
             onClick={onClick}
             className={cn(
-                "flex items-center justify-center text-2xl",
-                "cursor-pointer select-none",
+                "relative flex items-center justify-center text-2xl",
+                "cursor-pointer select-none overflow-hidden",
                 "transition-colors duration-200",
                 {
                     "border-r-2 border-r-[var(--grid-border-outer)]": isRightBorder,
@@ -37,6 +44,31 @@ export function SudokuCell({
             )}
         >
             {value !== 0 ? value : ''}
+
+            {value === 0 && notes && (
+                <div 
+                    className="absolute inset-0 grid w-full h-full pointer-events-none p-0.5"
+                    style={{ 
+                        gridTemplateColumns: `repeat(${boxSize}, minmax(0, 1fr))`,
+                        gridTemplateRows: `repeat(${boxSize}, minmax(0, 1fr))`
+                    }}
+                >
+                    {Array.from({ length: boardSize }, (_, i) => i + 1).map((num) => {
+                        const colorClass = notes[num];
+                        return (
+                            <div 
+                                key={num} 
+                                className={cn(
+                                    "flex items-center justify-center text-[0.6rem] sm:text-xs font-semibold leading-none",
+                                    colorClass || "text-transparent"
+                                )}
+                            >
+                                {colorClass ? num : ''}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

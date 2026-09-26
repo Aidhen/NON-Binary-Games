@@ -1,18 +1,18 @@
 import { Server, Socket } from "socket.io";
 import { checkWinCondition, countInitialFilledCells, generateSudoku, SudokuBoard } from "@nbg/shared";
-import type { ClientToServerEvents, ServerToClientEvents, SudokuGrid } from "@nbg/shared";
+import type { ClientToServerEvents, ServerToClientEvents, SudokuGrid, NotesGrid } from "@nbg/shared";
 
 interface RoomState {
   board: SudokuBoard;
   currentGrid: SudokuGrid;
   players: Set<string>;
   filledCells: number;
+  notesGrid: NotesGrid; 
 }
 
 const rooms = new Map<string, RoomState>();
 
 export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToClientEvents>) => {
-
   io.on("connection", (socket: Socket<ClientToServerEvents, ServerToClientEvents>) => {
 
     socket.on("join-room", (roomId, difficulty) => {
@@ -28,6 +28,7 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
           currentGrid: board.initial.map(row => [...row]),
           players: new Set(),
           filledCells: countInitialFilledCells(board.initial),
+          notesGrid: {},
         };
         rooms.set(roomId, room);
       }
@@ -36,7 +37,8 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
 
       socket.emit("game-started", {
         board: room.board,
-        currentGrid: room.currentGrid
+        currentGrid: room.currentGrid,
+        notesGrid: room.notesGrid
       });
     });
 
@@ -102,11 +104,45 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
       room.board = board;
       room.currentGrid = board.initial.map(row => [...row]);
       room.filledCells = countInitialFilledCells(board.initial);
+      room.notesGrid = {};
 
       io.to(roomId).emit("game-started", {
         board: room.board,
-        currentGrid: room.currentGrid
+        currentGrid: room.currentGrid,
+        notesGrid: room.notesGrid
       });
+    });
+
+    socket.on("toggle-note", (roomId: string, data: { r: number; c: number; v: number }) => {
+      const room = rooms.get(roomId);
+      if (!room || !room.board) return;
+
+      const { r, c, v } = data;
+      const size = room.board.size;
+
+      if (!Number.isInteger(r) || r < 0 || r >= size) return;
+      if (!Number.isInteger(c) || c < 0 || c >= size) return;
+      if (!Number.isInteger(v) || v < 1 || v > size) return;
+
+      const cellKey = `${r}-${c}`;
+      if (!room.notesGrid[cellKey]) {
+        room.notesGrid[cellKey] = {};
+      }
+
+      let assignedPlayerId: string | null = null;
+
+      if (room.notesGrid[cellKey][v]) {
+        delete room.notesGrid[cellKey][v];
+
+        if (Object.keys(room.notesGrid[cellKey]).length === 0) {
+          delete room.notesGrid[cellKey];
+        }
+      } else {
+        room.notesGrid[cellKey][v] = socket.id;
+        assignedPlayerId = socket.id;
+      }
+
+      io.to(roomId).emit("note-toggled", { r, c, v, playerId: assignedPlayerId });
     });
   });
 };

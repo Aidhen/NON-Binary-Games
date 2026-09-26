@@ -5,14 +5,17 @@ export * from './gameLogic';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
+export type NotesGrid = Record<string, Record<number, string>>;
+
 export interface ServerToClientEvents {
-  "game-started": (payload: { board: SudokuBoard; currentGrid: number[][] }) => void;
+  "game-started": (payload: { board: SudokuBoard; currentGrid: number[][]; notesGrid: NotesGrid }) => void;
   "cell-updated": (data: { r: number; c: number; v: number }) => void;
   "move-rejected": (data: { r: number; c: number; reason: string }) => void;
   "error": (message: string) => void;
   "player-selected-cell": (payload: { playerId: string, r: number | null, c: number | null }) => void;
   "player-disconnected": (playerId: string) => void;
   "game-won": () => void;
+  "note-toggled": (data: { r: number; c: number; v: number; playerId: string | null }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -20,4 +23,5 @@ export interface ClientToServerEvents {
   "cell-update": (roomId: string, data: { r: number; c: number; v: number }) => void;
   "select-cell": (roomId: string, payload: { r: number | null, c: number | null }) => void;
   "restart-game": (roomId: string, difficulty: DifficultyLevel) => void;
+  "toggle-note": (roomId: string, data: { r: number; c: number; v: number }) => void;
 }

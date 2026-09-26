@@ -10,7 +10,7 @@ interface RoomState {
   notesGrid: NotesGrid; 
 }
 
-const rooms = new Map<string, RoomState>();
+export const rooms = new Map<string, RoomState>();
 
 export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToClientEvents>) => {
   io.on("connection", (socket: Socket<ClientToServerEvents, ServerToClientEvents>) => {

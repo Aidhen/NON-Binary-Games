@@ -1,10 +1,10 @@
 'use client';
+import { useMemo } from 'react';
 import { SudokuBoard } from '@nbg/shared';
 import { GameSettings } from './SudokuContainer';
 import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils'; 
 
-//Default palette for co-op players
 const MULTIPLAYER_COLORS = [
     'ring-blue-500 bg-blue-500/10',     // P1 
     'ring-green-500 bg-green-500/10',   // P2
@@ -12,6 +12,14 @@ const MULTIPLAYER_COLORS = [
     'ring-pink-500 bg-pink-500/10',     // P4
     'ring-orange-500 bg-orange-500/10'  // P5
 ];
+
+const getStableColorIndex = (id: string): number => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+        hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash) % MULTIPLAYER_COLORS.length;
+};
 
 interface SudokuBoardUIProps {
     board: SudokuBoard;
@@ -107,8 +115,16 @@ export function SudokuBoardUI({
         return 'text-[var(--number-player)] font-medium';
     };
 
+    const cellOccupantsMap = useMemo(() => {
+        const map = new Map<string, string>();
+        Object.entries(othersSelections).forEach(([playerId, [r, c]]) => {
+            map.set(`${r}-${c}`, playerId);
+        });
+        return map;
+    }, [othersSelections]);
+
     return (
-        <div className={cn("relative w-full aspect-square")}>
+        <div className="relative w-full aspect-square">
             <div 
                 className={cn(
                     "w-full h-full grid shadow-xl transition-colors duration-300",
@@ -130,13 +146,11 @@ export function SudokuBoardUI({
                         const bgClass = resolveBackgroundClass(initial, selected, showCrosshair, showSameNumbers);
                         const textClass = resolveTextClass(cellValue, initial, displayError);
 
-                        const occupantId = activePlayerIds.find(id => 
-                            othersSelections[id]?.[0] === rIndex && othersSelections[id]?.[1] === cIndex
-                        );
-
+                        const occupantId = cellOccupantsMap.get(`${rIndex}-${cIndex}`);
+                        
                         let ringClass = "";
                         if (occupantId) {
-                            const colorIndex = activePlayerIds.indexOf(occupantId) % MULTIPLAYER_COLORS.length;
+                            const colorIndex = getStableColorIndex(occupantId);
                             ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[colorIndex]}`;
                         }
 

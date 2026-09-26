@@ -318,7 +318,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
                     {Array.from({ length: board.size }, (_, i) => i + 1).map((num) => (
                         <button
                             key={num}
-                            onClick={() => handleInput(num, isNotesMode)} // Passa dinamicamente lo stato
+                            onClick={() => handleInput(num, isNotesMode)}
                             disabled={!selectedCell || isGameWon}
                             className={cn(
                                 "p-3 text-xl font-bold rounded-lg transition-all duration-200",
@@ -333,7 +333,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
                         </button>
                     ))}
                     <button
-                        onClick={() => handleInput(0, false)} // Cancellazione assoluta
+                        onClick={() => handleInput(0, false)}
                         disabled={!selectedCell || isGameWon}
                         className={cn(
                             "p-3 text-xl font-bold rounded-lg transition-all duration-200",

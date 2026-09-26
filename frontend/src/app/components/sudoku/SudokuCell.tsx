@@ -8,7 +8,6 @@ interface SudokuCellProps {
     isRightBorder: boolean;
     isBottomBorder: boolean;
     onClick: () => void;
-    // Nuove prop generiche
     notes?: Record<number, string>;
     boardSize?: number;
     boxSize?: number;

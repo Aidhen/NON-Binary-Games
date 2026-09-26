@@ -8,6 +8,7 @@ export function generateSudoku(difficulty: Difficulty, size: number = 9): Sudoku
     }
 
     const solution = generateFullGrid(size, boxSize);
+    console.log(solution)
     const initial = solution.map(row => [...row]);
     const cluesTarget = getCluesCount(difficulty, size);
 
@@ -59,7 +60,7 @@ function shuffleArray<T>(array: T[]): void {
     }
 }
 
-function getCluesCount(difficulty: Difficulty, size: number): number {
+export function getCluesCount(difficulty: Difficulty, size: number): number {
     const totalCells = size * size;
     const ratios: Record<Difficulty, number> = {
         easy: 0.5,

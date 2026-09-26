@@ -2,8 +2,8 @@
   "compilerOptions": {
     "rootDir": "../", 
     "outDir": "./dist",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+   "module": "esnext",
+    "moduleResolution": "bundler",
     "target": "esnext",
     "sourceMap": true,
     "declaration": true,

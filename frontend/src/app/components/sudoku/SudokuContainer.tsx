@@ -1,10 +1,11 @@
-'use client'; 
+'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { generateSudoku, SudokuBoard, isValid } from '@nbg/shared'; 
+import { generateSudoku, SudokuBoard, isValid, DifficultyLevel } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
+import { getSocket } from "@/lib/socket";
 
 export interface GameSettings {
     highlightCrosshairs: boolean;
@@ -12,18 +13,19 @@ export interface GameSettings {
     showErrors: boolean;
 }
 
-export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
-export function SudokuContainer() {
+
+export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     const [board, setBoard] = useState<SudokuBoard>();
     const [playerGrid, setPlayerGrid] = useState<number[][]>();
     const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isGameWon, setIsGameWon] = useState<boolean>(false);
 
     const { t } = useTranslation();
-    
+
     const [difficulty, setDifficulty] = useState<DifficultyLevel>('easy');
-    
+
     const [settings, setSettings] = useState<GameSettings>({
         highlightCrosshairs: true,
         highlightSameNumbers: true,
@@ -35,16 +37,19 @@ export function SudokuContainer() {
         setBoard(newBoard);
         setPlayerGrid(newBoard.initial.map(row => [...row]));
         setSelectedCell(null);
-    }, [difficulty]); 
+    }, [difficulty]);
 
-    useEffect(() => {
-        initGame();
-    }, [initGame]);
+    const [othersSelections, setOthersSelections] = useState<Record<string, [number, number]>>({});
+
+    const handleCellClick = useCallback((r: number, c: number) => {
+        setSelectedCell([r, c]);
+        getSocket().emit("select-cell", roomId, { r, c });
+    }, [roomId]);
 
     const handleDifficultyChange = (newDifficulty: DifficultyLevel) => {
         setDifficulty(newDifficulty);
-        initGame(newDifficulty); 
-        setIsSettingsOpen(false); 
+        initGame(newDifficulty);
+        setIsSettingsOpen(false);
     };
 
     const canAcceptInput = useCallback((r: number, c: number): boolean => {
@@ -55,32 +60,26 @@ export function SudokuContainer() {
 
     const isErrorPlacement = useCallback((r: number, c: number, value: number): boolean => {
         if (!playerGrid || !board) return false;
-        if (value === 0) return false; 
+        if (value === 0) return false;
         const tempGrid = playerGrid.map(row => [...row]);
-        tempGrid[r][c] = 0; 
+        tempGrid[r][c] = 0;
         return !isValid(tempGrid, r, c, value, board.size, board.boxSize);
     }, [playerGrid, board]);
 
-    const checkWinCondition = useCallback((): boolean => {
-        if (!playerGrid) return false;
-        const hasEmptyCells = playerGrid.some(row => row.some(cell => cell === 0));
-        if (hasEmptyCells) return false;
-        const hasRuleViolations = playerGrid.some((row, rIndex) => 
-            row.some((cell, cIndex) => isErrorPlacement(rIndex, cIndex, cell))
-        );
-        if (hasRuleViolations) return false;
-        return true;
-    }, [playerGrid, isErrorPlacement]);
 
     const handleInput = useCallback((value: number) => {
         if (!selectedCell || !playerGrid) return;
         const [r, c] = selectedCell;
         if (!canAcceptInput(r, c)) return;
+
         const newGrid = [...playerGrid];
         newGrid[r] = [...newGrid[r]];
         newGrid[r][c] = value;
+
         setPlayerGrid(newGrid);
-    }, [selectedCell, playerGrid, canAcceptInput]);
+
+        getSocket().emit("cell-update", roomId, { r, c, v: value });
+    }, [selectedCell, playerGrid, canAcceptInput, roomId]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,6 +102,84 @@ export function SudokuContainer() {
         setSettings(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
+    useEffect(() => {
+        console.log("🟡 [Frontend] Mounting SudokuContainer");
+        const socket = getSocket();
+
+        const joinGame = () => {
+            console.log(`🚀 [Frontend] Emitting 'join-room' for room ${roomId}`);
+            socket.emit("join-room", roomId, difficulty);
+        };
+
+        const onConnect = () => {
+            console.log("🟢 [Frontend] Socket connected! ID:", socket.id);
+            joinGame();
+        };
+
+        socket.on("connect", onConnect);
+        
+        socket.on("game-started", (payload) => {
+            console.log("🔵 [Frontend] 'game-started' received! Payload:", payload);
+            setBoard(payload.board);
+            setPlayerGrid(payload.currentGrid);
+            setIsGameWon(false);
+        });
+
+        if (socket.connected) {
+            console.log("⚡ [Frontend] Socket was already connected (Hot Reload), joining immediately");
+            joinGame();
+        } else {
+            console.log("⏳ [Frontend] Calling socket.connect()...");
+            socket.connect();
+        }
+
+        socket.on("cell-updated", ({ r, c, v }) => {
+            setPlayerGrid((prev) => {
+                if (!prev) return prev;
+                const newGrid = prev.map(row => [...row]);
+                newGrid[r][c] = v;
+                return newGrid;
+            });
+        });
+
+        socket.on("player-selected-cell", ({ playerId, r, c }) => {
+            setOthersSelections((prev) => {
+                const next = { ...prev };
+                if (r === null || c === null) {
+                    delete next[playerId];
+                } else {
+                    next[playerId] = [r, c];
+                }
+                return next;
+            });
+        });
+
+        socket.on("player-disconnected", (playerId) => {
+            setOthersSelections((prev) => {
+                const next = { ...prev };
+                delete next[playerId];
+                return next;
+            });
+        });
+
+        socket.on("game-won", () => {
+            console.log("🎉 [Frontend] 'game-won' received!");
+            setIsGameWon(true);
+            setSelectedCell(null);
+        });
+
+
+        return () => {
+            console.log("🧹 [Frontend] Cleanup: unmounting listeners");
+            socket.off("connect", onConnect);
+            socket.off("game-started");
+            socket.off("cell-updated");
+            socket.off("player-selected-cell");
+            socket.off("player-disconnected");
+            socket.off("game-won");
+        };
+    }, [difficulty]);
+
 
     if (!board || !playerGrid) {
         return (
@@ -117,17 +194,15 @@ export function SudokuContainer() {
         );
     }
 
-    const isGameWon = checkWinCondition();
-
     return (
         <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
-            
+
             <div className="w-full flex justify-between items-center">
                 <div className="text-[var(--subtitle-text)] text-sm font-bold uppercase tracking-wider">
                     {t('sudoku.mode')}: {t(`sudoku.${difficulty}`)}
                 </div>
-                
-                <button 
+
+                <button
                     onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                     className="text-[var(--subtitle-text)] hover:text-[var(--title-text)] text-sm font-bold uppercase transition-colors"
                 >
@@ -136,8 +211,8 @@ export function SudokuContainer() {
             </div>
 
             {isSettingsOpen && (
-                <SettingsPanel 
-                    settings={settings} 
+                <SettingsPanel
+                    settings={settings}
                     onToggle={toggleSetting}
                     currentDifficulty={difficulty}
                     onDifficultyChange={handleDifficultyChange}
@@ -162,7 +237,7 @@ export function SudokuContainer() {
                                 {t('sudoku.compliment')}
                             </p>
                             <button
-                                onClick={() => initGame(difficulty)}
+                                onClick={() => getSocket().emit("restart-game", roomId, difficulty)}
                                 className={cn(
                                     "px-6 py-3 rounded-lg font-bold transition-all duration-200",
                                     "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
@@ -175,14 +250,15 @@ export function SudokuContainer() {
                     </div>
                 )}
 
-                <SudokuBoardUI 
+                <SudokuBoardUI
                     board={board}
                     playerGrid={playerGrid}
                     selectedCell={selectedCell}
                     settings={settings}
                     isGameWon={isGameWon}
-                    onCellClick={(r, c) => setSelectedCell([r, c])}
+                    onCellClick={handleCellClick}
                     isErrorPlacement={isErrorPlacement}
+                    othersSelections={othersSelections}
                 />
             </div>
 

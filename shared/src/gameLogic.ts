@@ -1,4 +1,4 @@
-import type { SudokuBoard } from '../games/sudoku/types';
+import type { SudokuBoard } from './games/sudoku/types';
 
 export const MAX_PLAYERS = 4;
 

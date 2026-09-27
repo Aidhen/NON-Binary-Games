@@ -7,5 +7,10 @@ export default defineConfig({
     environment: 'node',
     testTimeout: 15000, 
     setupFiles: ['./vitest.setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['lcov', 'text-summary'],
+      exclude: ['**/*.test.ts', '**/types.ts', '**/index.ts']
+    }
   },
 });

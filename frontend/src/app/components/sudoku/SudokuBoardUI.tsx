@@ -23,10 +23,14 @@ const MULTIPLAYER_TEXT_COLORS = [
 
 const getStableColorIndex = (id: string): number => {
     let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-        hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    const multiplier = MULTIPLAYER_COLORS.length;
+
+    for (const char of id) {
+        const charCode = char.codePointAt(0) ?? 0;
+        hash = charCode + ((hash << 5) - hash);
     }
-    return Math.abs(hash) % MULTIPLAYER_COLORS.length;
+
+    return Math.abs(hash % multiplier);
 };
 
 interface SudokuBoardUIProps {
@@ -57,7 +61,7 @@ export function SudokuBoardUI({
     const isCellSelected = (r: number, c: number) => selectedCell?.[0] === r && selectedCell?.[1] === c;
     const isCellEmpty = (r: number, c: number) => playerGrid[r][c] === 0;
 
-    const activePlayerIds = Object.keys(othersSelections).sort();
+    const activePlayerIds = Object.keys(othersSelections).sort((a, b) => a.localeCompare(b));
 
     const shouldDisplayError = (r: number, c: number, value: number): boolean => {
         if (!settings.showErrors) return false;

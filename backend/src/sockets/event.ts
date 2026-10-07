@@ -55,6 +55,8 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
       if (room.board.initial[r][c] !== 0) return;
 
       const prevValue = room.currentGrid[r][c];
+      
+      if (prevValue === v) return;
 
       if (prevValue === 0 && v !== 0) {
         room.filledCells++;

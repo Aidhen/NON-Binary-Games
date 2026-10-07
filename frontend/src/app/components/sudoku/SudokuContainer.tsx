@@ -96,16 +96,16 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
                 return;
             }
             
-            let num = parseInt(e.key);
-            if (isNaN(num)) {
+            let num = Number.parseInt(e.key);
+            if (Number.isNaN(num)) {
                 if (e.code.startsWith('Digit')) {
-                    num = parseInt(e.code.replace('Digit', ''));
+                    num = Number.parseInt(e.code.replace('Digit', ''));
                 } else if (e.code.startsWith('Numpad')) {
-                    num = parseInt(e.code.replace('Numpad', ''));
+                    num = Number.parseInt(e.code.replace('Numpad', ''));
                 }
             }
             
-            if (!isNaN(num) && num >= 1 && num <= board.size) {
+            if (!Number.isNaN(num) && num >= 1 && num <= board.size) {
                 const asNote = isNotesMode || e.shiftKey;
                 handleInput(num, asNote);
             }

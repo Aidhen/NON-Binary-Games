@@ -16,7 +16,7 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
   io.on("connection", (socket: Socket<ClientToServerEvents, ServerToClientEvents>) => {
 
     socket.on("join-room", (roomId, difficulty) => {
-      socket.join(roomId);
+      void socket.join(roomId);
 
       let room = rooms.get(roomId);
 

@@ -28,7 +28,7 @@ export function SudokuCell({
         <button
             type="button"
             onClick={onClick}
-            role="gridcell"
+            aria-label={value !== 0 ? `Cell value ${value}` : 'Empty cell'}
             className={cn(
                 "relative flex items-center justify-center text-2xl",
                 "cursor-pointer select-none overflow-hidden",

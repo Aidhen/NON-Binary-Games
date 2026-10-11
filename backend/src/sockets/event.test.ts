@@ -489,6 +489,8 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       const payload = await restarted;
 
+      expect(room.difficulty).toBe('medium');
+      expect(payload.difficulty).toBe('medium');
       expect(room.currentGrid).toEqual(room.board.initial);
       expect(room.notesGrid).toEqual({});
       expect(room.filledCells).toBe(

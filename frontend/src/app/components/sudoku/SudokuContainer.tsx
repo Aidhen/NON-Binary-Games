@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { generateSudoku, SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
+import { SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
 import { cn } from '@/lib/utils';

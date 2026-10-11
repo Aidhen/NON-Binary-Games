@@ -45,7 +45,9 @@ describe('Socket Events Security & Bounds Checking', () => {
    * The server replies only after processing all previously received events from that client.
    */
   const flushSocketEvents = (socket: TestClientSocket = clientSocket): Promise<void> =>
-    new Promise<void>((resolve) => { (socket as any).emit('__test-barrier', resolve); });
+    new Promise<void>((resolve) => {
+      (socket as unknown as { emit: (event: string, ack: () => void) => unknown }).emit('__test-barrier', resolve);
+    });
 
   /**
    * Joins a room and waits for the game-started event.

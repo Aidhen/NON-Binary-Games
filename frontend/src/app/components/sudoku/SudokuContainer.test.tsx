@@ -2,17 +2,48 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SudokuContainer } from './SudokuContainer';
+import type { Mock } from 'vitest';
+import type { DifficultyLevel, NotesGrid } from '@nbg/shared';
+import type { GameSettings } from './SudokuContainer';
+
+
+type BoardMockProps = {
+  onCellClick: (r: number, c: number) => void;
+  isErrorPlacement: (r: number, c: number, value: number) => boolean;
+  playerGrid: number[][];
+  selectedCell: [number, number] | null;
+  isGameWon: boolean;
+  othersSelections?: Record<string, [number, number]>;
+  notesGrid?: NotesGrid;
+};
+
+type SettingsPanelMockProps = {
+  settings: GameSettings;
+  onToggle: (key: keyof GameSettings) => void;
+  currentDifficulty: DifficultyLevel;
+  onDifficultyChange: (level: DifficultyLevel) => void;
+};
 
 const mocks = vi.hoisted(() => {
-  type Handler = (...args: any[]) => void;
+  type Handler = (...args: unknown[]) => void;
+
+  type SocketMock = {
+    connected: boolean;
+    id: string;
+    on: Mock<(event: string, handler: Handler) => SocketMock>;
+    off: Mock<(event: string, handler?: Handler) => SocketMock>;
+    emit: Mock<(event: string, ...args: unknown[]) => SocketMock>;
+    connect: Mock<() => SocketMock>;
+    disconnect: Mock<() => SocketMock>;
+  };
 
   const listeners: Record<string, Handler[]> = {};
-  const emitted: { event: string; args: any[] }[] = [];
+  const emitted: { event: string; args: unknown[] }[] = [];
   const generateSudoku = vi.fn();
   const isValid = vi.fn();
-  const socket: any = {};
+  const socket = {} as SocketMock;
 
-  const dispatch = (event: string, ...args: any[]) => {
+  const dispatch = (event: string, ...args: unknown[]) => {
     [...(listeners[event] ?? [])].forEach((handler) => handler(...args));
   };
 
@@ -27,7 +58,7 @@ const mocks = vi.hoisted(() => {
     else listeners[event] = (listeners[event] ?? []).filter((registered) => registered !== handler);
     return socket;
   });
-  socket.emit = vi.fn((event: string, ...args: any[]) => {
+  socket.emit = vi.fn((event: string, ...args: unknown[]) => {
     emitted.push({ event, args });
     return socket;
   });
@@ -71,7 +102,7 @@ vi.mock('@/lib/i18n/TranslationContext', () => ({
 }));
 
 vi.mock('./SudokuBoardUI', () => ({
-  SudokuBoardUI: (props: any) => {
+  SudokuBoardUI: (props: BoardMockProps) => {
     const [errorResult, setErrorResult] = useState('');
 
     return (
@@ -96,7 +127,7 @@ vi.mock('./SudokuBoardUI', () => ({
 }));
 
 vi.mock('./SettingsPanel', () => ({
-  SettingsPanel: ({ settings, onToggle, currentDifficulty, onDifficultyChange }: any) => (
+  SettingsPanel: ({ settings, onToggle, currentDifficulty, onDifficultyChange }: SettingsPanelMockProps) => (
     <div data-testid="settings-panel">
       <output data-testid="settings-state">{JSON.stringify({ settings, currentDifficulty })}</output>
       <button onClick={() => onToggle('showErrors')}>Toggle show errors</button>

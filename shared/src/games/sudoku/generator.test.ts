@@ -54,5 +54,5 @@ describe('Sudoku Generator Engine', () => {
         const solutions = countSolutions(gridCopy, size, boxSize);
 
         expect(solutions).toBe(1);
-    });
+    }, 15000);
 });

@@ -8,7 +8,6 @@ export function generateSudoku(difficulty: Difficulty, size: number = 9): Sudoku
     }
 
     const solution = generateFullGrid(size, boxSize);
-    console.log(solution)
     const initial = solution.map(row => [...row]);
     const cluesTarget = getCluesCount(difficulty, size);
 

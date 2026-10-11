@@ -1,5 +1,5 @@
 [
-  "shared",
-  "frontend",
-  "backend"
+  "./shared/vitest.config.ts",
+  "./frontend/vitest.config.mjs",
+  "./backend/vitest.config.ts"
 ]

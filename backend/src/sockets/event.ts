@@ -1,9 +1,10 @@
 import { Server, Socket } from "socket.io";
 import { checkWinCondition, countInitialFilledCells, generateSudoku, SudokuBoard } from "@nbg/shared";
-import type { ClientToServerEvents, ServerToClientEvents, SudokuGrid, NotesGrid } from "@nbg/shared";
+import type { ClientToServerEvents, ServerToClientEvents, SudokuGrid, NotesGrid, DifficultyLevel } from "@nbg/shared";
 
 interface RoomState {
   board: SudokuBoard;
+  difficulty: DifficultyLevel;
   currentGrid: SudokuGrid;
   players: Set<string>;
   filledCells: number;
@@ -25,6 +26,7 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
 
         room = {
           board,
+          difficulty,
           currentGrid: board.initial.map(row => [...row]),
           players: new Set(),
           filledCells: countInitialFilledCells(board.initial),
@@ -37,6 +39,7 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
 
       socket.emit("game-started", {
         board: room.board,
+        difficulty: room.difficulty,
         currentGrid: room.currentGrid,
         notesGrid: room.notesGrid
       });
@@ -70,7 +73,6 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
       const totalCells = size * size;
       if (room.filledCells === totalCells) {
         if (checkWinCondition(room.currentGrid, room.board.solution)) {
-          console.log(`🏆 Room ${roomId} solved!`);
           io.to(roomId).emit("game-won");
         }
       }
@@ -99,17 +101,17 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
       const room = rooms.get(roomId);
       if (!room) return;
 
-      console.log(`🔄 [Backend] Restarting game for room ${roomId}`);
-
       const board = generateSudoku(difficulty);
 
       room.board = board;
+      room.difficulty = difficulty;
       room.currentGrid = board.initial.map(row => [...row]);
       room.filledCells = countInitialFilledCells(board.initial);
       room.notesGrid = {};
 
       io.to(roomId).emit("game-started", {
         board: room.board,
+        difficulty: room.difficulty,
         currentGrid: room.currentGrid,
         notesGrid: room.notesGrid
       });

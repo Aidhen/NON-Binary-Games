@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
-import { generateSudoku, SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     const { t } = useTranslation();
 
     const [difficulty, setDifficulty] = useState<DifficultyLevel>('easy');
+    const difficultyRef = useRef<DifficultyLevel>('easy');
 
     const [settings, setSettings] = useState<GameSettings>({
         highlightCrosshairs: true,
@@ -32,13 +33,6 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
         showErrors: true,
     });
 
-    const initGame = useCallback((level: DifficultyLevel = difficulty) => {
-        const newBoard = generateSudoku(level);
-        setBoard(newBoard);
-        setPlayerGrid(newBoard.initial.map(row => [...row]));
-        setSelectedCell(null);
-        setNotesGrid({});
-    }, [difficulty]);
 
     const [othersSelections, setOthersSelections] = useState<Record<string, [number, number]>>({});
 
@@ -48,9 +42,10 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     }, [roomId]);
 
     const handleDifficultyChange = (newDifficulty: DifficultyLevel) => {
+        difficultyRef.current = newDifficulty;
         setDifficulty(newDifficulty);
-        initGame(newDifficulty);
         setIsSettingsOpen(false);
+        getSocket().emit('restart-game', roomId, newDifficulty);
     };
 
     const canAcceptInput = useCallback((r: number, c: number): boolean => {
@@ -71,7 +66,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     const handleInput = useCallback((value: number, asNote: boolean = isNotesMode) => {
         if (!selectedCell || !playerGrid || !board) return;
         const [r, c] = selectedCell;
-        
+
         if (!canAcceptInput(r, c)) return;
 
         if (asNote && value !== 0) {
@@ -90,27 +85,27 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!selectedCell || !board) return;
-            
+
             if (e.key === 'Backspace' || e.key === 'Delete') {
                 handleInput(0, false);
                 return;
             }
-            
-            let num = parseInt(e.key);
-            if (isNaN(num)) {
+
+            let num = Number.parseInt(e.key);
+            if (Number.isNaN(num)) {
                 if (e.code.startsWith('Digit')) {
-                    num = parseInt(e.code.replace('Digit', ''));
+                    num = Number.parseInt(e.code.replace('Digit', ''));
                 } else if (e.code.startsWith('Numpad')) {
-                    num = parseInt(e.code.replace('Numpad', ''));
+                    num = Number.parseInt(e.code.replace('Numpad', ''));
                 }
             }
-            
-            if (!isNaN(num) && num >= 1 && num <= board.size) {
+
+            if (!Number.isNaN(num) && num >= 1 && num <= board.size) {
                 const asNote = isNotesMode || e.shiftKey;
                 handleInput(num, asNote);
             }
         };
-        
+
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedCell, board, handleInput, isNotesMode]);
@@ -120,34 +115,32 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
     };
 
     useEffect(() => {
-        console.log("🟡 [Frontend] Mounting SudokuContainer");
         const socket = getSocket();
 
         const joinGame = () => {
-            console.log(`🚀 [Frontend] Emitting 'join-room' for room ${roomId}`);
-            socket.emit("join-room", roomId, difficulty);
+            socket.emit('join-room', roomId, difficultyRef.current);
         };
 
         const onConnect = () => {
-            console.log("🟢 [Frontend] Socket connected! ID:", socket.id);
             joinGame();
         };
 
         socket.on("connect", onConnect);
-        
+
         socket.on("game-started", (payload) => {
-            console.log("🔵 [Frontend] 'game-started' received! Payload:", payload);
+            difficultyRef.current = payload.difficulty;
+            setDifficulty(payload.difficulty);
             setBoard(payload.board);
             setPlayerGrid(payload.currentGrid);
             setNotesGrid(payload.notesGrid || {});
+            setSelectedCell(null);
+            setOthersSelections({});
             setIsGameWon(false);
         });
 
         if (socket.connected) {
-            console.log("⚡ [Frontend] Socket was already connected (Hot Reload), joining immediately");
             joinGame();
         } else {
-            console.log("⏳ [Frontend] Calling socket.connect()...");
             socket.connect();
         }
 
@@ -181,7 +174,6 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
         });
 
         socket.on("game-won", () => {
-            console.log("🎉 [Frontend] 'game-won' received!");
             setIsGameWon(true);
             setSelectedCell(null);
         });
@@ -190,9 +182,9 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             setNotesGrid((prev) => {
                 const next = { ...prev };
                 const key = `${r}-${c}`;
-                
+
                 if (!next[key]) next[key] = {};
-                
+
                 if (playerId === null) {
                     delete next[key][v];
                     if (Object.keys(next[key]).length === 0) {
@@ -206,7 +198,6 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
         });
 
         return () => {
-            console.log("🧹 [Frontend] Cleanup: unmounting listeners");
             socket.off("connect", onConnect);
             socket.off("game-started");
             socket.off("cell-updated");
@@ -215,7 +206,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
             socket.off("game-won");
             socket.off("note-toggled");
         };
-    }, [difficulty, roomId]);
+    }, [roomId]);
 
     if (!board || !playerGrid) {
         return (
@@ -304,8 +295,8 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
                         onClick={() => setIsNotesMode(!isNotesMode)}
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200",
-                            isNotesMode 
-                                ? "bg-blue-500/20 text-blue-500 border-2 border-blue-500/50" 
+                            isNotesMode
+                                ? "bg-blue-500/20 text-blue-500 border-2 border-blue-500/50"
                                 : "bg-[var(--numpad-background)] text-[var(--subtitle-text)] border-2 border-transparent hover:bg-[var(--numpad-hover)]"
                         )}
                     >
@@ -322,8 +313,8 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
                             disabled={!selectedCell || isGameWon}
                             className={cn(
                                 "p-3 text-xl font-bold rounded-lg transition-all duration-200",
-                                isNotesMode 
-                                    ? "bg-[var(--cell-background)] text-blue-500 border border-blue-500/30" 
+                                isNotesMode
+                                    ? "bg-[var(--cell-background)] text-blue-500 border border-blue-500/30"
                                     : "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
                                 "hover:opacity-80 active:scale-95",
                                 "disabled:opacity-50 disabled:cursor-not-allowed"

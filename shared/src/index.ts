@@ -8,7 +8,7 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 export type NotesGrid = Record<string, Record<number, string>>;
 
 export interface ServerToClientEvents {
-  "game-started": (payload: { board: SudokuBoard; currentGrid: number[][]; notesGrid: NotesGrid }) => void;
+  "game-started": (payload: { board: SudokuBoard; currentGrid: number[][]; notesGrid: NotesGrid; difficulty: DifficultyLevel }) => void;
   "cell-updated": (data: { r: number; c: number; v: number }) => void;
   "move-rejected": (data: { r: number; c: number; reason: string }) => void;
   "error": (message: string) => void;

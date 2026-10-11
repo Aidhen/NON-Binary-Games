@@ -1,16 +1,15 @@
 services:
-  # Utility per lanciare comandi NPM sulla root del monorepo
   node-cli:
     image: node:24-slim
     working_dir: /app
     volumes:
       - .:/app
 
-  redis:
-    image: redis:alpine
-    container_name: nbg_redis
-    ports:
-      - "6379:6379"
+  # redis:
+  #   image: redis:alpine
+  #   container_name: nbg_redis
+  #   ports:
+  #     - "6379:6379"
 
   backend:
     image: node:24-slim
@@ -21,10 +20,10 @@ services:
     ports:
       - "4000:4000"
     command: npm run dev
-    environment:
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - redis
+    # environment:
+    #   - REDIS_URL=redis://redis:6379
+    # depends_on:
+    #   - redis
 
   frontend:
     image: node:24-slim

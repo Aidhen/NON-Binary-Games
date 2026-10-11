@@ -1,5 +1,6 @@
 'use client';
-import { GameSettings, DifficultyLevel } from './SudokuContainer';
+import { GameSettings} from './SudokuContainer';
+import { DifficultyLevel } from '@nbg/shared';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 

@@ -16,11 +16,15 @@
     "vitest": "^4.1.7"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "vitest",
+    "coverage-no-file": "vitest run --coverage --coverage.reporter=text",
+    "coverage": "vitest run --coverage"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs}": [
-      "eslint --fix"
+      "eslint --fix",
+      "prettier --write"
     ]
   },
   "dependencies": {

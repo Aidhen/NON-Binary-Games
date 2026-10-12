@@ -189,7 +189,7 @@ describe('SudokuContainer', () => {
 
     expect(screen.getByText('sudoku.loading')).toBeInTheDocument();
     expect(mocks.socket.connect).toHaveBeenCalledOnce();
-    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['room-1', 'easy'] });
+    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room', 'easy'] });
   });
 
   it('joins the room immediately when the socket is already connected', () => {

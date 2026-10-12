@@ -52,6 +52,36 @@ function findEmptyCell(grid: SudokuGrid, size: number): [number, number] | null 
 }
 
 
+function findBestEmptyCell(grid: SudokuGrid, size: number, boxSize: number) {
+    let bestRow = -1, bestCol = -1, minOptions = size + 1;
+    let bestOptions: number[] = [];
+    let hasEmpty = false;
+
+    for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+            if (grid[r][c] === 0) {
+                hasEmpty = true;
+                const options = [];
+                for (let v = 1; v <= size; v++) {
+                    if (isValid(grid, r, c, v, size, boxSize)) options.push(v);
+                }
+
+                if (options.length === 0) return { r, c, options: [] }; 
+                
+                if (options.length < minOptions) {
+                    minOptions = options.length;
+                    bestRow = r;
+                    bestCol = c;
+                    bestOptions = options;
+                    
+                    if (minOptions === 1) return { r: bestRow, c: bestCol, options: bestOptions };
+                }
+            }
+        }
+    }
+    return hasEmpty ? { r: bestRow, c: bestCol, options: bestOptions } : null;
+}
+
 function shuffleArray<T>(array: T[]): void {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -85,28 +115,32 @@ function pokeHoles(grid: SudokuGrid, target: number, size: number, boxSize: numb
         const [row, col] = coords[i];
         const t = grid[row][col];
         grid[row][col] = 0;
-        if(countSolutions(grid, size, boxSize) === 1){ counterClues--;}
-        else {
+        
+        if (countSolutions(grid, size, boxSize) === 1) { 
+            counterClues--;
+        } else {
             grid[row][col] = t;
         }
     }
 }
 
 export function countSolutions(grid: SudokuGrid, size: number, boxSize: number): number {
-    const emptyCell = findEmptyCell(grid, size);
-    if (emptyCell === null) return 1;
+    const bestCell = findBestEmptyCell(grid, size, boxSize);
+    
+    if (!bestCell) return 1;
 
-    const [row, col] = emptyCell;
+    const { r, c, options } = bestCell;
+    
+    if (options.length === 0) return 0;
+
     let count = 0;
 
-    for (let i = 1; i <= size; i++) {
-        if(isValid(grid, row, col, i, size, boxSize)) {
-            grid[row][col] = i;
-            count += countSolutions(grid, size, boxSize);
-            
-            grid[row][col] = 0;
-            if(count > 1) return count;  
-        }
+    for (const val of options) {
+        grid[r][c] = val;
+        count += countSolutions(grid, size, boxSize);
+        grid[r][c] = 0;
+        
+        if (count > 1) return count;
     }
     return count;
 }

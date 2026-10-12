@@ -26,7 +26,7 @@ This project is built with a focus on Developer Experience (DX), modularity, and
 
 ---
 
-## Current Status: v0.2.0-alpha
+## Current Status: v0.1.0-alpha
 
 The core collaborative Sudoku gameplay is fully operational. Players can join multiplayer rooms, synchronize game state in real time, interact with shared notes, and see other players' selections and presence. The project is currently focused on the remaining work needed for a first public release.
 

@@ -20,5 +20,9 @@ export const it: Translations = {
         highlightSame: "Evidenzia numeri uguali",
         showErrors: "Mostra errori (rosso)",
         notesMode: "Note",
+        startNewGame: "Inizia una partita",
+        copied: "Copiato",
+        copyLink: "Copia link",
+        room: "Stanza"
     }
 };

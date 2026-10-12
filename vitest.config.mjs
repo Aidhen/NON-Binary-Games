@@ -27,6 +27,7 @@ export default defineConfig({
         'shared/src/index.ts',
         'shared/src/games/sudoku/index.ts',
         'shared/src/games/sudoku/types.ts',
+        '**/layout.tsx',
       ],
     },
   },

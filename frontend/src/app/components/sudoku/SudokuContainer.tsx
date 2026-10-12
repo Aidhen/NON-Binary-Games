@@ -13,7 +13,7 @@ export interface GameSettings {
     showErrors: boolean;
 }
 
-export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
+export function SudokuContainer({ roomId }: { roomId: string }) {
     const [board, setBoard] = useState<SudokuBoard>();
     const [playerGrid, setPlayerGrid] = useState<number[][]>();
     const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
@@ -290,7 +290,7 @@ export function SudokuContainer({ roomId = "room-1" }: { roomId?: string }) {
 
             {/* Controls Area (Toggle + Numpad) */}
             <div className="w-full flex flex-col gap-3 mt-2">
-                <div className="flex justify-end w-full">
+                <div className="flex justify-center w-full">
                     <button
                         onClick={() => setIsNotesMode(!isNotesMode)}
                         className={cn(

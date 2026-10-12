@@ -185,11 +185,11 @@ beforeEach(() => {
 
 describe('SudokuContainer', () => {
   it('renders the loading state and joins the room when the socket connects', () => {
-    render(<SudokuContainer />);
+    render(<SudokuContainer roomId="custom-room" />);
 
     expect(screen.getByText('sudoku.loading')).toBeInTheDocument();
     expect(mocks.socket.connect).toHaveBeenCalledOnce();
-    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['room-1', 'easy'] });
+    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room', 'easy'] });
   });
 
   it('joins the room immediately when the socket is already connected', () => {
@@ -490,7 +490,7 @@ describe('SudokuContainer', () => {
   });
 
   it('removes socket event listeners when unmounted', async () => {
-    const { unmount } = render(<SudokuContainer />);
+    const { unmount } = render(<SudokuContainer roomId="custom-room" />);
 
     expect(mocks.listeners['game-started']).toHaveLength(1);
     expect(mocks.listeners['cell-updated']).toHaveLength(1);

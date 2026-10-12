@@ -52,6 +52,35 @@ function findEmptyCell(grid: SudokuGrid, size: number): [number, number] | null 
 }
 
 
+function getCandidates(grid: SudokuGrid, r: number, c: number, size: number, boxSize: number): number[] {
+    const candidates = [];
+    for (let v = 1; v <= size; v++) {
+        if (isValid(grid, r, c, v, size, boxSize)) candidates.push(v);
+    }
+    return candidates;
+}
+
+function findBestEmptyCell(grid: SudokuGrid, size: number, boxSize: number) {
+    let best: { r: number; c: number; options: number[] } | null = null;
+
+    for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+            if (grid[r][c] !== 0) continue;
+
+            const options = getCandidates(grid, r, c, size, boxSize);
+
+            if (options.length === 0) return { r, c, options: [] };
+            if (options.length === 1) return { r, c, options };
+
+            if (!best || options.length < best.options.length) {
+                best = { r, c, options };
+            }
+        }
+    }
+
+    return best;
+}
+
 function shuffleArray<T>(array: T[]): void {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -85,28 +114,32 @@ function pokeHoles(grid: SudokuGrid, target: number, size: number, boxSize: numb
         const [row, col] = coords[i];
         const t = grid[row][col];
         grid[row][col] = 0;
-        if(countSolutions(grid, size, boxSize) === 1){ counterClues--;}
-        else {
+        
+        if (countSolutions(grid, size, boxSize) === 1) { 
+            counterClues--;
+        } else {
             grid[row][col] = t;
         }
     }
 }
 
 export function countSolutions(grid: SudokuGrid, size: number, boxSize: number): number {
-    const emptyCell = findEmptyCell(grid, size);
-    if (emptyCell === null) return 1;
+    const bestCell = findBestEmptyCell(grid, size, boxSize);
+    
+    if (!bestCell) return 1;
 
-    const [row, col] = emptyCell;
+    const { r, c, options } = bestCell;
+    
+    if (options.length === 0) return 0;
+
     let count = 0;
 
-    for (let i = 1; i <= size; i++) {
-        if(isValid(grid, row, col, i, size, boxSize)) {
-            grid[row][col] = i;
-            count += countSolutions(grid, size, boxSize);
-            
-            grid[row][col] = 0;
-            if(count > 1) return count;  
-        }
+    for (const val of options) {
+        grid[r][c] = val;
+        count += countSolutions(grid, size, boxSize);
+        grid[r][c] = 0;
+        
+        if (count > 1) return count;
     }
     return count;
 }

@@ -17,7 +17,11 @@ export const en = {
         highlightCrosshairs: "Highlight crosshairs & box",
         highlightSame: "Highlight same numbers",
         showErrors: "Show error clashes (red)",
-        notesMode: "Notes"
+        notesMode: "Notes",
+        startNewGame: "Start new game",
+        copied: "Copied",
+        copyLink: "Copy link",
+        room: "Room"
     }
 };
 

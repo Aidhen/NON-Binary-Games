@@ -52,34 +52,33 @@ function findEmptyCell(grid: SudokuGrid, size: number): [number, number] | null 
 }
 
 
+function getCandidates(grid: SudokuGrid, r: number, c: number, size: number, boxSize: number): number[] {
+    const candidates = [];
+    for (let v = 1; v <= size; v++) {
+        if (isValid(grid, r, c, v, size, boxSize)) candidates.push(v);
+    }
+    return candidates;
+}
+
 function findBestEmptyCell(grid: SudokuGrid, size: number, boxSize: number) {
-    let bestRow = -1, bestCol = -1, minOptions = size + 1;
-    let bestOptions: number[] = [];
-    let hasEmpty = false;
+    let best: { r: number; c: number; options: number[] } | null = null;
 
     for (let r = 0; r < size; r++) {
         for (let c = 0; c < size; c++) {
-            if (grid[r][c] === 0) {
-                hasEmpty = true;
-                const options = [];
-                for (let v = 1; v <= size; v++) {
-                    if (isValid(grid, r, c, v, size, boxSize)) options.push(v);
-                }
+            if (grid[r][c] !== 0) continue;
 
-                if (options.length === 0) return { r, c, options: [] }; 
-                
-                if (options.length < minOptions) {
-                    minOptions = options.length;
-                    bestRow = r;
-                    bestCol = c;
-                    bestOptions = options;
-                    
-                    if (minOptions === 1) return { r: bestRow, c: bestCol, options: bestOptions };
-                }
+            const options = getCandidates(grid, r, c, size, boxSize);
+
+            if (options.length === 0) return { r, c, options: [] };
+            if (options.length === 1) return { r, c, options };
+
+            if (!best || options.length < best.options.length) {
+                best = { r, c, options };
             }
         }
     }
-    return hasEmpty ? { r: bestRow, c: bestCol, options: bestOptions } : null;
+
+    return best;
 }
 
 function shuffleArray<T>(array: T[]): void {

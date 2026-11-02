@@ -1,9 +1,11 @@
-import { SudokuBoard } from './games/sudoku/types';
+import type { SudokuBoard, Difficulty } from './games/sudoku/types';
+import type { CellUpdatePayload, ToggleNotePayload, SelectCellPayload } from './schemas';
 
 export * from './games/sudoku/index';
 export * from './gameLogic';
+export * from './schemas';
 
-export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+export type DifficultyLevel = Difficulty;
 
 export type NotesGrid = Record<string, Record<number, string>>;
 
@@ -18,10 +20,20 @@ export interface ServerToClientEvents {
   "note-toggled": (data: { r: number; c: number; v: number; playerId: string | null }) => void;
 }
 
+/**
+ * Only `join-room` carries a room id: the server remembers the room of each
+ * socket (see SocketData), so every other event is implicitly scoped to the
+ * room the sender has actually joined.
+ */
 export interface ClientToServerEvents {
-  "join-room": (roomId: string, difficulty: "easy" | "medium" | "hard") => void;
-  "cell-update": (roomId: string, data: { r: number; c: number; v: number }) => void;
-  "select-cell": (roomId: string, payload: { r: number | null, c: number | null }) => void;
-  "restart-game": (roomId: string, difficulty: DifficultyLevel) => void;
-  "toggle-note": (roomId: string, data: { r: number; c: number; v: number }) => void;
+  "join-room": (roomId: string, difficulty: DifficultyLevel) => void;
+  "cell-update": (data: CellUpdatePayload) => void;
+  "select-cell": (payload: SelectCellPayload) => void;
+  "restart-game": (difficulty: DifficultyLevel) => void;
+  "toggle-note": (data: ToggleNotePayload) => void;
+}
+
+/** Per-socket state kept by the server (`socket.data`). */
+export interface SocketData {
+  roomId?: string;
 }

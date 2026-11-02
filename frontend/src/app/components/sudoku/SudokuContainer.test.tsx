@@ -217,7 +217,7 @@ describe('SudokuContainer', () => {
     expect(getBoardState().selectedCell).toEqual([0, 1]);
     expect(mocks.emitted).toContainEqual({
       event: 'select-cell',
-      args: ['test-room', { r: 0, c: 1 }],
+      args: [{ r: 0, c: 1 }],
     });
   });
 
@@ -230,7 +230,7 @@ describe('SudokuContainer', () => {
     expect(getBoardState().playerGrid[0][1]).toBe(3);
     expect(mocks.emitted).toContainEqual({
       event: 'cell-update',
-      args: ['room-1', { r: 0, c: 1, v: 3 }],
+      args: [{ r: 0, c: 1, v: 3 }],
     });
   });
 
@@ -260,7 +260,7 @@ describe('SudokuContainer', () => {
 
     expect(mocks.emitted).toContainEqual({
       event: 'toggle-note',
-      args: ['room-1', { r: 0, c: 1, v: 3 }],
+      args: [{ r: 0, c: 1, v: 3 }],
     });
     expect(mocks.emitted.some(({ event }) => event === 'cell-update')).toBe(false);
     expect(getBoardState().playerGrid[0][1]).toBe(2);
@@ -274,7 +274,7 @@ describe('SudokuContainer', () => {
 
     expect(mocks.emitted).toContainEqual({
       event: 'toggle-note',
-      args: ['room-1', { r: 0, c: 1, v: 3 }],
+      args: [{ r: 0, c: 1, v: 3 }],
     });
   });
 
@@ -286,7 +286,7 @@ describe('SudokuContainer', () => {
 
     expect(mocks.emitted).toContainEqual({
       event: 'cell-update',
-      args: ['room-1', { r: 0, c: 1, v: 3 }],
+      args: [{ r: 0, c: 1, v: 3 }],
     });
   });
 
@@ -299,7 +299,7 @@ describe('SudokuContainer', () => {
     expect(getBoardState().playerGrid[0][1]).toBe(0);
     expect(mocks.emitted).toContainEqual({
       event: 'cell-update',
-      args: ['room-1', { r: 0, c: 1, v: 0 }],
+      args: [{ r: 0, c: 1, v: 0 }],
     });
   });
 
@@ -402,7 +402,7 @@ describe('SudokuContainer', () => {
     expect(screen.queryByTestId('settings-panel')).not.toBeInTheDocument();
     expect(mocks.emitted).toContainEqual({
       event: 'restart-game',
-      args: ['room-1', 'medium'],
+      args: ['medium'],
     });
     expect(mocks.emitted.filter(({ event }) => event === 'join-room')).toHaveLength(1);
 
@@ -439,7 +439,7 @@ describe('SudokuContainer', () => {
 
     expect(mocks.emitted).toContainEqual({
       event: 'restart-game',
-      args: ['room-1', 'easy'],
+      args: ['easy'],
     });
   });
 

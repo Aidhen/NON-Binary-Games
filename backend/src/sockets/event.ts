@@ -1,6 +1,7 @@
-import { Server, Socket } from "socket.io";
-import { checkWinCondition, countInitialFilledCells, generateSudoku, SudokuBoard } from "@nbg/shared";
-import type { ClientToServerEvents, ServerToClientEvents, SudokuGrid, NotesGrid, DifficultyLevel } from "@nbg/shared";
+import { Server, Socket, DefaultEventsMap } from "socket.io";
+import { cellUpdateArgsSchema, checkWinCondition, countInitialFilledCells, generateSudoku, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, SudokuBoard, toggleNoteArgsSchema } from "@nbg/shared";
+import type { ClientToServerEvents, ServerToClientEvents, SocketData, SudokuGrid, NotesGrid, DifficultyLevel } from "@nbg/shared";
+import { safeHandler } from "./safeHandler";
 
 interface RoomState {
   board: SudokuBoard;
@@ -8,16 +9,60 @@ interface RoomState {
   currentGrid: SudokuGrid;
   players: Set<string>;
   filledCells: number;
-  notesGrid: NotesGrid; 
+  notesGrid: NotesGrid;
 }
+
+type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
+type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 
 export const rooms = new Map<string, RoomState>();
 
-export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToClientEvents>) => {
-  io.on("connection", (socket: Socket<ClientToServerEvents, ServerToClientEvents>) => {
+/**
+ * Removes the socket from the room it is currently in (if any).
+ * Used both when the socket moves to another room and when it disconnects.
+ */
+const leaveCurrentRoom = (socket: GameSocket) => {
+  const roomId = socket.data.roomId;
+  if (!roomId) return;
 
-    socket.on("join-room", (roomId, difficulty) => {
+  socket.data.roomId = undefined;
+  void socket.leave(roomId);
+
+  const room = rooms.get(roomId);
+  if (!room) return;
+
+  room.players.delete(socket.id);
+  socket.to(roomId).emit("player-disconnected", socket.id);
+
+  if (room.players.size === 0) {
+    rooms.delete(roomId);
+  }
+};
+
+/**
+ * The room a socket acts on is the one it joined, never a client-supplied id:
+ * a socket that has not joined a room cannot touch any room.
+ */
+const getCurrentRoom = (socket: GameSocket) => {
+  const roomId = socket.data.roomId;
+  if (!roomId) return undefined;
+
+  const room = rooms.get(roomId);
+  if (!room) return undefined;
+
+  return { roomId, room };
+};
+
+export const setupSocketHandlers = (io: GameServer) => {
+  io.on("connection", (socket: GameSocket) => {
+
+    socket.on("join-room", safeHandler(joinRoomArgsSchema, (roomId, difficulty) => {
+      if (socket.data.roomId !== roomId) {
+        leaveCurrentRoom(socket);
+      }
+
       void socket.join(roomId);
+      socket.data.roomId = roomId;
 
       let room = rooms.get(roomId);
 
@@ -43,22 +88,21 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
         currentGrid: room.currentGrid,
         notesGrid: room.notesGrid
       });
-    });
+    }));
 
-    socket.on("cell-update", (roomId, { r, c, v }) => {
-      const room = rooms.get(roomId);
-      if (!room) return;
+    socket.on("cell-update", safeHandler(cellUpdateArgsSchema, ({ r, c, v }) => {
+      const current = getCurrentRoom(socket);
+      if (!current) return;
+      const { roomId, room } = current;
 
       const size = room.board.initial.length;
 
-      if (!Number.isInteger(r) || r < 0 || r >= size) return;
-      if (!Number.isInteger(c) || c < 0 || c >= size) return;
-      if (!Number.isInteger(v) || v < 0 || v > size) return;
+      if (r >= size || c >= size || v > size) return;
 
       if (room.board.initial[r][c] !== 0) return;
 
       const prevValue = room.currentGrid[r][c];
-      
+
       if (prevValue === v) return;
 
       if (prevValue === 0 && v !== 0) {
@@ -76,30 +120,27 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
           io.to(roomId).emit("game-won");
         }
       }
-    });
+    }));
 
-    socket.on("select-cell", (roomId, { r, c }) => {
+    socket.on("select-cell", safeHandler(selectCellArgsSchema, ({ r, c }) => {
+      const current = getCurrentRoom(socket);
+      if (!current) return;
+      const { roomId, room } = current;
+
+      const size = room.board.size;
+      if ((r !== null && r >= size) || (c !== null && c >= size)) return;
+
       socket.to(roomId).emit("player-selected-cell", { playerId: socket.id, r, c });
-    });
+    }));
 
     socket.on("disconnect", () => {
-      for (const [roomId, room] of rooms.entries()) {
-        if (room.players.has(socket.id)) {
-          room.players.delete(socket.id);
-
-          socket.to(roomId).emit("player-disconnected", socket.id);
-
-          if (room.players.size === 0) {
-            rooms.delete(roomId);
-          }
-          break;
-        }
-      }
+      leaveCurrentRoom(socket);
     });
 
-    socket.on("restart-game", (roomId, difficulty) => {
-      const room = rooms.get(roomId);
-      if (!room) return;
+    socket.on("restart-game", safeHandler(restartGameArgsSchema, (difficulty) => {
+      const current = getCurrentRoom(socket);
+      if (!current) return;
+      const { roomId, room } = current;
 
       const board = generateSudoku(difficulty);
 
@@ -115,18 +156,16 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
         currentGrid: room.currentGrid,
         notesGrid: room.notesGrid
       });
-    });
+    }));
 
-    socket.on("toggle-note", (roomId: string, data: { r: number; c: number; v: number }) => {
-      const room = rooms.get(roomId);
-      if (!room || !room.board) return;
+    socket.on("toggle-note", safeHandler(toggleNoteArgsSchema, ({ r, c, v }) => {
+      const current = getCurrentRoom(socket);
+      if (!current) return;
+      const { roomId, room } = current;
 
-      const { r, c, v } = data;
       const size = room.board.size;
 
-      if (!Number.isInteger(r) || r < 0 || r >= size) return;
-      if (!Number.isInteger(c) || c < 0 || c >= size) return;
-      if (!Number.isInteger(v) || v < 1 || v > size) return;
+      if (r >= size || c >= size || v > size) return;
 
       const cellKey = `${r}-${c}`;
       if (!room.notesGrid[cellKey]) {
@@ -147,6 +186,6 @@ export const setupSocketHandlers = (io: Server<ClientToServerEvents, ServerToCli
       }
 
       io.to(roomId).emit("note-toggled", { r, c, v, playerId: assignedPlayerId });
-    });
+    }));
   });
 };

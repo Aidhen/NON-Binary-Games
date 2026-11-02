@@ -24,7 +24,8 @@ describe('getSocket', () => {
     expect(ioMock).toHaveBeenCalledOnce();
     expect(ioMock).toHaveBeenCalledWith('http://localhost:4000', {
       autoConnect: false,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: Infinity,
+      reconnectionDelayMax: 5000,
     });
     expect(socket).toBe(socketInstance);
   });

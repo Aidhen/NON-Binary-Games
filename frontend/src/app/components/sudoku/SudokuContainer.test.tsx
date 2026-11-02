@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SudokuContainer } from './SudokuContainer';
+import { WAKING_AFTER_MS } from '@/lib/useConnectionStatus';
 import type { Mock } from 'vitest';
 import type { DifficultyLevel, NotesGrid } from '@nbg/shared';
 import type { GameSettings } from './SudokuContainer';
@@ -503,5 +504,81 @@ describe('SudokuContainer', () => {
     expect(mocks.listeners['player-disconnected'] ?? []).toHaveLength(0);
     expect(mocks.listeners['game-won'] ?? []).toHaveLength(0);
     expect(mocks.listeners['note-toggled'] ?? []).toHaveLength(0);
+  });
+
+  describe('when the server is asleep', () => {
+    const connectLater = () => {
+      mocks.socket.connect.mockImplementationOnce(() => mocks.socket);
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    };
+
+    const serverWakesUp = async () => {
+      await act(async () => {
+        mocks.socket.connected = true;
+        mocks.dispatch('connect');
+        mocks.dispatch('game-started', {
+          board: testBoard,
+          currentGrid: currentGrid.map((row) => [...row]),
+          notesGrid: {},
+          difficulty: 'easy',
+        });
+      });
+    };
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('explains why it is waiting once the server has not answered for a few seconds', async () => {
+      connectLater();
+      render(<SudokuContainer roomId="sleepy-room" />);
+
+      expect(screen.getByText('sudoku.loading')).toBeInTheDocument();
+      expect(screen.queryByText('loader.waking')).not.toBeInTheDocument();
+
+      await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
+
+      expect(screen.getByText('loader.waking')).toBeInTheDocument();
+      expect(screen.getByText('loader.wakingDetails')).toBeInTheDocument();
+    });
+
+    it('goes straight to the board when the player did not touch the mini game', async () => {
+      connectLater();
+      render(<SudokuContainer roomId="sleepy-room" />);
+      await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
+
+      await serverWakesUp();
+
+      expect(screen.getByTestId('board-ui')).toBeInTheDocument();
+      expect(screen.queryByText('loader.ready')).not.toBeInTheDocument();
+    });
+
+    it('lets the player finish with the mini game and join when they choose', async () => {
+      connectLater();
+      render(<SudokuContainer roomId="sleepy-room" />);
+      await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'minigames.garden.water' }));
+      await serverWakesUp();
+
+      expect(screen.getByText('loader.ready')).toBeInTheDocument();
+      expect(screen.queryByTestId('board-ui')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'loader.join' }));
+
+      expect(screen.getByTestId('board-ui')).toBeInTheDocument();
+      expect(getBoardState().playerGrid).toEqual(currentGrid);
+    });
+
+    it('joins the room as soon as the socket connects, while the player is still in the mini game', async () => {
+      connectLater();
+      render(<SudokuContainer roomId="sleepy-room" />);
+      await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
+      expect(mocks.emitted.filter(({ event }) => event === 'join-room')).toHaveLength(0);
+
+      await serverWakesUp();
+
+      expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['sleepy-room', 'easy'] });
+    });
   });
 });

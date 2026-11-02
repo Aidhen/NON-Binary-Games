@@ -1,5 +1,5 @@
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, checkWinCondition, countInitialFilledCells, generateSudoku, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, SudokuBoard, toggleNoteArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, SudokuBoard, toggleNoteArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData, SudokuGrid, NotesGrid, DifficultyLevel } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 
@@ -156,6 +156,20 @@ export const setupSocketHandlers = (io: GameServer) => {
         currentGrid: room.currentGrid,
         notesGrid: room.notesGrid
       });
+    }));
+
+    // Fire and forget: the sender already shows its own emote, so only the others are notified.
+    // Emotes sent during the cooldown are dropped silently (the UI disables the bar for the same time).
+    socket.on("send-emote", safeHandler(sendEmoteArgsSchema, (emote) => {
+      const current = getCurrentRoom(socket);
+      if (!current) return;
+
+      const now = Date.now();
+      const lastEmoteAt = socket.data.lastEmoteAt;
+      if (lastEmoteAt !== undefined && now - lastEmoteAt < EMOTE_COOLDOWN_MS) return;
+
+      socket.data.lastEmoteAt = now;
+      socket.to(current.roomId).emit("emote-received", { playerId: socket.id, emote });
     }));
 
     socket.on("toggle-note", safeHandler(toggleNoteArgsSchema, ({ r, c, v }) => {

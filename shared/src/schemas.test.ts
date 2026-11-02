@@ -7,8 +7,10 @@ import {
   restartGameArgsSchema,
   roomIdSchema,
   selectCellArgsSchema,
+  sendEmoteArgsSchema,
   toggleNoteArgsSchema,
 } from './schemas';
+import { EMOTES } from './emotes';
 
 const garbage: unknown[] = [undefined, null, 0, 1, NaN, 'text', true, [], {}, () => 1];
 
@@ -112,5 +114,30 @@ describe('restartGameArgsSchema', () => {
     expect(restartGameArgsSchema.safeParse(['medium']).success).toBe(true);
     expect(restartGameArgsSchema.safeParse(['banana']).success).toBe(false);
     expect(restartGameArgsSchema.safeParse([]).success).toBe(false);
+  });
+});
+
+describe('EMOTES', () => {
+  it('stays small enough to fit a button bar and has no duplicates', () => {
+    expect(EMOTES.length).toBeGreaterThan(0);
+    expect(EMOTES.length).toBeLessThanOrEqual(10);
+    expect(new Set(EMOTES).size).toBe(EMOTES.length);
+  });
+});
+
+describe('sendEmoteArgsSchema', () => {
+  it('accepts every emote of the list', () => {
+    for (const emote of EMOTES) {
+      expect(sendEmoteArgsSchema.safeParse([emote]).success).toBe(true);
+    }
+  });
+
+  it('rejects anything that is not exactly one known emote', () => {
+    const garbage: unknown[] = ['🦄', 'hello', '💜💜', ' 💜', '', 42, null, undefined, {}, [], { emote: '💜' }, '💜'.repeat(10_000)];
+    for (const value of garbage) {
+      expect(sendEmoteArgsSchema.safeParse([value]).success).toBe(false);
+    }
+    expect(sendEmoteArgsSchema.safeParse([]).success).toBe(false);
+    expect(sendEmoteArgsSchema.safeParse([EMOTES[0], 'extra']).success).toBe(false);
   });
 });

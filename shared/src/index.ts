@@ -1,9 +1,11 @@
 import type { SudokuBoard, Difficulty } from './games/sudoku/types';
+import type { Emote } from './emotes';
 import type { CellUpdatePayload, ToggleNotePayload, SelectCellPayload } from './schemas';
 
 export * from './games/sudoku/index';
 export * from './gameLogic';
 export * from './schemas';
+export * from './emotes';
 
 export type DifficultyLevel = Difficulty;
 
@@ -18,6 +20,7 @@ export interface ServerToClientEvents {
   "player-disconnected": (playerId: string) => void;
   "game-won": () => void;
   "note-toggled": (data: { r: number; c: number; v: number; playerId: string | null }) => void;
+  "emote-received": (data: { playerId: string; emote: Emote }) => void;
 }
 
 /**
@@ -31,9 +34,12 @@ export interface ClientToServerEvents {
   "select-cell": (payload: SelectCellPayload) => void;
   "restart-game": (difficulty: DifficultyLevel) => void;
   "toggle-note": (data: ToggleNotePayload) => void;
+  "send-emote": (emote: Emote) => void;
 }
 
 /** Per-socket state kept by the server (`socket.data`). */
 export interface SocketData {
   roomId?: string;
+  /** Timestamp (ms) of the last emote accepted from this socket, for the cooldown. */
+  lastEmoteAt?: number;
 }

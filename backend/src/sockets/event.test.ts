@@ -185,7 +185,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
     it('rejects negative coordinates', async () => {
       const room = rooms.get(testRoomId)!;
-      clientSocket.emit('toggle-note', testRoomId, { r: -1, c: 5, v: 3 });
+      clientSocket.emit('toggle-note', { r: -1, c: 5, v: 3 });
       await flushSocketEvents();
       expect(room.notesGrid['-1-5']).toBeUndefined();
     });
@@ -193,7 +193,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     it('rejects coordinates greater than or equal to the board size', async () => {
       const room = rooms.get(testRoomId)!;
       const size = room.board.size;
-      clientSocket.emit('toggle-note', testRoomId, { r: size, c: 0, v: 3 });
+      clientSocket.emit('toggle-note', { r: size, c: 0, v: 3 });
       await flushSocketEvents();
       expect(room.notesGrid[`${size}-0`]).toBeUndefined();
     });
@@ -201,16 +201,16 @@ describe('Socket Events Security & Bounds Checking', () => {
     it('rejects values less than 1 or greater than the board size', async () => {
       const room = rooms.get(testRoomId)!;
       const size = room.board.size;
-      clientSocket.emit('toggle-note', testRoomId, { r: 0, c: 0, v: 0 });
-      clientSocket.emit('toggle-note', testRoomId, { r: 0, c: 0, v: size + 1 });
+      clientSocket.emit('toggle-note', { r: 0, c: 0, v: 0 });
+      clientSocket.emit('toggle-note', { r: 0, c: 0, v: size + 1 });
       await flushSocketEvents();
       expect(room.notesGrid['0-0']).toBeUndefined();
     });
 
     it('rejects non-integer coordinates and values', async () => {
       const room = rooms.get(testRoomId)!;
-      clientSocket.emit('toggle-note', testRoomId, { r: 1.5, c: 2, v: 3 } as any);
-      clientSocket.emit('toggle-note', testRoomId, { r: 1, c: 2, v: '3' } as any);
+      clientSocket.emit('toggle-note', { r: 1.5, c: 2, v: 3 } as any);
+      clientSocket.emit('toggle-note', { r: 1, c: 2, v: '3' } as any);
       await flushSocketEvents();
       expect(room.notesGrid['1.5-2']).toBeUndefined();
       expect(room.notesGrid['1-2']).toBeUndefined();
@@ -223,7 +223,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         clientSocket.once('note-toggled', resolve);
       });
 
-      clientSocket.emit('toggle-note', testRoomId, { r: 2, c: 3, v: 5 });
+      clientSocket.emit('toggle-note', { r: 2, c: 3, v: 5 });
 
       await expect(noteAdded).resolves.toEqual({ r: 2, c: 3, v: 5, playerId: clientSocket.id });
       expect(room.notesGrid['2-3'][5]).toBe(clientSocket.id);
@@ -232,7 +232,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         clientSocket.once('note-toggled', resolve);
       });
 
-      clientSocket.emit('toggle-note', testRoomId, { r: 2, c: 3, v: 5 });
+      clientSocket.emit('toggle-note', { r: 2, c: 3, v: 5 });
 
       await expect(noteRemoved).resolves.toEqual({ r: 2, c: 3, v: 5, playerId: null });
       expect(room.notesGrid['2-3']).toBeUndefined();
@@ -246,10 +246,19 @@ describe('Socket Events Security & Bounds Checking', () => {
   describe('cell-update', () => {
     beforeEach(async () => { await joinRoom(); });
 
-    it('ignores updates for non-existent rooms', async () => {
-      clientSocket.emit('cell-update', 'missing-room', { r: 0, c: 0, v: 1 });
-      await flushSocketEvents();
-      expect(rooms.has('missing-room')).toBe(false);
+    it('ignores updates from a socket that has not joined any room', async () => {
+      const room = rooms.get(testRoomId)!;
+      const cell = findCell(room.board.initial, (value) => value === 0);
+      const outsider = await connectTestClient();
+
+      try {
+        outsider.emit('cell-update', { r: cell.r, c: cell.c, v: room.board.solution[cell.r][cell.c] });
+        await flushSocketEvents(outsider);
+
+        expect(room.currentGrid[cell.r][cell.c]).toBe(0);
+      } finally {
+        outsider.disconnect();
+      }
     });
 
     it('rejects invalid coordinates and values', async () => {
@@ -271,7 +280,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       ];
 
       for (const payload of invalidPayloads) {
-        clientSocket.emit('cell-update', testRoomId, payload as any);
+        clientSocket.emit('cell-update', payload as any);
       }
 
       await flushSocketEvents();
@@ -283,7 +292,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const cell = findCell(room.board.initial, (value) => value !== 0);
       const originalValue = room.currentGrid[cell.r][cell.c];
 
-      clientSocket.emit('cell-update', testRoomId, { r: cell.r, c: cell.c, v: 0 });
+      clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: 0 });
       await flushSocketEvents();
 
       expect(room.currentGrid[cell.r][cell.c]).toBe(originalValue);
@@ -295,7 +304,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const originalFilledCells = room.filledCells;
       const value = room.board.solution[cell.r][cell.c];
 
-      clientSocket.emit('cell-update', testRoomId, { r: cell.r, c: cell.c, v: value });
+      clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: value });
       await flushSocketEvents();
 
       expect(room.currentGrid[cell.r][cell.c]).toBe(value);
@@ -311,7 +320,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       const originalFilledCells = room.filledCells;
 
-      clientSocket.emit('cell-update', testRoomId, { r: cell.r, c: cell.c, v: 0 });
+      clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: 0 });
       await flushSocketEvents();
 
       expect(room.currentGrid[cell.r][cell.c]).toBe(0);
@@ -327,7 +336,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       const originalFilledCells = room.filledCells;
 
-      clientSocket.emit('cell-update', testRoomId, { r: cell.r, c: cell.c, v: 5 });
+      clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: 5 });
       await flushSocketEvents();
 
       expect(room.currentGrid[cell.r][cell.c]).toBe(5);
@@ -342,7 +351,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       const originalFilledCells = room.filledCells;
 
-      clientSocket.emit('cell-update', testRoomId, { r: cell.r, c: cell.c, v: 4 });
+      clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: 4 });
       await flushSocketEvents();
 
       expect(room.currentGrid[cell.r][cell.c]).toBe(4);
@@ -363,7 +372,7 @@ describe('Socket Events Security & Bounds Checking', () => {
           observer.once('cell-updated', resolve);
         });
 
-        clientSocket.emit('cell-update', testRoomId, { r: cell.r, c: cell.c, v: value });
+        clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: value });
 
         await expect(updateReceived).resolves.toEqual({ r: cell.r, c: cell.c, v: value });
       } finally {
@@ -382,7 +391,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       const gameWon = new Promise<void>((resolve) => { clientSocket.once('game-won', resolve); });
 
-      clientSocket.emit('cell-update', testRoomId, {
+      clientSocket.emit('cell-update', {
         r: cell.r,
         c: cell.c,
         v: room.board.solution[cell.r][cell.c],
@@ -405,7 +414,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       clientSocket.on('game-won', onGameWon);
 
       try {
-        clientSocket.emit('cell-update', testRoomId, {
+        clientSocket.emit('cell-update', {
           r: cell.r,
           c: cell.c,
           v: room.board.solution[cell.r][cell.c],
@@ -436,7 +445,7 @@ describe('Socket Events Security & Bounds Checking', () => {
           observer.once('player-selected-cell', resolve);
         });
 
-        clientSocket.emit('select-cell', testRoomId, { r: 2, c: 3 });
+        clientSocket.emit('select-cell', { r: 2, c: 3 });
 
         await expect(selection).resolves.toEqual({ playerId: clientSocket.id, r: 2, c: 3 });
       } finally {
@@ -454,7 +463,7 @@ describe('Socket Events Security & Bounds Checking', () => {
           observer.once('player-selected-cell', resolve);
         });
 
-        clientSocket.emit('select-cell', testRoomId, { r: null, c: null });
+        clientSocket.emit('select-cell', { r: null, c: null });
 
         await expect(selection).resolves.toEqual({ playerId: clientSocket.id, r: null, c: null });
       } finally {
@@ -470,10 +479,20 @@ describe('Socket Events Security & Bounds Checking', () => {
   describe('restart-game', () => {
     beforeEach(async () => { await joinRoom(); });
 
-    it('ignores restart for a non-existent room', async () => {
-      clientSocket.emit('restart-game', 'missing-restart-room', 'easy');
-      await flushSocketEvents();
-      expect(rooms.has('missing-restart-room')).toBe(false);
+    it('ignores restart from a socket that has not joined any room', async () => {
+      const room = rooms.get(testRoomId)!;
+      const originalBoard = room.board;
+      const outsider = await connectTestClient();
+
+      try {
+        outsider.emit('restart-game', 'hard');
+        await flushSocketEvents(outsider);
+
+        expect(room.board).toBe(originalBoard);
+        expect(room.difficulty).toBe('easy');
+      } finally {
+        outsider.disconnect();
+      }
     });
 
     it('restarts the game and resets the initial state', async () => {
@@ -487,7 +506,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         clientSocket.once('game-started', resolve);
       });
 
-      clientSocket.emit('restart-game', testRoomId, 'medium');
+      clientSocket.emit('restart-game', 'medium');
 
       const payload = await restarted;
 
@@ -513,7 +532,7 @@ describe('Socket Events Security & Bounds Checking', () => {
           observer.once('game-started', resolve);
         });
 
-        clientSocket.emit('restart-game', testRoomId, 'hard');
+        clientSocket.emit('restart-game', 'hard');
 
         const payload = await restarted;
 
@@ -579,6 +598,202 @@ describe('Socket Events Security & Bounds Checking', () => {
         await serverDisconnected;
 
         expect(rooms.has(roomId)).toBe(false);
+      } finally {
+        observer.disconnect();
+      }
+    });
+  });
+
+  // -------------------------------------------------------
+  // ROOM MEMBERSHIP
+  // -------------------------------------------------------
+
+  describe('room membership', () => {
+    it('does not let a socket outside the room toggle notes or select cells', async () => {
+      const room = await joinRoom();
+      const outsider = await connectTestClient();
+      const received: string[] = [];
+
+      const onNoteToggled = () => { received.push('note-toggled'); };
+      const onPlayerSelectedCell = () => { received.push('player-selected-cell'); };
+
+      clientSocket.on('note-toggled', onNoteToggled);
+      clientSocket.on('player-selected-cell', onPlayerSelectedCell);
+
+      try {
+        outsider.emit('toggle-note', { r: 0, c: 0, v: 1 });
+        outsider.emit('select-cell', { r: 0, c: 0 });
+        await flushSocketEvents(outsider);
+        await flushSocketEvents(clientSocket);
+
+        expect(room.notesGrid).toEqual({});
+        expect(received).toEqual([]);
+      } finally {
+        clientSocket.off('note-toggled', onNoteToggled);
+        clientSocket.off('player-selected-cell', onPlayerSelectedCell);
+        outsider.disconnect();
+      }
+    });
+
+    it('removes the player from the previous room when joining another one', async () => {
+      const mover = await connectTestClient();
+      const stayer = await connectTestClient();
+
+      try {
+        await joinRoom(stayer, 'room-a');
+        await joinRoom(mover, 'room-a');
+
+        const left = new Promise<string>((resolve) => { stayer.once('player-disconnected', resolve); });
+
+        await joinRoom(mover, 'room-b');
+
+        await expect(left).resolves.toBe(mover.id);
+        expect(rooms.get('room-a')!.players.has(mover.id!)).toBe(false);
+        expect(rooms.get('room-a')!.players.has(stayer.id!)).toBe(true);
+        expect(rooms.get('room-b')!.players.has(mover.id!)).toBe(true);
+      } finally {
+        mover.disconnect();
+        stayer.disconnect();
+      }
+    });
+
+    it('deletes the abandoned room when its last player moves away', async () => {
+      const mover = await connectTestClient();
+
+      try {
+        await joinRoom(mover, 'room-a');
+        await joinRoom(mover, 'room-b');
+
+        expect(rooms.has('room-a')).toBe(false);
+        expect(rooms.has('room-b')).toBe(true);
+      } finally {
+        mover.disconnect();
+      }
+    });
+
+    it('leaves no ghost players behind after moving between rooms and disconnecting', async () => {
+      const mover = await connectTestClient();
+      await joinRoom(mover, 'room-a');
+      await joinRoom(mover, 'room-b');
+
+      const serverDisconnected = new Promise<void>((resolve) => {
+        getServerSocket(mover).once('disconnect', () => resolve());
+      });
+
+      mover.disconnect();
+      await serverDisconnected;
+
+      expect(rooms.size).toBe(0);
+    });
+
+    it('keeps the room when the same socket joins it again', async () => {
+      const room = await joinRoom();
+      await joinRoom();
+
+      expect(rooms.get(testRoomId)).toBe(room);
+      expect(room.players.size).toBe(1);
+    });
+  });
+
+  // -------------------------------------------------------
+  // MALFORMED INPUT
+  // -------------------------------------------------------
+
+  describe('malformed input', () => {
+    const rawEmit = (socket: TestClientSocket, event: string, ...args: unknown[]) => {
+      (socket as unknown as { emit: (event: string, ...args: unknown[]) => void }).emit(event, ...args);
+    };
+
+    it('survives garbage on every event and keeps serving valid requests', async () => {
+      const room = await joinRoom();
+      const originalBoard = room.board;
+      const originalGrid = room.currentGrid.map((row) => [...row]);
+      const garbage: unknown[] = [null, 0, 1, 'text', true, [], {}, { r: 'a' }, { r: 0 }, { r: 0, c: 0, v: null }];
+
+      for (const event of ['cell-update', 'toggle-note', 'select-cell', 'restart-game', 'join-room']) {
+        rawEmit(clientSocket, event);
+        for (const value of garbage) rawEmit(clientSocket, event, value);
+      }
+
+      rawEmit(clientSocket, 'join-room', 42, 'easy');
+      rawEmit(clientSocket, 'join-room', testRoomId);
+      rawEmit(clientSocket, 'join-room', testRoomId, 'easy', 'extra');
+      rawEmit(clientSocket, 'cell-update', { r: 0, c: 0, v: 1 }, 'extra');
+
+      await flushSocketEvents();
+
+      expect(rooms.get(testRoomId)).toBe(room);
+      expect(room.board).toBe(originalBoard);
+      expect(room.currentGrid).toEqual(originalGrid);
+      expect(room.notesGrid).toEqual({});
+
+      // The server must still be alive and processing valid events.
+      const cell = findCell(room.board.initial, (value) => value === 0);
+      const value = room.board.solution[cell.r][cell.c];
+      clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: value });
+      await flushSocketEvents();
+
+      expect(room.currentGrid[cell.r][cell.c]).toBe(value);
+    });
+
+    it('does not create a room for an unknown difficulty', async () => {
+      const client = await connectTestClient();
+      const received: string[] = [];
+      client.on('game-started', () => received.push('game-started'));
+
+      try {
+        rawEmit(client, 'join-room', 'room-bad-difficulty', 'banana');
+        await flushSocketEvents(client);
+
+        expect(rooms.has('room-bad-difficulty')).toBe(false);
+        expect(received).toEqual([]);
+      } finally {
+        client.disconnect();
+      }
+    });
+
+    it('does not create rooms for invalid room ids', async () => {
+      const client = await connectTestClient();
+
+      try {
+        rawEmit(client, 'join-room', '', 'easy');
+        rawEmit(client, 'join-room', 'a'.repeat(65), 'easy');
+        rawEmit(client, 'join-room', 'room with spaces', 'easy');
+        rawEmit(client, 'join-room', '../etc/passwd', 'easy');
+        await flushSocketEvents(client);
+
+        expect(rooms.size).toBe(0);
+      } finally {
+        client.disconnect();
+      }
+    });
+
+    it('ignores restart-game with an unknown difficulty', async () => {
+      const room = await joinRoom();
+      const originalBoard = room.board;
+
+      rawEmit(clientSocket, 'restart-game', 'banana');
+      await flushSocketEvents();
+
+      expect(room.board).toBe(originalBoard);
+      expect(room.difficulty).toBe('easy');
+    });
+
+    it('ignores select-cell outside the board', async () => {
+      const room = await joinRoom();
+      const observer = await connectTestClient();
+      const received: string[] = [];
+
+      try {
+        await joinRoom(observer, testRoomId);
+        observer.on('player-selected-cell', () => received.push('player-selected-cell'));
+
+        clientSocket.emit('select-cell', { r: room.board.size, c: 0 });
+        clientSocket.emit('select-cell', { r: 0, c: room.board.size });
+        await flushSocketEvents();
+        await flushSocketEvents(observer);
+
+        expect(received).toEqual([]);
       } finally {
         observer.disconnect();
       }

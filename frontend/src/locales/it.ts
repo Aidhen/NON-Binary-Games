@@ -34,6 +34,9 @@ export const it: Translations = {
     ready: "Il server è pronto!",
     join: "Entra in partita"
   },
+  emotes: {
+    title: "Reazioni"
+  },
   minigames: {
     pick: "Scegli un gioco",
     garden: {
@@ -45,6 +48,15 @@ export const it: Translations = {
       sprout: "Sta spuntando qualcosa!",
       leaves: "Guarda che foglie.",
       bloom: "È sbocciato! Goditelo un momento."
+    },
+    blob: {
+      name: "Blob",
+      poke: "Pungola il blob",
+      idle: "Il blob aspetta. Pungolalo o mandagli una reazione!",
+      happy: "Il blob è felicissimo!",
+      surprised: "Wow!",
+      sad: "Il blob è un po' triste.",
+      thinking: "Il blob ci sta pensando..."
     }
   }
 };

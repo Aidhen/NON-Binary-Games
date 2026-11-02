@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { createServer } from 'node:http';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
 import { setupSocketHandlers, rooms } from './event';
+import { EMOTE_COOLDOWN_MS, EMOTES } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
 
 type TestClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
@@ -11,6 +12,7 @@ type GameStartedPayload = Parameters<ServerToClientEvents['game-started']>[0];
 type CellUpdatedPayload = Parameters<ServerToClientEvents['cell-updated']>[0];
 type PlayerSelectedCellPayload = Parameters<ServerToClientEvents['player-selected-cell']>[0];
 type NoteToggledPayload = Parameters<ServerToClientEvents['note-toggled']>[0];
+type EmoteReceivedPayload = Parameters<ServerToClientEvents['emote-received']>[0];
 
 describe('Socket Events Security & Bounds Checking', () => {
   let io: Server<ClientToServerEvents, ServerToClientEvents>;
@@ -696,6 +698,153 @@ describe('Socket Events Security & Bounds Checking', () => {
   });
 
   // -------------------------------------------------------
+  // SEND EMOTE
+  // -------------------------------------------------------
+
+  describe('send-emote', () => {
+    const collectEmotes = (socket: TestClientSocket) => {
+      const received: EmoteReceivedPayload[] = [];
+      socket.on('emote-received', (data) => received.push(data));
+      return received;
+    };
+
+    const rawEmit = (socket: TestClientSocket, event: string, ...args: unknown[]) => {
+      (socket as unknown as { emit: (event: string, ...args: unknown[]) => void }).emit(event, ...args);
+    };
+
+    let now = 1_000_000;
+
+    beforeEach(() => {
+      now = 1_000_000;
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('relays the emote to the other players in the room, not back to the sender', async () => {
+      const sender = await connectTestClient();
+      const other = await connectTestClient();
+      await joinRoom(sender);
+      await joinRoom(other);
+      const receivedBySender = collectEmotes(sender);
+      const receivedByOther = collectEmotes(other);
+
+      sender.emit('send-emote', EMOTES[0]);
+      await flushSocketEvents(sender);
+      await flushSocketEvents(other);
+
+      expect(receivedByOther).toEqual([{ playerId: sender.id, emote: EMOTES[0] }]);
+      expect(receivedBySender).toEqual([]);
+    });
+
+    it('does not leak emotes to other rooms', async () => {
+      const sender = await connectTestClient();
+      const sameRoom = await connectTestClient();
+      const otherRoom = await connectTestClient();
+      await joinRoom(sender);
+      await joinRoom(sameRoom);
+      await joinRoom(otherRoom, 'another-room');
+      const receivedInOtherRoom = collectEmotes(otherRoom);
+
+      sender.emit('send-emote', EMOTES[1]);
+      await flushSocketEvents(sender);
+      await flushSocketEvents(otherRoom);
+
+      expect(receivedInOtherRoom).toEqual([]);
+    });
+
+    it('drops emotes sent during the cooldown and accepts them again afterwards', async () => {
+      const sender = await connectTestClient();
+      const other = await connectTestClient();
+      await joinRoom(sender);
+      await joinRoom(other);
+      const received = collectEmotes(other);
+
+      sender.emit('send-emote', EMOTES[0]);
+      await flushSocketEvents(sender);
+      now += EMOTE_COOLDOWN_MS - 1;
+      sender.emit('send-emote', EMOTES[1]);
+      await flushSocketEvents(sender);
+      now += 1;
+      sender.emit('send-emote', EMOTES[2]);
+      await flushSocketEvents(sender);
+      await flushSocketEvents(other);
+
+      expect(received.map(({ emote }) => emote)).toEqual([EMOTES[0], EMOTES[2]]);
+    });
+
+    it('applies the cooldown per player', async () => {
+      const first = await connectTestClient();
+      const second = await connectTestClient();
+      const listener = await connectTestClient();
+      await joinRoom(first);
+      await joinRoom(second);
+      await joinRoom(listener);
+      const received = collectEmotes(listener);
+
+      first.emit('send-emote', EMOTES[0]);
+      await flushSocketEvents(first);
+      second.emit('send-emote', EMOTES[1]);
+      await flushSocketEvents(second);
+      await flushSocketEvents(listener);
+
+      expect(received.map(({ emote }) => emote)).toEqual([EMOTES[0], EMOTES[1]]);
+    });
+
+    it('does not start the cooldown for rejected emotes', async () => {
+      const sender = await connectTestClient();
+      const other = await connectTestClient();
+      await joinRoom(sender);
+      await joinRoom(other);
+      const received = collectEmotes(other);
+
+      rawEmit(sender, 'send-emote', 'not-an-emote');
+      sender.emit('send-emote', EMOTES[3]);
+      await flushSocketEvents(sender);
+      await flushSocketEvents(other);
+
+      expect(received.map(({ emote }) => emote)).toEqual([EMOTES[3]]);
+    });
+
+    it.each([
+      ['an unknown emoji', '🦄'],
+      ['free text', 'hello everyone'],
+      ['a very long string', '💜'.repeat(10_000)],
+      ['an object', { emote: EMOTES[0] }],
+      ['null', null],
+    ])('ignores %s', async (_label, value) => {
+      const sender = await connectTestClient();
+      const other = await connectTestClient();
+      await joinRoom(sender);
+      await joinRoom(other);
+      const received = collectEmotes(other);
+
+      rawEmit(sender, 'send-emote', value);
+      rawEmit(sender, 'send-emote');
+      rawEmit(sender, 'send-emote', EMOTES[0], 'extra');
+      await flushSocketEvents(sender);
+      await flushSocketEvents(other);
+
+      expect(received).toEqual([]);
+    });
+
+    it('ignores emotes from a socket that has not joined a room', async () => {
+      const outsider = await connectTestClient();
+      const player = await connectTestClient();
+      await joinRoom(player);
+      const received = collectEmotes(player);
+
+      outsider.emit('send-emote', EMOTES[0]);
+      await flushSocketEvents(outsider);
+      await flushSocketEvents(player);
+
+      expect(received).toEqual([]);
+    });
+  });
+
+  // -------------------------------------------------------
   // MALFORMED INPUT
   // -------------------------------------------------------
 
@@ -710,7 +859,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const originalGrid = room.currentGrid.map((row) => [...row]);
       const garbage: unknown[] = [null, 0, 1, 'text', true, [], {}, { r: 'a' }, { r: 0 }, { r: 0, c: 0, v: null }];
 
-      for (const event of ['cell-update', 'toggle-note', 'select-cell', 'restart-game', 'join-room']) {
+      for (const event of ['cell-update', 'toggle-note', 'select-cell', 'restart-game', 'join-room', 'send-emote']) {
         rawEmit(clientSocket, event);
         for (const value of garbage) rawEmit(clientSocket, event, value);
       }

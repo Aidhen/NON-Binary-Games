@@ -4,10 +4,13 @@ import { SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
 import { ServerLoader } from '../loader/ServerLoader';
+import { EmoteBar } from '../emotes/EmoteBar';
+import { EmoteOverlay } from '../emotes/EmoteOverlay';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from "@/lib/socket";
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
+import { useEmotes } from '@/lib/useEmotes';
 
 export interface GameSettings {
   highlightCrosshairs: boolean;
@@ -28,6 +31,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
   const { status, retry } = useConnectionStatus();
   const [hasEntered, setHasEntered] = useState(false);
   const enterGame = useCallback(() => setHasEntered(true), []);
+  const { emotes, sendEmote, isCoolingDown } = useEmotes();
 
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('easy');
   const difficultyRef = useRef<DifficultyLevel>('easy');
@@ -331,7 +335,11 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
             ⌫
           </button>
         </div>
+
+        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
       </div>
+
+      <EmoteOverlay emotes={emotes} />
     </div>
   );
 }

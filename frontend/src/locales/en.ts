@@ -32,6 +32,9 @@ export const en = {
     ready: "The server is ready!",
     join: "Join the game"
   },
+  emotes: {
+    title: "Reactions"
+  },
   minigames: {
     pick: "Pick a game",
     garden: {
@@ -43,6 +46,15 @@ export const en = {
       sprout: "Something is sprouting!",
       leaves: "Look at those leaves.",
       bloom: "It bloomed! Take a moment to enjoy it."
+    },
+    blob: {
+      name: "Blob",
+      poke: "Poke the blob",
+      idle: "The blob is waiting. Poke it or send it a reaction!",
+      happy: "The blob is delighted!",
+      surprised: "Whoa!",
+      sad: "The blob is a bit sad.",
+      thinking: "The blob is thinking about it..."
     }
   }
 };

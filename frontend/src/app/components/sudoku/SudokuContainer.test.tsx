@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SudokuContainer } from './SudokuContainer';
 import { WAKING_AFTER_MS } from '@/lib/useConnectionStatus';
+import { EMOTES } from '@nbg/shared';
 import type { Mock } from 'vitest';
 import type { DifficultyLevel, NotesGrid } from '@nbg/shared';
 import type { GameSettings } from './SudokuContainer';
@@ -504,6 +505,45 @@ describe('SudokuContainer', () => {
     expect(mocks.listeners['player-disconnected'] ?? []).toHaveLength(0);
     expect(mocks.listeners['game-won'] ?? []).toHaveLength(0);
     expect(mocks.listeners['note-toggled'] ?? []).toHaveLength(0);
+  });
+
+  describe('emotes', () => {
+    it('lets the player send a reaction to the others in the room', async () => {
+      await renderGame();
+
+      fireEvent.click(screen.getByRole('button', { name: EMOTES[5] }));
+
+      expect(mocks.emitted).toContainEqual({ event: 'send-emote', args: [EMOTES[5]] });
+      expect(screen.getAllByTestId('floating-emote').map((element) => element.textContent)).toEqual([EMOTES[5]]);
+    });
+
+    it('waits for the cooldown before accepting another reaction', async () => {
+      await renderGame();
+
+      fireEvent.click(screen.getByRole('button', { name: EMOTES[0] }));
+
+      for (const button of screen.getAllByRole('button', { name: new RegExp(EMOTES.join('|')) })) {
+        expect(button).toBeDisabled();
+      }
+    });
+
+    it('shows the reactions sent by other players', async () => {
+      await renderGame();
+
+      await act(async () => { mocks.dispatch('emote-received', { playerId: 'someone-else', emote: EMOTES[3] }); });
+
+      expect(screen.getAllByTestId('floating-emote').map((element) => element.textContent)).toEqual([EMOTES[3]]);
+      expect(mocks.emitted.some(({ event }) => event === 'send-emote')).toBe(false);
+    });
+
+    it('stops listening for reactions when unmounted', async () => {
+      const { unmount } = render(<SudokuContainer roomId="custom-room" />);
+      expect(mocks.listeners['emote-received']).toHaveLength(1);
+
+      unmount();
+
+      expect(mocks.listeners['emote-received'] ?? []).toHaveLength(0);
+    });
   });
 
   describe('when the server is asleep', () => {

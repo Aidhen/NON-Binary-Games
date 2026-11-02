@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DIFFICULTIES } from './games/sudoku/types';
+import { EMOTES } from './emotes';
 
 /**
  * Runtime schemas for every payload a client can send to the server.
@@ -11,6 +12,8 @@ import { DIFFICULTIES } from './games/sudoku/types';
  */
 
 export const difficultySchema = z.enum(DIFFICULTIES);
+
+export const emoteSchema = z.enum(EMOTES);
 
 export const MAX_ROOM_ID_LENGTH = 64;
 
@@ -57,3 +60,4 @@ export const cellUpdateArgsSchema = z.tuple([cellUpdatePayloadSchema]);
 export const toggleNoteArgsSchema = z.tuple([toggleNotePayloadSchema]);
 export const selectCellArgsSchema = z.tuple([selectCellPayloadSchema]);
 export const restartGameArgsSchema = z.tuple([difficultySchema]);
+export const sendEmoteArgsSchema = z.tuple([emoteSchema]);

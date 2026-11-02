@@ -1,12 +1,18 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from "@/lib/utils";
 import { useTranslation } from '@/lib/i18n/TranslationContext';
+import { warmUpServer } from '@/lib/warmUp';
 
 export default function Home() {
   const { t } = useTranslation();
   const router = useRouter();
+
+  useEffect(() => {
+    warmUpServer();
+  }, []);
 
   const createNewGame = () => {
     const roomId = crypto.randomUUID();

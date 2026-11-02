@@ -3,9 +3,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
+import { ServerLoader } from '../loader/ServerLoader';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from "@/lib/socket";
+import { useConnectionStatus } from '@/lib/useConnectionStatus';
 
 export interface GameSettings {
   highlightCrosshairs: boolean;
@@ -23,6 +25,9 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
   const [isNotesMode, setIsNotesMode] = useState(false);
 
   const { t } = useTranslation();
+  const { status, retry } = useConnectionStatus();
+  const [hasEntered, setHasEntered] = useState(false);
+  const enterGame = useCallback(() => setHasEntered(true), []);
 
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('easy');
   const difficultyRef = useRef<DifficultyLevel>('easy');
@@ -208,17 +213,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     };
   }, [roomId]);
 
-  if (!board || !playerGrid) {
-    return (
-      <div className={cn(
-        "w-full max-w-[500px] aspect-square mx-auto",
-        "flex items-center justify-center border-4 border-[var(--grid-border-outer)]"
-      )}>
-        <span className="text-[var(--subtitle-text)] font-medium animate-pulse">
-          {t('sudoku.loading')}
-        </span>
-      </div>
-    );
+  if (!board || !playerGrid || !hasEntered) {
+    return <ServerLoader status={status} ready={!!board && !!playerGrid} onEnter={enterGame} onRetry={retry} />;
   }
 
   return (

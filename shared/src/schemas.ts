@@ -16,32 +16,32 @@ export const MAX_ROOM_ID_LENGTH = 64;
 
 /** Room ids appear in URLs (/play/[roomId]), so keep them URL-safe and bounded. */
 export const roomIdSchema = z
-    .string()
-    .max(MAX_ROOM_ID_LENGTH)
-    .regex(/^[A-Za-z0-9_-]+$/);
+  .string()
+  .max(MAX_ROOM_ID_LENGTH)
+  .regex(/^[A-Za-z0-9_-]+$/);
 
 const coordinateSchema = z.number().int().nonnegative();
 
 /** Upper bounds depend on the board size, so they are checked by the server. */
 export const cellUpdatePayloadSchema = z.object({
-    r: coordinateSchema,
-    c: coordinateSchema,
-    v: z.number().int().nonnegative(),
+  r: coordinateSchema,
+  c: coordinateSchema,
+  v: z.number().int().nonnegative(),
 });
 
 export const toggleNotePayloadSchema = z.object({
-    r: coordinateSchema,
-    c: coordinateSchema,
-    v: z.number().int().positive(),
+  r: coordinateSchema,
+  c: coordinateSchema,
+  v: z.number().int().positive(),
 });
 
 /** `null` means "deselect"; row and column must be both set or both null. */
 export const selectCellPayloadSchema = z
-    .object({
-        r: coordinateSchema.nullable(),
-        c: coordinateSchema.nullable(),
-    })
-    .refine(({ r, c }) => (r === null) === (c === null));
+  .object({
+    r: coordinateSchema.nullable(),
+    c: coordinateSchema.nullable(),
+  })
+  .refine(({ r, c }) => (r === null) === (c === null));
 
 export type CellUpdatePayload = z.infer<typeof cellUpdatePayloadSchema>;
 export type ToggleNotePayload = z.infer<typeof toggleNotePayloadSchema>;

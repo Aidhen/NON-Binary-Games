@@ -4,10 +4,10 @@ import { EmoteOverlay } from './EmoteOverlay';
 
 describe('EmoteOverlay', () => {
   it('renders each floating emote at its own horizontal position', () => {
-    render(<EmoteOverlay emotes={[{ id: 1, emote: '🔥', left: 25 }, { id: 2, emote: '🪻', left: 70 }]} />);
+    render(<EmoteOverlay emotes={[{ id: 1, emote: '🔥', left: 25 }, { id: 2, emote: '😴', left: 70 }]} />);
 
     const floating = screen.getAllByTestId('floating-emote');
-    expect(floating.map((element) => element.textContent)).toEqual(['🔥', '🪻']);
+    expect(floating.map((element) => element.textContent)).toEqual(['🔥', '😴']);
     expect(floating.map((element) => element.style.left)).toEqual(['25%', '70%']);
   });
 

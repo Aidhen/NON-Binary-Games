@@ -62,9 +62,10 @@ export function SudokuBoardUI({
   const isCellEmpty = (r: number, c: number) => playerGrid[r][c] === 0;
 
   const shouldDisplayError = (r: number, c: number, value: number): boolean => {
-    if (!settings.showErrors) return false;
     if (isCellInitial(r, c)) return false;
     if (isCellEmpty(r, c)) return false;
+    if (settings.godMode && value !== board.solution[r][c]) return true;
+    if (!settings.showErrors) return false;
     return isErrorPlacement(r, c, value);
   };
 

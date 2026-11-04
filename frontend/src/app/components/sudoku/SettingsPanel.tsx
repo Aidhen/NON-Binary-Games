@@ -91,6 +91,17 @@ export function SettingsPanel({
             className="w-4 h-4 cursor-pointer accent-[var(--number-player)]"
           />
         </label>
+        <label className="flex items-center justify-between cursor-pointer group">
+          <span className="text-[var(--title-text)] font-medium text-sm group-hover:opacity-80 transition-opacity">
+            {t('sudoku.godMode')}
+          </span>
+          <input
+            type="checkbox"
+            checked={settings.godMode}
+            onChange={() => onToggle('godMode')}
+            className="w-4 h-4 cursor-pointer accent-[var(--number-player)]"
+          />
+        </label>
       </div>
 
     </div>

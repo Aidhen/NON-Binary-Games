@@ -17,6 +17,7 @@ export const en = {
     highlightCrosshairs: "Highlight crosshairs & box",
     highlightSame: "Highlight same numbers",
     showErrors: "Show error clashes (red)",
+    godMode: "God mode: mark wrong numbers (red)",
     notesMode: "Notes",
     startNewGame: "Start new game",
     copied: "Copied",

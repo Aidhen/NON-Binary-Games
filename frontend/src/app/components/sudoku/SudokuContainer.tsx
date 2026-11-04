@@ -17,6 +17,7 @@ export interface GameSettings {
   highlightCrosshairs: boolean;
   highlightSameNumbers: boolean;
   showErrors: boolean;
+  godMode: boolean;
 }
 
 export function SudokuContainer({ roomId }: { roomId: string }) {
@@ -41,6 +42,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     highlightCrosshairs: true,
     highlightSameNumbers: true,
     showErrors: true,
+    godMode: false,
   });
 
 

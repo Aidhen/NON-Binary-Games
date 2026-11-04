@@ -33,6 +33,7 @@ const defaultSettings: GameSettings = {
   highlightCrosshairs: true,
   highlightSameNumbers: true,
   showErrors: true,
+  godMode: false,
 };
 
 const textColors = [
@@ -207,6 +208,55 @@ describe('SudokuBoardUI', () => {
     expect(isErrorPlacement).not.toHaveBeenCalled();
     expect(getCell(0, 1)).toHaveClass('text-[var(--number-player)]', 'font-medium');
     expect(getCell(0, 1)).not.toHaveClass('text-red-500');
+  });
+
+  describe('god mode', () => {
+    const wrongGrid = () => {
+      const playerGrid = currentGrid.map((row) => [...row]);
+      playerGrid[0][2] = 2; // solution is 3
+      return playerGrid;
+    };
+
+    it('marks numbers that differ from the solution, even with no rule clash', () => {
+      renderBoard({
+        playerGrid: wrongGrid(),
+        settings: { ...defaultSettings, godMode: true, showErrors: false },
+        isErrorPlacement: vi.fn(() => false),
+      });
+
+      expect(getCell(0, 2)).toHaveClass('text-red-500', 'font-bold');
+    });
+
+    it('keeps correct, initial and empty cells unmarked', () => {
+      renderBoard({
+        playerGrid: wrongGrid(),
+        settings: { ...defaultSettings, godMode: true },
+      });
+
+      expect(getCell(0, 1)).toHaveClass('text-[var(--number-player)]', 'font-medium');
+      expect(getCell(0, 0)).toHaveClass('text-[var(--number-initial)]', 'font-bold');
+      expect(getCell(1, 0)).toHaveClass('text-transparent');
+    });
+
+    it('does not compare with the solution when disabled', () => {
+      renderBoard({ playerGrid: wrongGrid() });
+
+      expect(getCell(0, 2)).toHaveClass('text-[var(--number-player)]', 'font-medium');
+      expect(getCell(0, 2)).not.toHaveClass('text-red-500');
+    });
+
+    it('does not highlight matching numbers when the selected number is wrong', () => {
+      const playerGrid = wrongGrid();
+      playerGrid[1][0] = 2; // same wrong value, solution is 3
+
+      renderBoard({
+        playerGrid,
+        selectedCell: [0, 2],
+        settings: { ...defaultSettings, godMode: true },
+      });
+
+      expect(getCell(1, 0)).not.toHaveClass('bg-[var(--cell-background-selected)]');
+    });
   });
 
   it('renders other players selections using consistent multiplayer styling', () => {

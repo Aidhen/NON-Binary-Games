@@ -19,6 +19,7 @@ export const it: Translations = {
     highlightCrosshairs: "Evidenzia croce e quadrante",
     highlightSame: "Evidenzia numeri uguali",
     showErrors: "Mostra errori (rosso)",
+    godMode: "Modalità god: segna i numeri sbagliati (rosso)",
     notesMode: "Note",
     startNewGame: "Inizia una partita",
     copied: "Copiato",

@@ -247,7 +247,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       <div className="relative w-full">
         {isGameWon && (
           <div className={cn(
-            "absolute inset-0 z-10 rounded-lg",
+            "absolute inset-0 z-20 rounded-lg",
             "flex flex-col items-center justify-center",
             "bg-black/60 backdrop-blur-sm transition-all duration-500"
           )}>

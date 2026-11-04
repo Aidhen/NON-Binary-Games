@@ -445,6 +445,16 @@ describe('SudokuContainer', () => {
     });
   });
 
+  it('stacks the completion overlay above the occupied cells (z-10)', async () => {
+    await renderGame();
+
+    await act(async () => {
+      mocks.dispatch('game-won');
+    });
+
+    expect(screen.getByText('sudoku.cleared').closest('.absolute')).toHaveClass('z-20');
+  });
+
   it('clears the completion state when a new game starts', async () => {
     await renderGame();
 

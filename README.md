@@ -38,11 +38,11 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 - [x] Online deployment (Vercel and Render).
 
 ### What is next
-- [ ] **Polish the game:** keep your own selection always visible, fix the overlap with the victory banner, and hide a number (on the number pad and in the notes) once all of its places are filled.
-- [ ] **Themes:** consistent colors across every theme, notes mode included.
-- [ ] **Room privacy:** hide the room code in the interface.
+- [x] **Polish the game:** keep your own selection always visible, fix the overlap with the victory banner, and hide a number (on the number pad and in the notes) once all of its places are filled.
+- [x] **Themes:** consistent colors across every theme, notes mode included.
+- [x] **Room privacy:** hide the room code in the interface.
 - [ ] **A proper introduction:** a short description of the game on the home page.
-- [ ] **Gentler feedback:** optional modes to show mistakes right away, or to see which number is wrong ("god mode").
+- [x] **Gentler feedback:** optional modes to show mistakes right away, or to see which number is wrong ("god mode").
 - [ ] **Smoother reconnections:** coming back to a room after a connection drop should feel seamless.
 - [ ] **Keeping rooms in sync and safe:** consistent moves between players, limits against flooding.
 - [ ] **Keyboard play:** moving around the grid with the arrow keys, and better support for screen readers.

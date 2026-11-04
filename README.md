@@ -8,56 +8,66 @@ I had this idea while looking for ways to pass the time with my long-distance pa
 
 ---
 
-## Architecture & Tech Stack
+## Play together
 
-This project is built with a focus on Developer Experience (DX), modularity, and clean code. It relies on a **Monorepo** architecture managed via `npm workspaces`, separating the client interface from the core game engines.
+Open a game, send the link to your partner or your friends, and you are in the same room. No accounts, no timers, no scores.
 
-### Workspace Structure
-- **`@nbg/shared`**: Agnostic, pure TypeScript core logic. Houses the custom Sudoku Engine (generator, validator), shared types (`NotesGrid` dictionary), and Socket.io payload contracts.
-- **`@nbg/backend`**: Node.js & Socket.io authoritative server. Handles room management, real-time state synchronization, shared notes hydration/validation (`toggle-note`), payload bound validation, and hybrid win-state detection.
-- **`@nbg/frontend`**: Next.js/React interface. Built with a native, headless approach using **Tailwind CSS** (featuring dynamic CSS Grid overlays and hardware-layer keyboard input fallbacks), favoring complete DOM control over heavy pre-styled component libraries.
+- **Sudoku, together.** Three difficulty levels, and the whole room can start a new game when you are ready for another.
+- **Shared notes.** Each note is colored after the person who wrote it, so you can see who had which idea.
+- **Seeing each other.** You see where the other players are looking, in their own color.
+- **Emotes.** Ten quick reactions (💜 🌹 🔥 ...) float over the board, for when you want to say something without typing.
+- **Themes and languages.** Several themes, including a Non-Binary one, and two languages (English and Italian).
 
-### Infrastructure & Developer Experience (DX)
-- **Testing:** Comprehensive unit, component, and integration testing with **Vitest** (configured for monorepo workspaces, module resolution, and parallel execution).
-- **Coverage:** Coverage reporting with Vitest and V8 instrumentation, integrated with SonarQube Cloud.
-- **Containerization:** **Docker & Docker Compose** for reproducible development environments.
-- **CI/CD:** Automated pipelines via **GitHub Actions** enforcing linting, tests, and SonarQube analysis on every push.
-- **Git Hygiene:** Automated pre-commit linting (`lint-staged`) and pre-push testing via **Husky** to guarantee branch stability.
+### A gentle wait
+
+The game runs on a free hosting plan that goes to sleep when nobody is around, so the first visit can take about a minute. Instead of a blank page, it tells you what is happening and gives you something to do: water a little garden, or poke a blob that reacts to the emotes.
 
 ---
 
-## Current Status: v0.1.0-alpha
+## Current Status: v0.2.0-alpha
 
-The core collaborative Sudoku gameplay is fully operational. Players can join multiplayer rooms, synchronize game state in real time, interact with shared notes, and see other players' selections and presence. The project is currently focused on the remaining work needed for a first public release.
+The game is playable online. You can create a room, share the link, solve a Sudoku together, share notes and react with emotes. From here the focus is on polishing the game, making rooms smooth and reliable, and adding more games.
 
-### Completed Milestones
-- [x] Monorepo setup and Dockerization.
-- [x] CI/CD pipeline, SonarQube analysis, and Git hooks configuration.
-- [x] Core Sudoku engine (generation, validation, difficulty handling).
-- [x] Shared TypeScript types and Socket.io payload contracts.
-- [x] Component-driven frontend architecture and reusable UI primitives.
-- [x] Custom internationalization engine (English and Italian).
-- [x] Socket.IO room management and real-time game-state synchronization.
-- [x] Server-side validation of incoming game events and payloads.
-- [x] Hybrid win-condition detection to prevent desyncs.
-- [x] Shared notes with real-time synchronization and O(1) `NotesGrid` lookup.
-- [x] Multiplayer player presence, live cell selection indicators, and deterministic player colors.
-- [x] Win-condition detection and game-over UI.
-- [x] Automated unit, component, and integration tests.
+### What is done
+- [x] Collaborative Sudoku with real-time rooms and shareable links (`/play/[roomId]`).
+- [x] Shared notes, live cell selections and player colors.
+- [x] Win detection and a "play again" screen.
+- [x] Emotes between players.
+- [x] A friendly wait while the server wakes up, with two tiny mini games.
+- [x] English and Italian translations, several themes.
+- [x] Online deployment (Vercel and Render).
 
-### Roadmap: First Public Release
+### What is next
+- [ ] **Polish the game:** keep your own selection always visible, fix the overlap with the victory banner, and hide a number (on the number pad and in the notes) once all of its places are filled.
+- [ ] **Themes:** consistent colors across every theme, notes mode included.
+- [ ] **Room privacy:** hide the room code in the interface.
+- [ ] **A proper introduction:** a short description of the game on the home page.
+- [ ] **Gentler feedback:** optional modes to show mistakes right away, or to see which number is wrong ("god mode").
+- [ ] **Smoother reconnections:** coming back to a room after a connection drop should feel seamless.
+- [ ] **Keeping rooms in sync and safe:** consistent moves between players, limits against flooding.
+- [ ] **Keyboard play:** moving around the grid with the arrow keys, and better support for screen readers.
+- [ ] **More games:** the mini games already live in a small registry, so a new game is a component plus one entry.
+- [ ] **Rooms that survive restarts**, and a backend that can scale (Redis).
+- [ ] **Hosting details:** a health check, graceful shutdown and proper logs.
 
-#### Must Have
-- [ ] **Room Deep Linking:** Implement dynamic routing (`/play/[roomId]`) and a shareable invitation link to reduce friction for multiplayer onboarding.
-- [ ] **CORS Configuration:** Configure allowed origins through environment variables on the Node.js backend.
-- [ ] **Production Configuration:** Configure frontend and backend URLs, environment variables, and HTTPS/WSS.
-- [ ] **Deployment:** Deploy the frontend to Vercel and the backend to a suitable hosting provider.
+---
 
-#### Nice to Have
-- [ ] **Rate Limiting:** Protect Socket.IO handlers against excessive event traffic.
-- [ ] **Reconnect Experience:** Improve recovery and user feedback when a player disconnects or reconnects.
-- [ ] **Error Feedback Modes:** Support immediate conflict detection and an optional omniscient mode comparing entries against the solution.
-- [ ] **State Persistence & Horizontal Scaling:** Integrate `@socket.io/redis-adapter` and migrate in-memory room state to Redis to support stateless backend containers and prevent data loss on restart.
+## Under the hood
+
+<details>
+<summary>Tech stack and project structure</summary>
+
+&nbsp;
+
+It is a **monorepo** managed with `npm workspaces`, separating the client from the game logic:
+
+- **`@nbg/shared`**: pure TypeScript core logic. The custom Sudoku engine (generator, validator), the Socket.IO event contracts, the [zod](https://zod.dev) schemas that validate every client payload (the TypeScript types are inferred from them) and the shared list of emotes.
+- **`@nbg/backend`**: Node.js and Socket.IO server. Rooms, real-time synchronization, shared notes, win detection and emote relaying (validated, with a cooldown).
+- **`@nbg/frontend`**: Next.js and React, styled with Tailwind CSS (themes are CSS variables) and no UI component library.
+
+Tooling: **Vitest** for unit, component and integration tests (the server tests use real Socket.IO sockets), coverage with V8 and SonarQube Cloud, **Docker Compose** for development, **GitHub Actions** for linting and tests, **Husky** with `lint-staged` for pre-commit and pre-push checks.
+
+</details>
 
 ---
 
@@ -68,7 +78,7 @@ The repository is fully containerized. You don't need Node.js installed locally.
 ```bash
 # 1. Clone the repository
 git clone https://github.com/Aidhen/NON-Binary-Games
-cd non-binary-games
+cd NON-Binary-Games
 
 # 2. Install monorepo dependencies via the CLI container
 docker compose run --rm node-cli npm install
@@ -76,3 +86,28 @@ docker compose run --rm node-cli npm install
 # 3. Start the development servers
 docker compose up --build
 ```
+
+Then open <http://localhost:3000>. To try multiplayer, open the invitation link of a room in a second browser window.
+
+### Useful commands
+
+```bash
+# Run the whole test suite once, with coverage
+docker compose run --rm node-cli npm run coverage
+
+# Lint the frontend
+docker compose run --rm node-cli npm run lint --workspace=frontend
+```
+
+### Environment variables
+
+| Variable | Where | Default | Purpose |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_SOCKET_URL` | frontend | `http://localhost:4000` | URL of the Socket.IO backend |
+| `FRONTEND_URL` | backend | `http://localhost:3000` | Origin allowed by CORS |
+
+---
+
+## License
+
+GPL-3.0-or-later. See [LICENSE](LICENSE).

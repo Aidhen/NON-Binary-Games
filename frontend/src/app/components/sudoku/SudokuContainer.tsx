@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from "@/lib/socket";
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
 import { useEmotes } from '@/lib/useEmotes';
+import { getCompletedNumbers } from '@/lib/completedNumbers';
 
 export interface GameSettings {
   highlightCrosshairs: boolean;
@@ -44,6 +45,11 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
 
 
   const [othersSelections, setOthersSelections] = useState<Record<string, [number, number]>>({});
+
+  const completedNumbers = useMemo(
+    () => (board && playerGrid ? getCompletedNumbers(playerGrid, board.size) : new Set<number>()),
+    [board, playerGrid]
+  );
 
   const handleCellClick = useCallback((r: number, c: number) => {
     setSelectedCell([r, c]);
@@ -310,7 +316,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
             <button
               key={num}
               onClick={() => handleInput(num, isNotesMode)}
-              disabled={!selectedCell || isGameWon}
+              disabled={!selectedCell || isGameWon || completedNumbers.has(num)}
               className={cn(
                 "p-3 text-xl font-bold rounded-lg transition-all duration-200",
                 isNotesMode

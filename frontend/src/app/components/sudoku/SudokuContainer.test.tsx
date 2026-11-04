@@ -470,6 +470,35 @@ describe('SudokuContainer', () => {
     expect(screen.queryByText('sudoku.cleared')).not.toBeInTheDocument();
   });
 
+  it('disables the numpad buttons of the numbers that are complete on the grid', async () => {
+    await renderGame();
+
+    fireEvent.click(screen.getByTestId('select-empty-cell'));
+
+    expect(screen.getByRole('button', { name: /^1$/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^4$/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^2$/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^3$/ })).toBeEnabled();
+  });
+
+  it('disables a number once its last occurrence is placed and enables it again when removed', async () => {
+    await renderGame();
+
+    fireEvent.click(screen.getByTestId('select-empty-cell'));
+
+    await act(async () => {
+      mocks.dispatch('cell-updated', { r: 0, c: 2, v: 2 });
+      mocks.dispatch('cell-updated', { r: 1, c: 0, v: 2 });
+      mocks.dispatch('cell-updated', { r: 1, c: 3, v: 2 });
+    });
+    expect(screen.getByRole('button', { name: /^2$/ })).toBeDisabled();
+
+    await act(async () => {
+      mocks.dispatch('cell-updated', { r: 1, c: 3, v: 0 });
+    });
+    expect(screen.getByRole('button', { name: /^2$/ })).toBeEnabled();
+  });
+
   it('reports invalid placements through isValid', async () => {
     mocks.isValid.mockReturnValue(false);
     await renderGame();

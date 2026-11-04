@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
@@ -11,11 +11,13 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from "@/lib/socket";
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
 import { useEmotes } from '@/lib/useEmotes';
+import { getCompletedNumbers } from '@/lib/completedNumbers';
 
 export interface GameSettings {
   highlightCrosshairs: boolean;
   highlightSameNumbers: boolean;
   showErrors: boolean;
+  godMode: boolean;
 }
 
 export function SudokuContainer({ roomId }: { roomId: string }) {
@@ -40,10 +42,16 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     highlightCrosshairs: true,
     highlightSameNumbers: true,
     showErrors: true,
+    godMode: false,
   });
 
 
   const [othersSelections, setOthersSelections] = useState<Record<string, [number, number]>>({});
+
+  const completedNumbers = useMemo(
+    () => (board && playerGrid ? getCompletedNumbers(playerGrid, board.size) : new Set<number>()),
+    [board, playerGrid]
+  );
 
   const handleCellClick = useCallback((r: number, c: number) => {
     setSelectedCell([r, c]);
@@ -247,7 +255,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       <div className="relative w-full">
         {isGameWon && (
           <div className={cn(
-            "absolute inset-0 z-10 rounded-lg",
+            "absolute inset-0 z-20 rounded-lg",
             "flex flex-col items-center justify-center",
             "bg-black/60 backdrop-blur-sm transition-all duration-500"
           )}>
@@ -285,6 +293,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
           isErrorPlacement={isErrorPlacement}
           othersSelections={othersSelections}
           notesGrid={notesGrid}
+          completedNumbers={completedNumbers}
         />
       </div>
 
@@ -296,7 +305,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200",
               isNotesMode
-                ? "bg-blue-500/20 text-blue-500 border-2 border-blue-500/50"
+                ? "bg-[var(--number-player)]/10 text-[var(--number-player)] border-2 border-[var(--number-player)]/50"
                 : "bg-[var(--numpad-background)] text-[var(--subtitle-text)] border-2 border-transparent hover:bg-[var(--numpad-hover)]"
             )}
           >
@@ -310,11 +319,11 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
             <button
               key={num}
               onClick={() => handleInput(num, isNotesMode)}
-              disabled={!selectedCell || isGameWon}
+              disabled={!selectedCell || isGameWon || completedNumbers.has(num)}
               className={cn(
                 "p-3 text-xl font-bold rounded-lg transition-all duration-200",
                 isNotesMode
-                  ? "bg-[var(--cell-background)] text-blue-500 border border-blue-500/30"
+                  ? "bg-[var(--cell-background)] text-[var(--number-player)] border border-[var(--number-player)]/30"
                   : "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
                 "hover:opacity-80 active:scale-95",
                 "disabled:opacity-50 disabled:cursor-not-allowed"

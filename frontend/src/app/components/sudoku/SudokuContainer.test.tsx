@@ -17,6 +17,7 @@ type BoardMockProps = {
   isGameWon: boolean;
   othersSelections?: Record<string, [number, number]>;
   notesGrid?: NotesGrid;
+  completedNumbers?: Set<number>;
 };
 
 type SettingsPanelMockProps = {
@@ -121,6 +122,7 @@ vi.mock('./SudokuBoardUI', () => ({
             isGameWon: props.isGameWon,
             othersSelections: props.othersSelections,
             notesGrid: props.notesGrid,
+            completedNumbers: Array.from(props.completedNumbers ?? []),
           })}
         </output>
       </div>
@@ -445,6 +447,16 @@ describe('SudokuContainer', () => {
     });
   });
 
+  it('stacks the completion overlay above the occupied cells (z-10)', async () => {
+    await renderGame();
+
+    await act(async () => {
+      mocks.dispatch('game-won');
+    });
+
+    expect(screen.getByText('sudoku.cleared').closest('.absolute')).toHaveClass('z-20');
+  });
+
   it('clears the completion state when a new game starts', async () => {
     await renderGame();
 
@@ -458,6 +470,55 @@ describe('SudokuContainer', () => {
 
     expect(getBoardState().isGameWon).toBe(false);
     expect(screen.queryByText('sudoku.cleared')).not.toBeInTheDocument();
+  });
+
+  it('disables the numpad buttons of the numbers that are complete on the grid', async () => {
+    await renderGame();
+
+    fireEvent.click(screen.getByTestId('select-empty-cell'));
+
+    expect(screen.getByRole('button', { name: /^1$/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^4$/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^2$/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^3$/ })).toBeEnabled();
+  });
+
+  it('disables a number once its last occurrence is placed and enables it again when removed', async () => {
+    await renderGame();
+
+    fireEvent.click(screen.getByTestId('select-empty-cell'));
+
+    await act(async () => {
+      mocks.dispatch('cell-updated', { r: 0, c: 2, v: 2 });
+      mocks.dispatch('cell-updated', { r: 1, c: 0, v: 2 });
+      mocks.dispatch('cell-updated', { r: 1, c: 3, v: 2 });
+    });
+    expect(screen.getByRole('button', { name: /^2$/ })).toBeDisabled();
+
+    await act(async () => {
+      mocks.dispatch('cell-updated', { r: 1, c: 3, v: 0 });
+    });
+    expect(screen.getByRole('button', { name: /^2$/ })).toBeEnabled();
+  });
+
+  it('colors the notes mode controls with the theme accent instead of a fixed blue', async () => {
+    await renderGame();
+
+    fireEvent.click(screen.getByRole('button', { name: /sudoku.notesMode OFF/ }));
+
+    const toggle = screen.getByRole('button', { name: /sudoku.notesMode ON/ });
+    const numpadKey = screen.getByRole('button', { name: /^3$/ });
+
+    expect(toggle).toHaveClass('text-[var(--number-player)]', 'border-[var(--number-player)]/50');
+    expect(numpadKey).toHaveClass('text-[var(--number-player)]', 'border-[var(--number-player)]/30');
+    expect(toggle.className).not.toMatch(/blue/);
+    expect(numpadKey.className).not.toMatch(/blue/);
+  });
+
+  it('passes the completed numbers to the board so it can hide their notes', async () => {
+    await renderGame();
+
+    expect(getBoardState().completedNumbers).toEqual([1, 4]);
   });
 
   it('reports invalid placements through isValid', async () => {

@@ -13,6 +13,7 @@ const defaultSettings: GameSettings = {
   highlightCrosshairs: true,
   highlightSameNumbers: true,
   showErrors: true,
+  godMode: false,
 };
 
 const createProps = (overrides: Partial<ComponentProps<typeof SettingsPanel>> = {}) => ({
@@ -40,6 +41,7 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('checkbox', { name: 'sudoku.highlightCrosshairs' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'sudoku.highlightSame' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'sudoku.showErrors' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'sudoku.godMode' })).toBeInTheDocument();
   });
 
   it('marks the current difficulty as active', () => {
@@ -78,18 +80,21 @@ describe('SettingsPanel', () => {
         highlightCrosshairs: true,
         highlightSameNumbers: false,
         showErrors: false,
+        godMode: true,
       },
     });
 
     expect(screen.getByRole('checkbox', { name: 'sudoku.highlightCrosshairs' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'sudoku.highlightSame' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'sudoku.showErrors' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'sudoku.godMode' })).toBeChecked();
   });
 
   it.each([
     ['sudoku.highlightCrosshairs', 'highlightCrosshairs'],
     ['sudoku.highlightSame', 'highlightSameNumbers'],
     ['sudoku.showErrors', 'showErrors'],
+    ['sudoku.godMode', 'godMode'],
   ] as const)(
     'calls onToggle with %s when its checkbox changes',
     (label, setting) => {

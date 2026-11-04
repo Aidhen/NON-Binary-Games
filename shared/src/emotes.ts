@@ -3,7 +3,7 @@
  * Plain Unicode emoji: no assets to load, and screen readers know their names.
  * Keep the list short (max 10): every emote needs a button in the UI.
  */
-export const EMOTES = ['💜', '❤️', '😂', '🌹', '👏', '🔥', '🤔', '😢', '🪻', '😎'] as const;
+export const EMOTES = ['💜', '❤️', '😂', '🌹', '👏', '🔥', '🤔', '😢', '😴', '😎'] as const;
 
 export type Emote = (typeof EMOTES)[number];
 

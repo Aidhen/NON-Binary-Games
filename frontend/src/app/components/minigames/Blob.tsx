@@ -19,7 +19,7 @@ const MOOD_BY_EMOTE: Record<Emote, Mood> = {
   '🔥': 'surprised',
   '🤔': 'thinking',
   '😢': 'sad',
-  '🪻': 'happy',
+  '😴': 'happy',
   '😎': 'happy',
 };
 

@@ -98,7 +98,7 @@ describe('Blob', () => {
 
   it('leaves no timer behind when unmounted', () => {
     const { unmount } = render(<Blob />);
-    fireEvent.click(screen.getByRole('button', { name: '🪻' }));
+    fireEvent.click(screen.getByRole('button', { name: '😴' }));
 
     unmount();
 

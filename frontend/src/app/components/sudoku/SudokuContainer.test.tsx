@@ -17,6 +17,7 @@ type BoardMockProps = {
   isGameWon: boolean;
   othersSelections?: Record<string, [number, number]>;
   notesGrid?: NotesGrid;
+  completedNumbers?: Set<number>;
 };
 
 type SettingsPanelMockProps = {
@@ -121,6 +122,7 @@ vi.mock('./SudokuBoardUI', () => ({
             isGameWon: props.isGameWon,
             othersSelections: props.othersSelections,
             notesGrid: props.notesGrid,
+            completedNumbers: Array.from(props.completedNumbers ?? []),
           })}
         </output>
       </div>
@@ -497,6 +499,12 @@ describe('SudokuContainer', () => {
       mocks.dispatch('cell-updated', { r: 1, c: 3, v: 0 });
     });
     expect(screen.getByRole('button', { name: /^2$/ })).toBeEnabled();
+  });
+
+  it('passes the completed numbers to the board so it can hide their notes', async () => {
+    await renderGame();
+
+    expect(getBoardState().completedNumbers).toEqual([1, 4]);
   });
 
   it('reports invalid placements through isValid', async () => {

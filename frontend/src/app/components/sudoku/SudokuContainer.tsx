@@ -293,6 +293,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
           isErrorPlacement={isErrorPlacement}
           othersSelections={othersSelections}
           notesGrid={notesGrid}
+          completedNumbers={completedNumbers}
         />
       </div>
 

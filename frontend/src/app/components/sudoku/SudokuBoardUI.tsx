@@ -43,6 +43,7 @@ interface SudokuBoardUIProps {
   isErrorPlacement: (r: number, c: number, value: number) => boolean;
   othersSelections?: Record<string, [number, number]>;
   notesGrid?: NotesGrid;
+  completedNumbers?: Set<number>;
 }
 
 export function SudokuBoardUI({
@@ -54,7 +55,8 @@ export function SudokuBoardUI({
   onCellClick,
   isErrorPlacement,
   othersSelections = {},
-  notesGrid = {}
+  notesGrid = {},
+  completedNumbers = new Set<number>()
 }: SudokuBoardUIProps) {
 
   const isCellInitial = (r: number, c: number) => board.initial[r][c] !== 0;
@@ -174,7 +176,9 @@ export function SudokuBoardUI({
             if (rawNotes) {
               parsedNotes = {};
               for (const [noteVal, pid] of Object.entries(rawNotes)) {
-                parsedNotes[Number(noteVal)] = MULTIPLAYER_TEXT_COLORS[getStableColorIndex(pid)];
+                const note = Number(noteVal);
+                if (completedNumbers.has(note) || isErrorPlacement(rIndex, cIndex, note)) continue;
+                parsedNotes[note] = MULTIPLAYER_TEXT_COLORS[getStableColorIndex(pid)];
               }
             }
 

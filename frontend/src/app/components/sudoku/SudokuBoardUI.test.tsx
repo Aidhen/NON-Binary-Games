@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { isValid } from '@nbg/shared';
 import type { SudokuBoard } from '@nbg/shared';
 import type { GameSettings } from './SudokuContainer';
 import { SudokuBoardUI } from './SudokuBoardUI';
@@ -299,6 +300,72 @@ describe('SudokuBoardUI', () => {
     expect(noteCells[2]).toHaveClass('text-transparent');
     expect(noteCells[3]).toHaveTextContent('4');
     expect(textColors.some((color) => noteCells[3].classList.contains(color))).toBe(true);
+  });
+
+  describe('note visibility', () => {
+    const getVisibleNotes = (r: number, c: number) =>
+      Array.from(getCell(r, c).querySelector('div[style]')?.children ?? [])
+        .map((note) => note.textContent)
+        .filter(Boolean);
+
+    it('hides the notes of completed numbers', () => {
+      renderBoard({
+        notesGrid: { '0-2': { 2: 'player-2', 3: 'player-2' } },
+        completedNumbers: new Set([2]),
+      });
+
+      expect(getVisibleNotes(0, 2)).toEqual(['3']);
+    });
+
+    it('hides the notes that clash with a placed number in the row, column or box', () => {
+      const isErrorPlacement = vi.fn((r: number, c: number, value: number) => r === 0 && c === 2 && value === 2);
+
+      renderBoard({
+        notesGrid: {
+          '0-2': { 2: 'player-2', 3: 'player-2' },
+          '1-0': { 2: 'player-2' },
+        },
+        isErrorPlacement,
+      });
+
+      expect(isErrorPlacement).toHaveBeenCalledWith(0, 2, 2);
+      expect(getVisibleNotes(0, 2)).toEqual(['3']);
+      expect(getVisibleNotes(1, 0)).toEqual(['2']);
+    });
+
+    it('applies the real sudoku rules: same row, column and box hide the note, other cells keep it', () => {
+      const playerGrid = Array.from({ length: 4 }, () => new Array(4).fill(0));
+      playerGrid[0][0] = 2;
+      const isErrorPlacement = (r: number, c: number, value: number) => {
+        const grid = playerGrid.map((row) => [...row]);
+        grid[r][c] = 0;
+        return !isValid(grid, r, c, value, 4, 2);
+      };
+      const note = { 2: 'player-2' };
+
+      renderBoard({
+        playerGrid,
+        notesGrid: { '0-3': note, '3-0': note, '1-1': note, '2-2': note },
+        isErrorPlacement,
+      });
+
+      expect(getVisibleNotes(0, 3)).toEqual([]); // same row
+      expect(getVisibleNotes(3, 0)).toEqual([]); // same column
+      expect(getVisibleNotes(1, 1)).toEqual([]); // same box
+      expect(getVisibleNotes(2, 2)).toEqual(['2']); // unrelated cell
+    });
+
+    it('shows a hidden note again when the clash goes away', () => {
+      const notesGrid = { '0-2': { 2: 'player-2' } };
+      const props = createProps({ notesGrid, isErrorPlacement: vi.fn(() => true) });
+      const { rerender } = render(<SudokuBoardUI {...props} />);
+
+      expect(getVisibleNotes(0, 2)).toEqual([]);
+
+      rerender(<SudokuBoardUI {...props} isErrorPlacement={vi.fn(() => false)} />);
+
+      expect(getVisibleNotes(0, 2)).toEqual(['2']);
+    });
   });
 
   it('does not render the notes grid when no notes are present', () => {

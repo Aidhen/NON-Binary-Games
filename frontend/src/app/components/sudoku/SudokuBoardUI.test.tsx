@@ -171,8 +171,23 @@ describe('SudokuBoardUI', () => {
       settings: { ...defaultSettings, highlightCrosshairs: false },
     });
 
-    expect(getCell(2, 3)).toHaveClass('bg-[var(--cell-background-selected)]');
-    expect(getCell(1, 3)).not.toHaveClass('bg-[var(--cell-background-selected)]');
+    expect(getCell(2, 3)).toHaveClass('bg-[var(--cell-background-same)]');
+    expect(getCell(2, 3)).not.toHaveClass('bg-[var(--cell-background-selected)]');
+    expect(getCell(1, 3)).not.toHaveClass('bg-[var(--cell-background-same)]');
+  });
+
+  it('keeps the selected cell visually different from the cells with the same number', () => {
+    const playerGrid = currentGrid.map((row) => [...row]);
+    playerGrid[2][3] = 2;
+
+    renderBoard({
+      playerGrid,
+      selectedCell: [0, 1],
+      settings: { ...defaultSettings, highlightCrosshairs: false },
+    });
+
+    expect(getCell(0, 1)).toHaveClass('bg-[var(--cell-background-selected)]');
+    expect(getCell(0, 1)).not.toHaveClass('bg-[var(--cell-background-same)]');
   });
 
   it('does not highlight matching numbers when the selected placement is invalid', () => {
@@ -186,14 +201,15 @@ describe('SudokuBoardUI', () => {
       isErrorPlacement: vi.fn(() => true),
     });
 
-    expect(getCell(0, 1)).toHaveClass('text-red-500', 'font-bold');
+    expect(getCell(0, 1)).toHaveClass('text-[var(--number-error)]', 'font-bold');
     expect(getCell(2, 3)).not.toHaveClass('bg-[var(--cell-background-selected)]');
+    expect(getCell(2, 3)).not.toHaveClass('bg-[var(--cell-background-same)]');
   });
 
   it('marks invalid placements as errors without marking initial or empty cells', () => {
     renderBoard({ isErrorPlacement: vi.fn(() => true) });
 
-    expect(getCell(0, 1)).toHaveClass('text-red-500', 'font-bold');
+    expect(getCell(0, 1)).toHaveClass('text-[var(--number-error)]', 'font-bold');
     expect(getCell(0, 0)).toHaveClass('text-[var(--number-initial)]', 'font-bold');
     expect(getCell(0, 2)).toHaveClass('text-transparent');
   });
@@ -208,7 +224,7 @@ describe('SudokuBoardUI', () => {
 
     expect(isErrorPlacement).not.toHaveBeenCalled();
     expect(getCell(0, 1)).toHaveClass('text-[var(--number-player)]', 'font-medium');
-    expect(getCell(0, 1)).not.toHaveClass('text-red-500');
+    expect(getCell(0, 1)).not.toHaveClass('text-[var(--number-error)]');
   });
 
   describe('god mode', () => {
@@ -225,7 +241,7 @@ describe('SudokuBoardUI', () => {
         isErrorPlacement: vi.fn(() => false),
       });
 
-      expect(getCell(0, 2)).toHaveClass('text-red-500', 'font-bold');
+      expect(getCell(0, 2)).toHaveClass('text-[var(--number-error)]', 'font-bold');
     });
 
     it('keeps correct, initial and empty cells unmarked', () => {
@@ -243,7 +259,7 @@ describe('SudokuBoardUI', () => {
       renderBoard({ playerGrid: wrongGrid() });
 
       expect(getCell(0, 2)).toHaveClass('text-[var(--number-player)]', 'font-medium');
-      expect(getCell(0, 2)).not.toHaveClass('text-red-500');
+      expect(getCell(0, 2)).not.toHaveClass('text-[var(--number-error)]');
     });
 
     it('does not highlight matching numbers when the selected number is wrong', () => {
@@ -300,6 +316,48 @@ describe('SudokuBoardUI', () => {
     expect(noteCells[2]).toHaveClass('text-transparent');
     expect(noteCells[3]).toHaveTextContent('4');
     expect(textColors.some((color) => noteCells[3].classList.contains(color))).toBe(true);
+  });
+
+  describe('selection outline', () => {
+    const outline = ['outline-2', '-outline-offset-2', 'outline-[var(--number-player)]/70'];
+
+    it('draws a themed outline around the selected cell only', () => {
+      renderBoard({ selectedCell: [0, 1] });
+
+      expect(getCell(0, 1)).toHaveClass(...outline);
+      expect(getCell(0, 2)).not.toHaveClass('outline-2');
+    });
+
+    it('keeps the outline next to the ring of another player on the same cell', () => {
+      renderBoard({ selectedCell: [0, 1], othersSelections: { 'player-2': [0, 1] } });
+
+      expect(getCell(0, 1)).toHaveClass(...outline, 'ring-4', 'ring-inset');
+    });
+
+    it('does not draw the outline when nothing is selected', () => {
+      renderBoard();
+
+      screen.getAllByRole('button').forEach((cell) => expect(cell).not.toHaveClass('outline-2'));
+    });
+  });
+
+  describe('cells occupied by other players', () => {
+    const tints = ['bg-blue-500/10', 'bg-green-500/10', 'bg-purple-500/10', 'bg-pink-500/10', 'bg-orange-500/10'];
+    const hasTint = (cell: HTMLElement) => tints.some((tint) => cell.classList.contains(tint));
+
+    it('keeps my selected background when another player is on the same cell', () => {
+      renderBoard({ selectedCell: [0, 1], othersSelections: { 'player-2': [0, 1] } });
+
+      expect(getCell(0, 1)).toHaveClass('bg-[var(--cell-background-selected)]', 'ring-4', 'ring-inset');
+      expect(hasTint(getCell(0, 1))).toBe(false);
+    });
+
+    it('tints the cell of another player when it is not selected', () => {
+      renderBoard({ othersSelections: { 'player-2': [0, 1] } });
+
+      expect(hasTint(getCell(0, 1))).toBe(true);
+      expect(getCell(0, 1)).not.toHaveClass('bg-[var(--cell-background)]');
+    });
   });
 
   describe('note visibility', () => {

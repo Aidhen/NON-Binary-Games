@@ -6,11 +6,21 @@ import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils';
 
 const MULTIPLAYER_COLORS = [
-  'ring-blue-500 bg-blue-500/10',     // P1 
-  'ring-green-500 bg-green-500/10',   // P2
-  'ring-purple-500 bg-purple-500/10', // P3
-  'ring-pink-500 bg-pink-500/10',     // P4
-  'ring-orange-500 bg-orange-500/10'  // P5
+  'ring-blue-500',   // P1
+  'ring-green-500',  // P2
+  'ring-purple-500', // P3
+  'ring-pink-500',   // P4
+  'ring-orange-500'  // P5
+];
+
+// Kept apart from the ring: tailwind-merge keeps only the last bg-* class,
+// so a tint added to the cell would hide the selected background.
+const MULTIPLAYER_BG_COLORS = [
+  'bg-blue-500/10',
+  'bg-green-500/10',
+  'bg-purple-500/10',
+  'bg-pink-500/10',
+  'bg-orange-500/10'
 ];
 
 const MULTIPLAYER_TEXT_COLORS = [
@@ -113,7 +123,8 @@ export function SudokuBoardUI({
     showCrosshair: boolean,
     showSameNumbers: boolean
   ): string => {
-    if (isSelected || showSameNumbers) return 'bg-[var(--cell-background-selected)]';
+    if (isSelected) return 'bg-[var(--cell-background-selected)]';
+    if (showSameNumbers) return 'bg-[var(--cell-background-same)]';
     if (showCrosshair) return 'bg-[var(--cell-background-highlight)]';
     if (isInitial) return 'bg-[var(--cell-background-initial)]';
     return 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)] transition-colors';
@@ -126,7 +137,7 @@ export function SudokuBoardUI({
   ): string => {
     if (value === 0) return 'text-transparent';
     if (isInitial) return 'text-[var(--number-initial)] font-bold';
-    if (isError) return 'text-red-500 font-bold';
+    if (isError) return 'text-[var(--number-error)] font-bold';
     return 'text-[var(--number-player)] font-medium';
   };
 
@@ -165,10 +176,15 @@ export function SudokuBoardUI({
 
             let ringClass = "";
             if (occupantId) {
-              ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[getStableColorIndex(occupantId)]}`;
+              const colorIndex = getStableColorIndex(occupantId);
+              const tintClass = selected ? '' : MULTIPLAYER_BG_COLORS[colorIndex];
+              ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[colorIndex]} ${tintClass}`;
             }
 
-            const finalBgClass = cn(bgClass, ringClass);
+            // Outline, not ring: it can sit next to the ring of another player on the same cell
+            const outlineClass = selected ? 'outline-2 -outline-offset-2 outline-[var(--number-player)]/70' : '';
+
+            const finalBgClass = cn(bgClass, ringClass, outlineClass);
 
             const rawNotes = notesGrid[`${rIndex}-${cIndex}`];
             let parsedNotes: Record<number, string> | undefined;

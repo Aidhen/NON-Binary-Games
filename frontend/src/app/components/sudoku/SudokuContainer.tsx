@@ -305,7 +305,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200",
               isNotesMode
-                ? "bg-blue-500/20 text-blue-500 border-2 border-blue-500/50"
+                ? "bg-[var(--number-player)]/10 text-[var(--number-player)] border-2 border-[var(--number-player)]/50"
                 : "bg-[var(--numpad-background)] text-[var(--subtitle-text)] border-2 border-transparent hover:bg-[var(--numpad-hover)]"
             )}
           >
@@ -323,7 +323,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
               className={cn(
                 "p-3 text-xl font-bold rounded-lg transition-all duration-200",
                 isNotesMode
-                  ? "bg-[var(--cell-background)] text-blue-500 border border-blue-500/30"
+                  ? "bg-[var(--cell-background)] text-[var(--number-player)] border border-[var(--number-player)]/30"
                   : "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
                 "hover:opacity-80 active:scale-95",
                 "disabled:opacity-50 disabled:cursor-not-allowed"

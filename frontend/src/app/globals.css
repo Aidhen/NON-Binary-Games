@@ -13,10 +13,12 @@
   --color-cell-bg: var(--cell-background);
   --color-cell-bg-initial: var(--cell-background-initial);
   --color-cell-bg-selected: var(--cell-background-selected);
+  --color-cell-bg-same: var(--cell-background-same);
   --color-cell-bg-highlight: var(--cell-background-highlight);
   
   --color-num-initial: var(--number-initial);
   --color-num-player: var(--number-player);
+  --color-num-error: var(--number-error);
   
   --color-numpad-bg: var(--numpad-background);
   --color-numpad-text: var(--numpad-text);
@@ -39,10 +41,12 @@
   --cell-background: #ffffff;
   --cell-background-initial: #f8fafc;
   --cell-background-selected: #bfdbfe;
-  --cell-background-highlight: #e2e8f0;
+  --cell-background-same: #dbeafe;
+  --cell-background-highlight: #dfe6ef;
   
   --number-initial: #0f172a;
   --number-player: #2563eb;
+  --number-error: #b91c1c;
   
   --numpad-background: #f1f5f9;
   --numpad-text: #0f172a;
@@ -62,10 +66,12 @@
   --cell-background: #0f172a;
   --cell-background-initial: #1e293b;
   --cell-background-selected: #1e3a8a;
-  --cell-background-highlight: #22334d;
+  --cell-background-same: #172554;
+  --cell-background-highlight: #243650;
   
   --number-initial: #f8fafc;
   --number-player: #60a5fa;
+  --number-error: #f87171;
   
   --numpad-background: #1e293b;
   --numpad-text: #f8fafc;
@@ -77,7 +83,7 @@
 [data-theme="retro"] {
   --bg: #f4ecd8;
   --title-text: #4a3c31;
-  --subtitle-text: #7d6b5d;
+  --subtitle-text: #776556;
   
   --grid-border-outer: #4a3c31;
   --grid-border-inner: #d1bfae;
@@ -85,33 +91,37 @@
   --cell-background: #f4ecd8;
   --cell-background-initial: #e9dec1;
   --cell-background-selected: #d1bfae;
+  --cell-background-same: #dde2c6;
   --cell-background-highlight: #e7d395;
   
   --number-initial: #4a3c31;
-  --number-player: #b45309;
+  --number-player: #92400e;
+  --number-error: #991b1b;
   
   --numpad-background: #e9dec1;
   --numpad-text: #4a3c31;
   --numpad-hover: #d1bfae;
-  --numpad-active: #a89f91;
+  --numpad-active: #b8ad9e;
 }
 
 /* Theme: OLED */
 [data-theme="oled"] {
   --bg: #000000;
   --title-text: #ffffff;
-  --subtitle-text: #666666;
+  --subtitle-text: #808080;
   
   --grid-border-outer: #444444;
   --grid-border-inner: #222222;
   
   --cell-background: #000000;
   --cell-background-initial: #0a0a0a;
-  --cell-background-selected: #1a1a1a;
-  --cell-background-highlight: #1b1b1b;
+  --cell-background-selected: #393939;
+  --cell-background-same: #262626;
+  --cell-background-highlight: #1e1e1e;
   
   --number-initial: #ffffff;
   --number-player: #aaaaaa;
+  --number-error: #f87171;
   
   --numpad-background: #0a0a0a;
   --numpad-text: #ffffff;
@@ -123,7 +133,7 @@
 [data-theme="non-binary"] {
   --bg: #1a1a1a;
   
-  --title-text: #9c59d1; 
+  --title-text: #ab6fde; 
   --subtitle-text: #fcf434;
   
   --grid-border-outer: #ffffff;
@@ -131,13 +141,15 @@
   
   --cell-background: #2c2c2c;
   --cell-background-initial: #383838;
-  --cell-background-selected: #502d6b;
-  --cell-background-highlight: #412656;
+  --cell-background-selected: #5b3a7e;
+  --cell-background-same: #3a2a49;
+  --cell-background-highlight: #2f2438;
   
   --number-initial: #ffffff;
   --number-player: #fcf434;
+  --number-error: #f87171;
   
-  --numpad-background: #9c59d1;
+  --numpad-background: #9553cc;
   --numpad-text: #ffffff;
   --numpad-hover: #8347b5;
   --numpad-active: #6b3a94;

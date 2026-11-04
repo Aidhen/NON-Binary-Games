@@ -501,6 +501,20 @@ describe('SudokuContainer', () => {
     expect(screen.getByRole('button', { name: /^2$/ })).toBeEnabled();
   });
 
+  it('colors the notes mode controls with the theme accent instead of a fixed blue', async () => {
+    await renderGame();
+
+    fireEvent.click(screen.getByRole('button', { name: /sudoku.notesMode OFF/ }));
+
+    const toggle = screen.getByRole('button', { name: /sudoku.notesMode ON/ });
+    const numpadKey = screen.getByRole('button', { name: /^3$/ });
+
+    expect(toggle).toHaveClass('text-[var(--number-player)]', 'border-[var(--number-player)]/50');
+    expect(numpadKey).toHaveClass('text-[var(--number-player)]', 'border-[var(--number-player)]/30');
+    expect(toggle.className).not.toMatch(/blue/);
+    expect(numpadKey.className).not.toMatch(/blue/);
+  });
+
   it('passes the completed numbers to the board so it can hide their notes', async () => {
     await renderGame();
 

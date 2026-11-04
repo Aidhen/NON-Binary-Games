@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import PlayRoomPage from '@/app/play/[roomId]/page';
+import { getRoomEmoji } from '@/lib/roomEmoji';
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ roomId: 'test-room-123' }),
@@ -17,9 +18,10 @@ vi.mock('@/app/components/sudoku/SudokuContainer', () => ({
 }));
 
 describe('PlayRoomPage', () => {
-  it('renders the room ID', () => {
+  it('renders the room emoji label instead of the room ID', () => {
     render(<PlayRoomPage />);
-    expect(screen.getByText('test-room-123')).toBeDefined();
+    expect(screen.getByText(getRoomEmoji('test-room-123').join(''))).toBeDefined();
+    expect(screen.queryByText('test-room-123')).toBeNull();
   });
 
   it('renders the SudokuContainer with the correct roomId', () => {

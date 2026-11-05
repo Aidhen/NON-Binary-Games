@@ -39,6 +39,8 @@ export interface ClientToServerEvents {
 
 /** Per-socket state kept by the server (`socket.data`). */
 export interface SocketData {
+  /** Stable identity of the player: the id sent by the browser, or the socket id when it sent none. */
+  playerId: string;
   roomId?: string;
   /** Timestamp (ms) of the last emote accepted from this socket, for the cooldown. */
   lastEmoteAt?: number;

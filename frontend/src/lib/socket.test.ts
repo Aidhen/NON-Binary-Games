@@ -8,6 +8,10 @@ vi.mock('socket.io-client', () => ({
   io: ioMock,
 }));
 
+vi.mock('./playerId', () => ({
+  getPlayerId: () => 'test-player-id',
+}));
+
 describe('getSocket', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -24,6 +28,7 @@ describe('getSocket', () => {
     expect(ioMock).toHaveBeenCalledOnce();
     expect(ioMock).toHaveBeenCalledWith('http://localhost:4000', {
       autoConnect: false,
+      auth: { playerId: 'test-player-id' },
       reconnectionAttempts: Infinity,
       reconnectionDelayMax: 5000,
     });

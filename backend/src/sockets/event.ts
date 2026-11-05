@@ -1,5 +1,5 @@
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, SudokuBoard, toggleNoteArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, SudokuBoard, toggleNoteArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData, SudokuGrid, NotesGrid, DifficultyLevel } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 
@@ -7,7 +7,7 @@ interface RoomState {
   board: SudokuBoard;
   difficulty: DifficultyLevel;
   currentGrid: SudokuGrid;
-  players: Set<string>;
+  players: Map<string, Set<string>>;
   filledCells: number;
   notesGrid: NotesGrid;
 }
@@ -31,8 +31,14 @@ const leaveCurrentRoom = (socket: GameSocket) => {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  room.players.delete(socket.id);
-  socket.to(roomId).emit("player-disconnected", socket.id);
+  const { playerId } = socket.data;
+  const sockets = room.players.get(playerId);
+  sockets?.delete(socket.id);
+
+  if (!sockets?.size) {
+    room.players.delete(playerId);
+    socket.to(roomId).emit("player-disconnected", playerId);
+  }
 
   if (room.players.size === 0) {
     rooms.delete(roomId);
@@ -53,8 +59,15 @@ const getCurrentRoom = (socket: GameSocket) => {
   return { roomId, room };
 };
 
+/** The id the browser sent in the handshake, or the socket id for clients that sent none (or garbage). */
+const resolvePlayerId = (socket: GameSocket): string => {
+  const parsed = playerIdSchema.safeParse(socket.handshake.auth?.playerId);
+  return parsed.success ? parsed.data : socket.id;
+};
+
 export const setupSocketHandlers = (io: GameServer) => {
   io.on("connection", (socket: GameSocket) => {
+    socket.data.playerId = resolvePlayerId(socket);
 
     socket.on("join-room", safeHandler(joinRoomArgsSchema, (roomId, difficulty) => {
       if (socket.data.roomId !== roomId) {
@@ -73,14 +86,16 @@ export const setupSocketHandlers = (io: GameServer) => {
           board,
           difficulty,
           currentGrid: board.initial.map(row => [...row]),
-          players: new Set(),
+          players: new Map(),
           filledCells: countInitialFilledCells(board.initial),
           notesGrid: {},
         };
         rooms.set(roomId, room);
       }
 
-      room.players.add(socket.id);
+      const sockets = room.players.get(socket.data.playerId) ?? new Set<string>();
+      sockets.add(socket.id);
+      room.players.set(socket.data.playerId, sockets);
 
       socket.emit("game-started", {
         board: room.board,
@@ -130,7 +145,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       const size = room.board.size;
       if ((r !== null && r >= size) || (c !== null && c >= size)) return;
 
-      socket.to(roomId).emit("player-selected-cell", { playerId: socket.id, r, c });
+      socket.to(roomId).emit("player-selected-cell", { playerId: socket.data.playerId, r, c });
     }));
 
     socket.on("disconnect", () => {
@@ -169,7 +184,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (lastEmoteAt !== undefined && now - lastEmoteAt < EMOTE_COOLDOWN_MS) return;
 
       socket.data.lastEmoteAt = now;
-      socket.to(current.roomId).emit("emote-received", { playerId: socket.id, emote });
+      socket.to(current.roomId).emit("emote-received", { playerId: socket.data.playerId, emote });
     }));
 
     socket.on("toggle-note", safeHandler(toggleNoteArgsSchema, ({ r, c, v }) => {
@@ -195,8 +210,8 @@ export const setupSocketHandlers = (io: GameServer) => {
           delete room.notesGrid[cellKey];
         }
       } else {
-        room.notesGrid[cellKey][v] = socket.id;
-        assignedPlayerId = socket.id;
+        room.notesGrid[cellKey][v] = socket.data.playerId;
+        assignedPlayerId = socket.data.playerId;
       }
 
       io.to(roomId).emit("note-toggled", { r, c, v, playerId: assignedPlayerId });

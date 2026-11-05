@@ -26,8 +26,11 @@ describe('Socket Events Security & Bounds Checking', () => {
   /**
    * Connects a Socket.IO client to the test server.
    */
-  const connectTestClient = async (): Promise<TestClientSocket> => {
-    const socket = Client(`http://127.0.0.1:${port}`, { autoConnect: false }) as TestClientSocket;
+  const connectTestClient = async (playerId?: unknown): Promise<TestClientSocket> => {
+    const socket = Client(`http://127.0.0.1:${port}`, {
+      autoConnect: false,
+      ...(playerId === undefined ? {} : { auth: { playerId } }),
+    }) as TestClientSocket;
 
     clients.add(socket);
 
@@ -602,6 +605,133 @@ describe('Socket Events Security & Bounds Checking', () => {
         expect(rooms.has(roomId)).toBe(false);
       } finally {
         observer.disconnect();
+      }
+    });
+  });
+
+  // -------------------------------------------------------
+  // PLAYER IDENTITY
+  // -------------------------------------------------------
+
+  describe('player identity', () => {
+    const playerId = 'player-identity-abc123';
+
+    const waitForServerDisconnect = (socket: TestClientSocket) => {
+      const serverSocket = getServerSocket(socket);
+      return new Promise<void>((resolve) => { serverSocket.once('disconnect', () => resolve()); });
+    };
+
+    it('uses the id sent by the browser instead of the socket id', async () => {
+      const client = await connectTestClient(playerId);
+
+      try {
+        const room = await joinRoom(client);
+
+        expect(getServerSocket(client).data.playerId).toBe(playerId);
+        expect(room.players.has(playerId)).toBe(true);
+        expect(room.players.has(client.id!)).toBe(false);
+      } finally {
+        client.disconnect();
+      }
+    });
+
+    it.each([undefined, '', 'short', 'has spaces in it', 'x'.repeat(65), 42, null])(
+      'falls back to the socket id when the browser sent %j',
+      async (invalid) => {
+        const client = await connectTestClient(invalid);
+
+        try {
+          await joinRoom(client);
+
+          expect(getServerSocket(client).data.playerId).toBe(client.id);
+        } finally {
+          client.disconnect();
+        }
+      },
+    );
+
+    it('keeps the notes of a player after a reconnection', async () => {
+      // Someone else stays in the room: an empty room is deleted (until it is given a grace period).
+      const observer = await connectTestClient();
+      const first = await connectTestClient(playerId);
+      await joinRoom(observer, testRoomId);
+      const room = await joinRoom(first, testRoomId);
+      const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+
+      first.emit('toggle-note', { r, c, v: 1 });
+      await flushSocketEvents(first);
+      const closed = waitForServerDisconnect(first);
+      first.disconnect();
+      await closed;
+
+      const second = await connectTestClient(playerId);
+
+      try {
+        const gameStarted = new Promise<GameStartedPayload>((resolve) => { second.once('game-started', resolve); });
+        second.emit('join-room', testRoomId, 'easy');
+
+        const payload = await gameStarted;
+        expect(first.id).not.toBe(second.id);
+        expect(payload.notesGrid[`${r}-${c}`][1]).toBe(playerId);
+      } finally {
+        observer.disconnect();
+        second.disconnect();
+      }
+    });
+
+    it('does not tell the others that a player left while another tab of that player is open', async () => {
+      const observer = await connectTestClient();
+      const tab = await connectTestClient(playerId);
+      const otherTab = await connectTestClient(playerId);
+
+      try {
+        await joinRoom(observer, testRoomId);
+        await joinRoom(tab, testRoomId);
+        const room = await joinRoom(otherTab, testRoomId);
+
+        const left = vi.fn();
+        observer.on('player-disconnected', left);
+
+        const closed = waitForServerDisconnect(tab);
+        tab.disconnect();
+        await closed;
+        await flushSocketEvents(observer);
+
+        expect(left).not.toHaveBeenCalled();
+        expect(room.players.has(playerId)).toBe(true);
+
+        const lastClosed = waitForServerDisconnect(otherTab);
+        const playerLeft = new Promise<string>((resolve) => { observer.once('player-disconnected', resolve); });
+        otherTab.disconnect();
+        await lastClosed;
+
+        await expect(playerLeft).resolves.toBe(playerId);
+        expect(room.players.has(playerId)).toBe(false);
+      } finally {
+        observer.disconnect();
+        tab.disconnect();
+        otherTab.disconnect();
+      }
+    });
+
+    it('reports selections and emotes with the stable id', async () => {
+      const observer = await connectTestClient();
+      const client = await connectTestClient(playerId);
+
+      try {
+        await joinRoom(observer, testRoomId);
+        await joinRoom(client, testRoomId);
+
+        const selection = new Promise<PlayerSelectedCellPayload>((resolve) => { observer.once('player-selected-cell', resolve); });
+        const emote = new Promise<EmoteReceivedPayload>((resolve) => { observer.once('emote-received', resolve); });
+        client.emit('select-cell', { r: 0, c: 0 });
+        client.emit('send-emote', EMOTES[0]);
+
+        await expect(selection).resolves.toMatchObject({ playerId });
+        await expect(emote).resolves.toEqual({ playerId, emote: EMOTES[0] });
+      } finally {
+        observer.disconnect();
+        client.disconnect();
       }
     });
   });

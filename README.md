@@ -104,6 +104,7 @@ docker compose run --rm node-cli npm run lint --workspace=frontend
 | Variable | Where | Default | Purpose |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_SOCKET_URL` | frontend | `http://localhost:4000` | URL of the Socket.IO backend |
+| `PORT` | backend | `4000` | Port the backend listens on (Render sets it) |
 | `FRONTEND_URL` | backend | `http://localhost:3000` | Origin allowed by CORS |
 
 ---

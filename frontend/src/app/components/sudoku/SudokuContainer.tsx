@@ -104,12 +104,26 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     });
   }, [selectedCell, playerGrid, board, canAcceptInput, isNotesMode, roomId]);
 
+  // In notes mode the delete key wipes the notes of the cell; with no notes to wipe (or outside notes mode) it clears the number.
+  const handleClear = useCallback(() => {
+    if (!selectedCell) return;
+    const [r, c] = selectedCell;
+    const notes = Object.keys(notesGrid[`${r}-${c}`] ?? {});
+
+    if (isNotesMode && notes.length > 0 && canAcceptInput(r, c)) {
+      notes.forEach((note) => getSocket().emit("toggle-note", { r, c, v: Number(note) }));
+      return;
+    }
+
+    handleInput(0, false);
+  }, [selectedCell, notesGrid, isNotesMode, canAcceptInput, handleInput]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!selectedCell || !board) return;
 
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        handleInput(0, false);
+        handleClear();
         return;
       }
 
@@ -130,7 +144,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCell, board, handleInput, isNotesMode]);
+  }, [selectedCell, board, handleInput, handleClear, isNotesMode]);
 
   const toggleSetting = (key: keyof GameSettings) => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
@@ -355,7 +369,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
             </button>
           ))}
           <button
-            onClick={() => handleInput(0, false)}
+            onClick={handleClear}
             disabled={!selectedCell || isGameWon}
             className={cn(
               "p-3 text-xl font-bold rounded-lg transition-all duration-200",

@@ -301,6 +301,74 @@ describe('SudokuContainer', () => {
     expect(getBoardState().playerGrid[0][1]).toBe(2);
   });
 
+  describe('delete key and notes', () => {
+    const addNotes = async (...values: number[]) => {
+      for (const v of values) {
+        await act(async () => { mocks.dispatch('note-toggled', { r: 0, c: 1, v, playerId: 'p-1' }); });
+      }
+    };
+
+    const notesToggled = () => mocks.emitted.filter(({ event }) => event === 'toggle-note').map(({ args }) => args[0]);
+
+    it('wipes all the notes of the cell in notes mode', async () => {
+      await renderGame();
+      fireEvent.click(screen.getByRole('button', { name: /sudoku.notesMode OFF/ }));
+      fireEvent.click(screen.getByTestId('select-empty-cell'));
+      await addNotes(2, 5, 7);
+
+      fireEvent.click(screen.getByRole('button', { name: '⌫' }));
+
+      expect(notesToggled()).toEqual([{ r: 0, c: 1, v: 2 }, { r: 0, c: 1, v: 5 }, { r: 0, c: 1, v: 7 }]);
+      expect(mocks.emitted.some(({ event }) => event === 'cell-update')).toBe(false);
+      expect(getBoardState().playerGrid[0][1]).toBe(2);
+    });
+
+    it('wipes the notes with Backspace too', async () => {
+      await renderGame();
+      fireEvent.click(screen.getByRole('button', { name: /sudoku.notesMode OFF/ }));
+      fireEvent.click(screen.getByTestId('select-empty-cell'));
+      await addNotes(4);
+
+      fireEvent.keyDown(window, { key: 'Backspace', code: 'Backspace' });
+
+      expect(notesToggled()).toEqual([{ r: 0, c: 1, v: 4 }]);
+    });
+
+    it('clears the number when the cell has no notes', async () => {
+      await renderGame();
+      fireEvent.click(screen.getByRole('button', { name: /sudoku.notesMode OFF/ }));
+      fireEvent.click(screen.getByTestId('select-empty-cell'));
+
+      fireEvent.click(screen.getByRole('button', { name: '⌫' }));
+
+      expect(notesToggled()).toEqual([]);
+      expect(getBoardState().playerGrid[0][1]).toBe(0);
+    });
+
+    it('only clears the number outside notes mode, and leaves the notes alone', async () => {
+      await renderGame();
+      fireEvent.click(screen.getByTestId('select-empty-cell'));
+      await addNotes(2, 5);
+
+      fireEvent.click(screen.getByRole('button', { name: '⌫' }));
+
+      expect(notesToggled()).toEqual([]);
+      expect(getBoardState().playerGrid[0][1]).toBe(0);
+    });
+
+    it('does not touch the notes of other cells', async () => {
+      await renderGame();
+      fireEvent.click(screen.getByRole('button', { name: /sudoku.notesMode OFF/ }));
+      fireEvent.click(screen.getByTestId('select-empty-cell'));
+      await act(async () => { mocks.dispatch('note-toggled', { r: 3, c: 3, v: 9, playerId: 'p-1' }); });
+      await addNotes(6);
+
+      fireEvent.click(screen.getByRole('button', { name: '⌫' }));
+
+      expect(notesToggled()).toEqual([{ r: 0, c: 1, v: 6 }]);
+    });
+  });
+
   it('enters a note when a number key is pressed with Shift', async () => {
     await renderGame();
 

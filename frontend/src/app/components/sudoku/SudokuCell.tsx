@@ -22,7 +22,6 @@ export function SudokuCell({ value, bgClass, textClass, isRightBorder, isBottomB
       className={cn(
         "relative flex items-center justify-center text-2xl",
         "cursor-pointer select-none overflow-hidden",
-        "transition-colors duration-200",
         {
           "border-r-2 border-r-[var(--grid-border-outer)]": isRightBorder,
           "border-r border-r-[var(--grid-border-inner)]": !isRightBorder,

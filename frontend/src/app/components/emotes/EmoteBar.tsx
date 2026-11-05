@@ -20,9 +20,9 @@ export function EmoteBar({ onSend, disabled = false }: EmoteBarProps) {
           onClick={() => onSend(emote)}
           disabled={disabled}
           className={cn(
-            "h-10 rounded-lg text-xl transition-all duration-200",
+            "h-10 rounded-lg text-xl transition-transform",
             "bg-[var(--numpad-background)] hover:bg-[var(--numpad-hover)] active:scale-90",
-            "disabled:opacity-40 disabled:cursor-not-allowed"
+            "disabled:cursor-not-allowed"
           )}
         >
           {emote}

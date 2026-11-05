@@ -124,10 +124,10 @@ export function SudokuBoardUI({
     showSameNumbers: boolean
   ): string => {
     if (isSelected) return 'bg-[var(--cell-background-selected)]';
-    if (showSameNumbers) return 'bg-[var(--cell-background-same)]';
+    if (showSameNumbers) return 'bg-[var(--cell-background-selected)]';
     if (showCrosshair) return 'bg-[var(--cell-background-highlight)]';
     if (isInitial) return 'bg-[var(--cell-background-initial)]';
-    return 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)] transition-colors';
+    return 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)]';
   };
 
   const resolveTextClass = (

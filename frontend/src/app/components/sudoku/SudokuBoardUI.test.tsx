@@ -171,12 +171,11 @@ describe('SudokuBoardUI', () => {
       settings: { ...defaultSettings, highlightCrosshairs: false },
     });
 
-    expect(getCell(2, 3)).toHaveClass('bg-[var(--cell-background-same)]');
-    expect(getCell(2, 3)).not.toHaveClass('bg-[var(--cell-background-selected)]');
-    expect(getCell(1, 3)).not.toHaveClass('bg-[var(--cell-background-same)]');
+    expect(getCell(2, 3)).toHaveClass('bg-[var(--cell-background-selected)]');
+    expect(getCell(1, 3)).not.toHaveClass('bg-[var(--cell-background-selected)]');
   });
 
-  it('keeps the selected cell visually different from the cells with the same number', () => {
+  it('tells the selected cell apart from the cells with the same number by its outline', () => {
     const playerGrid = currentGrid.map((row) => [...row]);
     playerGrid[2][3] = 2;
 
@@ -186,8 +185,9 @@ describe('SudokuBoardUI', () => {
       settings: { ...defaultSettings, highlightCrosshairs: false },
     });
 
-    expect(getCell(0, 1)).toHaveClass('bg-[var(--cell-background-selected)]');
-    expect(getCell(0, 1)).not.toHaveClass('bg-[var(--cell-background-same)]');
+    expect(getCell(0, 1)).toHaveClass('outline-2');
+    expect(getCell(2, 3)).toHaveClass('bg-[var(--cell-background-selected)]');
+    expect(getCell(2, 3)).not.toHaveClass('outline-2');
   });
 
   it('does not highlight matching numbers when the selected placement is invalid', () => {
@@ -203,7 +203,6 @@ describe('SudokuBoardUI', () => {
 
     expect(getCell(0, 1)).toHaveClass('text-[var(--number-error)]', 'font-bold');
     expect(getCell(2, 3)).not.toHaveClass('bg-[var(--cell-background-selected)]');
-    expect(getCell(2, 3)).not.toHaveClass('bg-[var(--cell-background-same)]');
   });
 
   it('marks invalid placements as errors without marking initial or empty cells', () => {

@@ -13,7 +13,6 @@
   --color-cell-bg: var(--cell-background);
   --color-cell-bg-initial: var(--cell-background-initial);
   --color-cell-bg-selected: var(--cell-background-selected);
-  --color-cell-bg-same: var(--cell-background-same);
   --color-cell-bg-highlight: var(--cell-background-highlight);
   
   --color-num-initial: var(--number-initial);
@@ -41,7 +40,6 @@
   --cell-background: #ffffff;
   --cell-background-initial: #f8fafc;
   --cell-background-selected: #bfdbfe;
-  --cell-background-same: #dbeafe;
   --cell-background-highlight: #dfe6ef;
   
   --number-initial: #0f172a;
@@ -66,7 +64,6 @@
   --cell-background: #0f172a;
   --cell-background-initial: #1e293b;
   --cell-background-selected: #1e3a8a;
-  --cell-background-same: #172554;
   --cell-background-highlight: #243650;
   
   --number-initial: #f8fafc;
@@ -91,7 +88,6 @@
   --cell-background: #f4ecd8;
   --cell-background-initial: #e9dec1;
   --cell-background-selected: #d1bfae;
-  --cell-background-same: #dde2c6;
   --cell-background-highlight: #e7d395;
   
   --number-initial: #4a3c31;
@@ -116,7 +112,6 @@
   --cell-background: #000000;
   --cell-background-initial: #0a0a0a;
   --cell-background-selected: #393939;
-  --cell-background-same: #262626;
   --cell-background-highlight: #1e1e1e;
   
   --number-initial: #ffffff;
@@ -142,7 +137,6 @@
   --cell-background: #2c2c2c;
   --cell-background-initial: #383838;
   --cell-background-selected: #5b3a7e;
-  --cell-background-same: #3a2a49;
   --cell-background-highlight: #2f2438;
   
   --number-initial: #ffffff;

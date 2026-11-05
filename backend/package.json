@@ -11,8 +11,6 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "@nbg/shared": "*",
-    "@types/redis": "^4.0.10",
-    "redis": "^5.12.1",
     "socket.io": "^4.8.3",
     "zod": "^4.6.7"
   }

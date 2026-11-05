@@ -78,6 +78,12 @@ describe('cellUpdateArgsSchema', () => {
     expect(cellUpdateArgsSchema.safeParse([{ r: -1, c: 1, v: 1 }]).success).toBe(false);
     expect(cellUpdateArgsSchema.safeParse([{ r: 1, c: 1 }]).success).toBe(false);
   });
+
+  it('accepts the acknowledgement callback Socket.IO adds, and nothing else after the payload', () => {
+    expect(cellUpdateArgsSchema.safeParse([{ r: 0, c: 0, v: 1 }, () => undefined]).success).toBe(true);
+    expect(cellUpdateArgsSchema.safeParse([{ r: 0, c: 0, v: 1 }, 'not a function']).success).toBe(false);
+    expect(cellUpdateArgsSchema.safeParse([{ r: 0, c: 0, v: 1 }, () => undefined, 1]).success).toBe(false);
+  });
 });
 
 describe('toggleNoteArgsSchema', () => {

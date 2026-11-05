@@ -234,8 +234,39 @@ describe('SudokuContainer', () => {
     expect(getBoardState().playerGrid[0][1]).toBe(3);
     expect(mocks.emitted).toContainEqual({
       event: 'cell-update',
-      args: [{ r: 0, c: 1, v: 3 }],
+      args: [{ r: 0, c: 1, v: 3 }, expect.any(Function)],
     });
+  });
+
+  it('asks the server for the real state when a move is not applied', async () => {
+    await renderGame('room-7');
+    fireEvent.click(screen.getByTestId('select-empty-cell'));
+    fireEvent.click(screen.getByRole('button', { name: /^3$/ }));
+
+    const acknowledge = mocks.emitted.find(({ event }) => event === 'cell-update')!.args[1] as (result: { ok: boolean }) => void;
+
+    acknowledge({ ok: true });
+    const joinsBefore = mocks.emitted.filter(({ event }) => event === 'join-room').length;
+
+    acknowledge({ ok: false });
+
+    const joins = mocks.emitted.filter(({ event }) => event === 'join-room');
+    expect(joins).toHaveLength(joinsBefore + 1);
+    expect(joins.at(-1)!.args).toEqual(['room-7', 'easy']);
+  });
+
+  it.each([
+    ['room-full', 'sudoku.roomFull'],
+    ['server-full', 'sudoku.serverFull'],
+  ])('shows why the game cannot be joined (%s)', async (reason, message) => {
+    render(<SudokuContainer roomId="room-1" />);
+
+    await act(async () => {
+      mocks.dispatch('join-error', reason);
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent(message);
+    expect(screen.getByRole('link', { name: 'sudoku.backHome' })).toHaveAttribute('href', '/');
   });
 
   it('does not update an initial fixed cell', async () => {
@@ -290,7 +321,7 @@ describe('SudokuContainer', () => {
 
     expect(mocks.emitted).toContainEqual({
       event: 'cell-update',
-      args: [{ r: 0, c: 1, v: 3 }],
+      args: [{ r: 0, c: 1, v: 3 }, expect.any(Function)],
     });
   });
 
@@ -303,7 +334,7 @@ describe('SudokuContainer', () => {
     expect(getBoardState().playerGrid[0][1]).toBe(0);
     expect(mocks.emitted).toContainEqual({
       event: 'cell-update',
-      args: [{ r: 0, c: 1, v: 0 }],
+      args: [{ r: 0, c: 1, v: 0 }, expect.any(Function)],
     });
   });
 

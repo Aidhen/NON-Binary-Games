@@ -24,7 +24,10 @@ export const it: Translations = {
     startNewGame: "Inizia una partita",
     copied: "Copiato",
     copyLink: "Copia link",
-    room: "Stanza"
+    room: "Stanza",
+    roomFull: "Questa stanza è piena.",
+    serverFull: "Ci sono troppe partite in corso al momento. Riprova tra qualche minuto.",
+    backHome: "Torna alla home"
   },
   loader: {
     waking: "Il server si sta svegliando",

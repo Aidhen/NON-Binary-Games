@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { SudokuBoard, isValid, DifficultyLevel, NotesGrid } from '@nbg/shared';
+import Link from 'next/link';
+import { SudokuBoard, isValid, DifficultyLevel, JoinError, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
 import { ServerLoader } from '../loader/ServerLoader';
@@ -28,6 +29,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
   const [isGameWon, setIsGameWon] = useState<boolean>(false);
   const [notesGrid, setNotesGrid] = useState<NotesGrid>({});
   const [isNotesMode, setIsNotesMode] = useState(false);
+  const [joinError, setJoinError] = useState<JoinError | null>(null);
 
   const { t } = useTranslation();
   const { status, retry } = useConnectionStatus();
@@ -96,8 +98,11 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     newGrid[r][c] = value;
 
     setPlayerGrid(newGrid);
-    getSocket().emit("cell-update", { r, c, v: value });
-  }, [selectedCell, playerGrid, board, canAcceptInput, isNotesMode]);
+    getSocket().emit("cell-update", { r, c, v: value }, (result) => {
+      // The server did not apply the move: ask for the real state instead of keeping a cell nobody else sees.
+      if (!result.ok) getSocket().emit("join-room", roomId, difficultyRef.current);
+    });
+  }, [selectedCell, playerGrid, board, canAcceptInput, isNotesMode, roomId]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -143,6 +148,9 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     };
 
     socket.on("connect", onConnect);
+
+    const onJoinError = (reason: JoinError) => setJoinError(reason);
+    socket.on("join-error", onJoinError);
 
     socket.on("game-started", (payload) => {
       difficultyRef.current = payload.difficulty;
@@ -216,6 +224,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
 
     return () => {
       socket.off("connect", onConnect);
+      socket.off("join-error", onJoinError);
       socket.off("game-started");
       socket.off("cell-updated");
       socket.off("player-selected-cell");
@@ -224,6 +233,19 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       socket.off("note-toggled");
     };
   }, [roomId]);
+
+  if (joinError) {
+    return (
+      <div role="alert" className="flex flex-col items-center gap-4 text-center">
+        <p className="text-lg font-bold text-[var(--title-text)]">
+          {t(joinError === 'room-full' ? 'sudoku.roomFull' : 'sudoku.serverFull')}
+        </p>
+        <Link href="/" className="font-bold text-[var(--subtitle-text)] underline hover:text-[var(--title-text)]">
+          {t('sudoku.backHome')}
+        </Link>
+      </div>
+    );
+  }
 
   if (!board || !playerGrid || !hasEntered) {
     return <ServerLoader status={status} ready={!!board && !!playerGrid} onEnter={enterGame} onRetry={retry} />;

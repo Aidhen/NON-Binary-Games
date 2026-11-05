@@ -42,4 +42,23 @@ describe('safeHandler', () => {
     expect(() => wrapped({ n: 1 })).not.toThrow();
     expect(consoleError).toHaveBeenCalledWith('[socket] handler failed:', error);
   });
+
+  it('drops the event without parsing it when the rate limit says no', () => {
+    const handler = vi.fn();
+    const parse = vi.spyOn(schema, 'safeParse');
+    const wrapped = safeHandler(schema, handler, () => false);
+
+    wrapped({ n: 1 });
+
+    expect(parse).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('calls the handler when the rate limit allows the event', () => {
+    const handler = vi.fn();
+
+    safeHandler(schema, handler, () => true)({ n: 1 });
+
+    expect(handler).toHaveBeenCalledOnce();
+  });
 });

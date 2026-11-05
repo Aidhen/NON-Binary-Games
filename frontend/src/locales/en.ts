@@ -22,7 +22,10 @@ export const en = {
     startNewGame: "Start new game",
     copied: "Copied",
     copyLink: "Copy link",
-    room: "Room"
+    room: "Room",
+    roomFull: "This room is full.",
+    serverFull: "The server has too many games running right now. Try again in a few minutes.",
+    backHome: "Back to the home page"
   },
   loader: {
     waking: "The server is waking up",

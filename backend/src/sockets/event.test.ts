@@ -2,8 +2,9 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } 
 import { createServer } from 'node:http';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
-import { setupSocketHandlers, rooms } from './event';
-import { EMOTE_COOLDOWN_MS, EMOTES } from '@nbg/shared';
+import { setupSocketHandlers, rooms, eventLimit } from './event';
+import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM } from '@nbg/shared';
+import type { JoinError } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
 
 type TestClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
@@ -26,8 +27,11 @@ describe('Socket Events Security & Bounds Checking', () => {
   /**
    * Connects a Socket.IO client to the test server.
    */
-  const connectTestClient = async (): Promise<TestClientSocket> => {
-    const socket = Client(`http://127.0.0.1:${port}`, { autoConnect: false }) as TestClientSocket;
+  const connectTestClient = async (playerId?: unknown): Promise<TestClientSocket> => {
+    const socket = Client(`http://127.0.0.1:${port}`, {
+      autoConnect: false,
+      ...(playerId === undefined ? {} : { auth: { playerId } }),
+    }) as TestClientSocket;
 
     clients.add(socket);
 
@@ -95,6 +99,8 @@ describe('Socket Events Security & Bounds Checking', () => {
   };
 
   beforeAll(async () => {
+    // Tests send bursts of events: the rate limit has its own tests.
+    eventLimit.max = Number.POSITIVE_INFINITY;
     const httpServer = createServer();
 
     io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
@@ -127,6 +133,10 @@ describe('Socket Events Security & Bounds Checking', () => {
 
   beforeEach(() => {
     rooms.clear();
+    // Most tests expect an empty room to be gone right away; the grace period has its own tests.
+    rooms.emptyRoomTtlMs = 0;
+    rooms.maxRooms = 1000;
+    eventLimit.max = Number.POSITIVE_INFINITY;
   });
 
   // -------------------------------------------------------
@@ -602,6 +612,392 @@ describe('Socket Events Security & Bounds Checking', () => {
         expect(rooms.has(roomId)).toBe(false);
       } finally {
         observer.disconnect();
+      }
+    });
+  });
+
+  // -------------------------------------------------------
+  // LIMITS
+  // -------------------------------------------------------
+
+  describe('limits', () => {
+    const joinOutcome = (socket: TestClientSocket, roomId: string) =>
+      new Promise<JoinError | 'joined'>((resolve) => {
+        socket.once('game-started', () => resolve('joined'));
+        socket.once('join-error', resolve);
+        socket.emit('join-room', roomId, 'easy');
+      });
+
+    const connectPlayers = async (count: number, prefix = 'cap-player') => {
+      const players: TestClientSocket[] = [];
+      for (let i = 0; i < count; i++) players.push(await connectTestClient(`${prefix}-${i}`));
+      return players;
+    };
+
+    it(`lets ${MAX_PLAYERS_PER_ROOM} players in and turns the next one away`, async () => {
+      const players = await connectPlayers(MAX_PLAYERS_PER_ROOM);
+      const extra = await connectTestClient('cap-player-extra');
+
+      try {
+        for (const player of players) await expect(joinOutcome(player, 'full-room')).resolves.toBe('joined');
+
+        await expect(joinOutcome(extra, 'full-room')).resolves.toBe('room-full');
+        expect(rooms.get('full-room')!.players.size).toBe(MAX_PLAYERS_PER_ROOM);
+        expect(rooms.get('full-room')!.players.has('cap-player-extra')).toBe(false);
+      } finally {
+        [...players, extra].forEach((socket) => socket.disconnect());
+      }
+    });
+
+    it('still lets a player of a full room in with another tab', async () => {
+      const players = await connectPlayers(MAX_PLAYERS_PER_ROOM);
+      const otherTab = await connectTestClient('cap-player-0');
+
+      try {
+        for (const player of players) await joinOutcome(player, 'full-room');
+
+        await expect(joinOutcome(otherTab, 'full-room')).resolves.toBe('joined');
+      } finally {
+        [...players, otherTab].forEach((socket) => socket.disconnect());
+      }
+    });
+
+    it('frees a place when a player leaves', async () => {
+      const players = await connectPlayers(MAX_PLAYERS_PER_ROOM);
+      const extra = await connectTestClient('cap-player-extra');
+
+      try {
+        for (const player of players) await joinOutcome(player, 'full-room');
+        await expect(joinOutcome(extra, 'full-room')).resolves.toBe('room-full');
+
+        const closed = new Promise<void>((resolve) => { getServerSocket(players[0]).once('disconnect', () => resolve()); });
+        players[0].disconnect();
+        await closed;
+
+        await expect(joinOutcome(extra, 'full-room')).resolves.toBe('joined');
+      } finally {
+        [...players, extra].forEach((socket) => socket.disconnect());
+      }
+    });
+
+    it('keeps a refused player in the room they were already in', async () => {
+      const players = await connectPlayers(MAX_PLAYERS_PER_ROOM);
+      const extra = await connectTestClient('cap-player-extra');
+
+      try {
+        for (const player of players) await joinOutcome(player, 'full-room');
+        await joinOutcome(extra, 'other-room');
+
+        await expect(joinOutcome(extra, 'full-room')).resolves.toBe('room-full');
+
+        expect(rooms.get('other-room')!.players.has('cap-player-extra')).toBe(true);
+        expect(getServerSocket(extra).data.roomId).toBe('other-room');
+      } finally {
+        [...players, extra].forEach((socket) => socket.disconnect());
+      }
+    });
+
+    it('refuses new rooms when the server is full, but not the ones that exist', async () => {
+      rooms.maxRooms = 1;
+      const [first, second] = await connectPlayers(2, 'room-cap');
+
+      try {
+        await expect(joinOutcome(first, 'only-room')).resolves.toBe('joined');
+
+        await expect(joinOutcome(second, 'one-too-many')).resolves.toBe('server-full');
+        expect(rooms.has('one-too-many')).toBe(false);
+
+        await expect(joinOutcome(second, 'only-room')).resolves.toBe('joined');
+      } finally {
+        first.disconnect();
+        second.disconnect();
+      }
+    });
+
+    it('drops the events of a socket that sends too many', async () => {
+      eventLimit.max = 3;
+      const observer = await connectTestClient();
+      const flooder = await connectTestClient();
+
+      try {
+        eventLimit.max = Number.POSITIVE_INFINITY;
+        await joinRoom(observer, testRoomId);
+        // The limit is read when a socket connects: flooder was created with max = 3.
+        await joinRoom(flooder, testRoomId);
+
+        const selections = vi.fn();
+        observer.on('player-selected-cell', selections);
+
+        for (let i = 0; i < 10; i++) flooder.emit('select-cell', { r: 0, c: 0 });
+        await flushSocketEvents(flooder);
+        await flushSocketEvents(observer);
+
+        // 3 allowed events per window: one was the join, so two selections get through.
+        expect(selections).toHaveBeenCalledTimes(2);
+      } finally {
+        observer.disconnect();
+        flooder.disconnect();
+      }
+    });
+  });
+
+  // -------------------------------------------------------
+  // MOVE ACKNOWLEDGEMENT
+  // -------------------------------------------------------
+
+  describe('cell-update acknowledgement', () => {
+    const update = (socket: TestClientSocket, r: number, c: number, v: number) =>
+      new Promise<{ ok: boolean }>((resolve) => { socket.emit('cell-update', { r, c, v }, resolve); });
+
+    it('confirms an applied move', async () => {
+      const room = await joinRoom();
+      const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+
+      await expect(update(clientSocket, r, c, 1)).resolves.toEqual({ ok: true });
+      expect(room.currentGrid[r][c]).toBe(1);
+    });
+
+    it('confirms a move that changes nothing', async () => {
+      const room = await joinRoom();
+      const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+
+      await update(clientSocket, r, c, 1);
+
+      await expect(update(clientSocket, r, c, 1)).resolves.toEqual({ ok: true });
+    });
+
+    it('rejects a move on a given cell', async () => {
+      const room = await joinRoom();
+      const { r, c, value } = findCell(room.currentGrid, (v) => v !== 0);
+
+      await expect(update(clientSocket, r, c, value === 1 ? 2 : 1)).resolves.toEqual({ ok: false });
+      expect(room.currentGrid[r][c]).toBe(value);
+    });
+
+    it('rejects out-of-bounds moves', async () => {
+      const room = await joinRoom();
+
+      await expect(update(clientSocket, room.board.size, 0, 1)).resolves.toEqual({ ok: false });
+      await expect(update(clientSocket, 0, 0, room.board.size + 1)).resolves.toEqual({ ok: false });
+    });
+
+    it('rejects a move from a socket that is not in a room', async () => {
+      const outsider = await connectTestClient();
+
+      try {
+        await expect(update(outsider, 0, 0, 1)).resolves.toEqual({ ok: false });
+      } finally {
+        outsider.disconnect();
+      }
+    });
+
+    it('does not run the handler when the acknowledgement is not a function', async () => {
+      const room = await joinRoom();
+      const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+
+      (clientSocket as unknown as { emit: (...args: unknown[]) => void }).emit('cell-update', { r, c, v: 1 }, 'nope');
+      await flushSocketEvents();
+
+      expect(room.currentGrid[r][c]).toBe(0);
+    });
+  });
+
+  // -------------------------------------------------------
+  // EMPTY ROOM GRACE PERIOD
+  // -------------------------------------------------------
+
+  describe('empty room grace period', () => {
+    const playerId = 'grace-period-player-1';
+
+    const leaveAndWait = async (socket: TestClientSocket) => {
+      const serverSocket = getServerSocket(socket);
+      const closed = new Promise<void>((resolve) => { serverSocket.once('disconnect', () => resolve()); });
+      socket.disconnect();
+      await closed;
+    };
+
+    it('keeps the room, with its board and notes, when the last player drops', async () => {
+      rooms.emptyRoomTtlMs = 60_000;
+      const first = await connectTestClient(playerId);
+      const room = await joinRoom(first, 'grace-room');
+      const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+
+      first.emit('toggle-note', { r, c, v: 2 });
+      await flushSocketEvents(first);
+      await leaveAndWait(first);
+
+      expect(rooms.has('grace-room')).toBe(true);
+      expect(rooms.get('grace-room')!.players.size).toBe(0);
+
+      const second = await connectTestClient(playerId);
+
+      try {
+        const gameStarted = new Promise<GameStartedPayload>((resolve) => { second.once('game-started', resolve); });
+        second.emit('join-room', 'grace-room', 'hard');
+        const payload = await gameStarted;
+
+        expect(payload.board).toEqual(room.board);
+        expect(payload.difficulty).toBe('easy');
+        expect(payload.notesGrid[`${r}-${c}`][2]).toBe(playerId);
+      } finally {
+        second.disconnect();
+      }
+    });
+
+    it('deletes the room once the grace period is over', async () => {
+      rooms.emptyRoomTtlMs = 50;
+      const client = await connectTestClient();
+      await joinRoom(client, 'expiring-room');
+
+      await leaveAndWait(client);
+      expect(rooms.has('expiring-room')).toBe(true);
+
+      await vi.waitFor(() => expect(rooms.has('expiring-room')).toBe(false));
+    });
+
+    it('does not delete a room that someone came back to before the grace period was over', async () => {
+      rooms.emptyRoomTtlMs = 100;
+      const first = await connectTestClient();
+      await joinRoom(first, 'returning-room');
+      await leaveAndWait(first);
+
+      const second = await connectTestClient();
+
+      try {
+        await joinRoom(second, 'returning-room');
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        expect(rooms.has('returning-room')).toBe(true);
+        expect(rooms.get('returning-room')!.players.size).toBe(1);
+      } finally {
+        second.disconnect();
+      }
+    });
+  });
+
+  // -------------------------------------------------------
+  // PLAYER IDENTITY
+  // -------------------------------------------------------
+
+  describe('player identity', () => {
+    const playerId = 'player-identity-abc123';
+
+    const waitForServerDisconnect = (socket: TestClientSocket) => {
+      const serverSocket = getServerSocket(socket);
+      return new Promise<void>((resolve) => { serverSocket.once('disconnect', () => resolve()); });
+    };
+
+    it('uses the id sent by the browser instead of the socket id', async () => {
+      const client = await connectTestClient(playerId);
+
+      try {
+        const room = await joinRoom(client);
+
+        expect(getServerSocket(client).data.playerId).toBe(playerId);
+        expect(room.players.has(playerId)).toBe(true);
+        expect(room.players.has(client.id!)).toBe(false);
+      } finally {
+        client.disconnect();
+      }
+    });
+
+    it.each([undefined, '', 'short', 'has spaces in it', 'x'.repeat(65), 42, null])(
+      'falls back to the socket id when the browser sent %j',
+      async (invalid) => {
+        const client = await connectTestClient(invalid);
+
+        try {
+          await joinRoom(client);
+
+          expect(getServerSocket(client).data.playerId).toBe(client.id);
+        } finally {
+          client.disconnect();
+        }
+      },
+    );
+
+    it('keeps the notes of a player after a reconnection', async () => {
+      // Someone else stays in the room: an empty room is deleted (until it is given a grace period).
+      const observer = await connectTestClient();
+      const first = await connectTestClient(playerId);
+      await joinRoom(observer, testRoomId);
+      const room = await joinRoom(first, testRoomId);
+      const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+
+      first.emit('toggle-note', { r, c, v: 1 });
+      await flushSocketEvents(first);
+      const closed = waitForServerDisconnect(first);
+      first.disconnect();
+      await closed;
+
+      const second = await connectTestClient(playerId);
+
+      try {
+        const gameStarted = new Promise<GameStartedPayload>((resolve) => { second.once('game-started', resolve); });
+        second.emit('join-room', testRoomId, 'easy');
+
+        const payload = await gameStarted;
+        expect(first.id).not.toBe(second.id);
+        expect(payload.notesGrid[`${r}-${c}`][1]).toBe(playerId);
+      } finally {
+        observer.disconnect();
+        second.disconnect();
+      }
+    });
+
+    it('does not tell the others that a player left while another tab of that player is open', async () => {
+      const observer = await connectTestClient();
+      const tab = await connectTestClient(playerId);
+      const otherTab = await connectTestClient(playerId);
+
+      try {
+        await joinRoom(observer, testRoomId);
+        await joinRoom(tab, testRoomId);
+        const room = await joinRoom(otherTab, testRoomId);
+
+        const left = vi.fn();
+        observer.on('player-disconnected', left);
+
+        const closed = waitForServerDisconnect(tab);
+        tab.disconnect();
+        await closed;
+        await flushSocketEvents(observer);
+
+        expect(left).not.toHaveBeenCalled();
+        expect(room.players.has(playerId)).toBe(true);
+
+        const lastClosed = waitForServerDisconnect(otherTab);
+        const playerLeft = new Promise<string>((resolve) => { observer.once('player-disconnected', resolve); });
+        otherTab.disconnect();
+        await lastClosed;
+
+        await expect(playerLeft).resolves.toBe(playerId);
+        expect(room.players.has(playerId)).toBe(false);
+      } finally {
+        observer.disconnect();
+        tab.disconnect();
+        otherTab.disconnect();
+      }
+    });
+
+    it('reports selections and emotes with the stable id', async () => {
+      const observer = await connectTestClient();
+      const client = await connectTestClient(playerId);
+
+      try {
+        await joinRoom(observer, testRoomId);
+        await joinRoom(client, testRoomId);
+
+        const selection = new Promise<PlayerSelectedCellPayload>((resolve) => { observer.once('player-selected-cell', resolve); });
+        const emote = new Promise<EmoteReceivedPayload>((resolve) => { observer.once('emote-received', resolve); });
+        client.emit('select-cell', { r: 0, c: 0 });
+        client.emit('send-emote', EMOTES[0]);
+
+        await expect(selection).resolves.toMatchObject({ playerId });
+        await expect(emote).resolves.toEqual({ playerId, emote: EMOTES[0] });
+      } finally {
+        observer.disconnect();
+        client.disconnect();
       }
     });
   });

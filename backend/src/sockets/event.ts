@@ -1,13 +1,17 @@
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
+import { createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
 
 type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 
 export const rooms = new RoomStore();
+
+/** Per socket, all events together: far above what a player can do, low enough to stop a flood. */
+export const eventLimit = { max: 40, windowMs: 1000 };
 
 /**
  * Removes the socket from the room it is currently in (if any).
@@ -60,8 +64,21 @@ const resolvePlayerId = (socket: GameSocket): string => {
 export const setupSocketHandlers = (io: GameServer) => {
   io.on("connection", (socket: GameSocket) => {
     socket.data.playerId = resolvePlayerId(socket);
+    const allowEvent = createRateLimiter(eventLimit.max, eventLimit.windowMs);
 
     socket.on("join-room", safeHandler(joinRoomArgsSchema, (roomId, difficulty) => {
+      const existingRoom = rooms.get(roomId);
+
+      // Checked before leaving the current room, so a refused player stays where they are.
+      if (!existingRoom && rooms.isFull()) {
+        socket.emit("join-error", "server-full");
+        return;
+      }
+      if (existingRoom && !existingRoom.players.has(socket.data.playerId) && existingRoom.players.size >= MAX_PLAYERS_PER_ROOM) {
+        socket.emit("join-error", "room-full");
+        return;
+      }
+
       if (socket.data.roomId !== roomId) {
         leaveCurrentRoom(socket);
       }
@@ -96,22 +113,34 @@ export const setupSocketHandlers = (io: GameServer) => {
         currentGrid: room.currentGrid,
         notesGrid: room.notesGrid
       });
-    }));
+    }, allowEvent));
 
-    socket.on("cell-update", safeHandler(cellUpdateArgsSchema, ({ r, c, v }) => {
+    socket.on("cell-update", safeHandler(cellUpdateArgsSchema, ({ r, c, v }, acknowledge?) => {
       const current = getCurrentRoom(socket);
-      if (!current) return;
+      if (!current) {
+        acknowledge?.({ ok: false });
+        return;
+      }
       const { roomId, room } = current;
 
       const size = room.board.initial.length;
 
-      if (r >= size || c >= size || v > size) return;
+      if (r >= size || c >= size || v > size) {
+        acknowledge?.({ ok: false });
+        return;
+      }
 
-      if (room.board.initial[r][c] !== 0) return;
+      if (room.board.initial[r][c] !== 0) {
+        acknowledge?.({ ok: false });
+        return;
+      }
 
       const prevValue = room.currentGrid[r][c];
 
-      if (prevValue === v) return;
+      if (prevValue === v) {
+        acknowledge?.({ ok: true });
+        return;
+      }
 
       if (prevValue === 0 && v !== 0) {
         room.filledCells++;
@@ -121,6 +150,7 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       room.currentGrid[r][c] = v;
       socket.to(roomId).emit("cell-updated", { r, c, v });
+      acknowledge?.({ ok: true });
 
       const totalCells = size * size;
       if (room.filledCells === totalCells) {
@@ -128,7 +158,7 @@ export const setupSocketHandlers = (io: GameServer) => {
           io.to(roomId).emit("game-won");
         }
       }
-    }));
+    }, allowEvent));
 
     socket.on("select-cell", safeHandler(selectCellArgsSchema, ({ r, c }) => {
       const current = getCurrentRoom(socket);
@@ -139,7 +169,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       if ((r !== null && r >= size) || (c !== null && c >= size)) return;
 
       socket.to(roomId).emit("player-selected-cell", { playerId: socket.data.playerId, r, c });
-    }));
+    }, allowEvent));
 
     socket.on("disconnect", () => {
       leaveCurrentRoom(socket);
@@ -164,7 +194,7 @@ export const setupSocketHandlers = (io: GameServer) => {
         currentGrid: room.currentGrid,
         notesGrid: room.notesGrid
       });
-    }));
+    }, allowEvent));
 
     // Fire and forget: the sender already shows its own emote, so only the others are notified.
     // Emotes sent during the cooldown are dropped silently (the UI disables the bar for the same time).
@@ -178,7 +208,7 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       socket.data.lastEmoteAt = now;
       socket.to(current.roomId).emit("emote-received", { playerId: socket.data.playerId, emote });
-    }));
+    }, allowEvent));
 
     socket.on("toggle-note", safeHandler(toggleNoteArgsSchema, ({ r, c, v }) => {
       const current = getCurrentRoom(socket);
@@ -208,6 +238,6 @@ export const setupSocketHandlers = (io: GameServer) => {
       }
 
       io.to(roomId).emit("note-toggled", { r, c, v, playerId: assignedPlayerId });
-    }));
+    }, allowEvent));
   });
 };

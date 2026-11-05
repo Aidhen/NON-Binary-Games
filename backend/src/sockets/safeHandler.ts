@@ -1,7 +1,7 @@
 import type { z } from "zod";
 
 /**
- * Wraps a Socket.IO event handler with the two guarantees every handler needs.
+ * Wraps a Socket.IO event handler with the guarantees every handler needs.
  *
  * 1. The whole argument list is validated against `schema` before the handler
  *    runs. Whatever a client sends is `unknown` until it has been parsed, because
@@ -10,12 +10,18 @@ import type { z } from "zod";
  *    handlers as plain EventEmitter listeners: an exception that escapes one is
  *    an uncaught exception and terminates the whole Node process (and with it
  *    every room held in memory).
+ *
+ * `isAllowed` is an optional rate limit: when it says no, the event is dropped.
  */
 export function safeHandler<Args extends unknown[]>(
   schema: z.ZodType<Args>,
   handler: (...args: Args) => void,
+  isAllowed: () => boolean = () => true,
 ): (...args: unknown[]) => void {
   return (...args: unknown[]): void => {
+    // Checked before parsing: a flood of invalid payloads must not cost anything either.
+    if (!isAllowed()) return;
+
     const parsed = schema.safeParse(args);
     if (!parsed.success) return;
 

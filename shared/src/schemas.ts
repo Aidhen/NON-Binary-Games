@@ -60,6 +60,10 @@ export const selectCellPayloadSchema = z
   .refine(({ r, c }) => (r === null) === (c === null));
 
 export type CellUpdatePayload = z.infer<typeof cellUpdatePayloadSchema>;
+/** `ok: false` means the server did not apply the move, so the client must resynchronize. */
+export interface CellUpdateResult {
+  ok: boolean;
+}
 export type ToggleNotePayload = z.infer<typeof toggleNotePayloadSchema>;
 export type SelectCellPayload = z.infer<typeof selectCellPayloadSchema>;
 
@@ -69,7 +73,10 @@ export type SelectCellPayload = z.infer<typeof selectCellPayloadSchema>;
  * as a whole argument list (extra or missing arguments are rejected).
  */
 export const joinRoomArgsSchema = z.tuple([roomIdSchema, difficultySchema]);
-export const cellUpdateArgsSchema = z.tuple([cellUpdatePayloadSchema]);
+/** Socket.IO appends the acknowledgement callback to the arguments when the client asks for one. */
+const acknowledgementSchema = z.custom<(result: CellUpdateResult) => void>((value) => typeof value === 'function');
+
+export const cellUpdateArgsSchema = z.tuple([cellUpdatePayloadSchema, acknowledgementSchema.optional()]);
 export const toggleNoteArgsSchema = z.tuple([toggleNotePayloadSchema]);
 export const selectCellArgsSchema = z.tuple([selectCellPayloadSchema]);
 export const restartGameArgsSchema = z.tuple([difficultySchema]);

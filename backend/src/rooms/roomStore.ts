@@ -13,6 +13,9 @@ export interface RoomState {
 /** How long an empty room is kept, so that a dropped connection does not cost the game. */
 export const EMPTY_ROOM_TTL_MS = 10 * 60 * 1000;
 
+/** Rooms kept at the same time: a room costs memory and a generated board costs CPU. */
+export const MAX_ROOMS = 200;
+
 /**
  * Every access to the rooms goes through here, so the way they are kept (today a
  * Map in memory) can change without touching the socket handlers.
@@ -24,10 +27,18 @@ export class RoomStore {
   private readonly rooms = new Map<string, RoomState>();
   private readonly expiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  constructor(public emptyRoomTtlMs: number = EMPTY_ROOM_TTL_MS) {}
+  constructor(
+    public emptyRoomTtlMs: number = EMPTY_ROOM_TTL_MS,
+    public maxRooms: number = MAX_ROOMS,
+  ) {}
 
   get size(): number {
     return this.rooms.size;
+  }
+
+  /** True when no new room can be created (rooms that already exist can still be joined). */
+  isFull(): boolean {
+    return this.rooms.size >= this.maxRooms;
   }
 
   get(roomId: string): RoomState | undefined {

@@ -130,6 +130,8 @@ describe('Socket Events Security & Bounds Checking', () => {
 
   beforeEach(() => {
     rooms.clear();
+    // Most tests expect an empty room to be gone right away; the grace period has its own tests.
+    rooms.emptyRoomTtlMs = 0;
   });
 
   // -------------------------------------------------------
@@ -605,6 +607,79 @@ describe('Socket Events Security & Bounds Checking', () => {
         expect(rooms.has(roomId)).toBe(false);
       } finally {
         observer.disconnect();
+      }
+    });
+  });
+
+  // -------------------------------------------------------
+  // EMPTY ROOM GRACE PERIOD
+  // -------------------------------------------------------
+
+  describe('empty room grace period', () => {
+    const playerId = 'grace-period-player-1';
+
+    const leaveAndWait = async (socket: TestClientSocket) => {
+      const serverSocket = getServerSocket(socket);
+      const closed = new Promise<void>((resolve) => { serverSocket.once('disconnect', () => resolve()); });
+      socket.disconnect();
+      await closed;
+    };
+
+    it('keeps the room, with its board and notes, when the last player drops', async () => {
+      rooms.emptyRoomTtlMs = 60_000;
+      const first = await connectTestClient(playerId);
+      const room = await joinRoom(first, 'grace-room');
+      const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+
+      first.emit('toggle-note', { r, c, v: 2 });
+      await flushSocketEvents(first);
+      await leaveAndWait(first);
+
+      expect(rooms.has('grace-room')).toBe(true);
+      expect(rooms.get('grace-room')!.players.size).toBe(0);
+
+      const second = await connectTestClient(playerId);
+
+      try {
+        const gameStarted = new Promise<GameStartedPayload>((resolve) => { second.once('game-started', resolve); });
+        second.emit('join-room', 'grace-room', 'hard');
+        const payload = await gameStarted;
+
+        expect(payload.board).toEqual(room.board);
+        expect(payload.difficulty).toBe('easy');
+        expect(payload.notesGrid[`${r}-${c}`][2]).toBe(playerId);
+      } finally {
+        second.disconnect();
+      }
+    });
+
+    it('deletes the room once the grace period is over', async () => {
+      rooms.emptyRoomTtlMs = 50;
+      const client = await connectTestClient();
+      await joinRoom(client, 'expiring-room');
+
+      await leaveAndWait(client);
+      expect(rooms.has('expiring-room')).toBe(true);
+
+      await vi.waitFor(() => expect(rooms.has('expiring-room')).toBe(false));
+    });
+
+    it('does not delete a room that someone came back to before the grace period was over', async () => {
+      rooms.emptyRoomTtlMs = 100;
+      const first = await connectTestClient();
+      await joinRoom(first, 'returning-room');
+      await leaveAndWait(first);
+
+      const second = await connectTestClient();
+
+      try {
+        await joinRoom(second, 'returning-room');
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        expect(rooms.has('returning-room')).toBe(true);
+        expect(rooms.get('returning-room')!.players.size).toBe(1);
+      } finally {
+        second.disconnect();
       }
     });
   });

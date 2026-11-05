@@ -1,21 +1,13 @@
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, SudokuBoard, toggleNoteArgsSchema } from "@nbg/shared";
-import type { ClientToServerEvents, ServerToClientEvents, SocketData, SudokuGrid, NotesGrid, DifficultyLevel } from "@nbg/shared";
+import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
+import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
-
-interface RoomState {
-  board: SudokuBoard;
-  difficulty: DifficultyLevel;
-  currentGrid: SudokuGrid;
-  players: Map<string, Set<string>>;
-  filledCells: number;
-  notesGrid: NotesGrid;
-}
+import { RoomStore } from "../rooms/roomStore";
 
 type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 
-export const rooms = new Map<string, RoomState>();
+export const rooms = new RoomStore();
 
 /**
  * Removes the socket from the room it is currently in (if any).
@@ -41,7 +33,7 @@ const leaveCurrentRoom = (socket: GameSocket) => {
   }
 
   if (room.players.size === 0) {
-    rooms.delete(roomId);
+    rooms.expireWhenEmpty(roomId);
   }
 };
 
@@ -78,6 +70,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       socket.data.roomId = roomId;
 
       let room = rooms.get(roomId);
+      rooms.cancelExpiry(roomId);
 
       if (!room) {
         const board = generateSudoku(difficulty);

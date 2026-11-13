@@ -6,17 +6,23 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# The job only reads the repository: the default token may be read/write.
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          # Do not leave the token in .git/config for the steps that follow.
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: 'npm'
@@ -30,7 +36,15 @@ jobs:
       - name: Run Tests with Coverage
         run: npx --no-install vitest run --coverage
 
+      # Fork and Dependabot PRs receive no secrets: skip the scan there instead of failing the job.
+      - name: Check for SonarQube token
+        id: sonar
+        env:
+          HAS_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
+        run: echo "enabled=$HAS_TOKEN" >> "$GITHUB_OUTPUT"
+
       - name: Official SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4
+        if: steps.sonar.outputs.enabled == 'true'
+        uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
         env: 
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

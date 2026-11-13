@@ -4,6 +4,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Wait a few days after a release: compromised releases are usually caught in that window.
+    cooldown:
+      default-days: 3
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
     ignore:
       - dependency-name: "typescript"
         versions: [">= 7.0.0"]
@@ -11,3 +17,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 3
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]

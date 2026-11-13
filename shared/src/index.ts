@@ -12,7 +12,8 @@ export type DifficultyLevel = Difficulty;
 /** Players that can be in the same room (one color each, see the palette of the board). */
 export const MAX_PLAYERS_PER_ROOM = 5;
 
-export type JoinError = 'room-full' | 'server-full';
+/** `too-fast`: this connection (or the whole server) is creating rooms faster than a game needs. */
+export type JoinError = 'room-full' | 'server-full' | 'too-fast';
 
 export type NotesGrid = Record<string, Record<number, string>>;
 

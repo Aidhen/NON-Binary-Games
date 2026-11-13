@@ -21,6 +21,13 @@ export interface GameSettings {
   godMode: boolean;
 }
 
+/** One message per reason: a new JoinError does not compile until it has its own text. */
+const joinErrorMessages: Record<JoinError, string> = {
+  'room-full': 'sudoku.roomFull',
+  'server-full': 'sudoku.serverFull',
+  'too-fast': 'sudoku.tooFast',
+};
+
 export function SudokuContainer({ roomId }: { roomId: string }) {
   const [board, setBoard] = useState<SudokuBoard>();
   const [playerGrid, setPlayerGrid] = useState<number[][]>();
@@ -167,6 +174,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     socket.on("join-error", onJoinError);
 
     socket.on("game-started", (payload) => {
+      // A refusal can be temporary (too-fast): once the game starts, the error must not stay on screen.
+      setJoinError(null);
       difficultyRef.current = payload.difficulty;
       setDifficulty(payload.difficulty);
       setBoard(payload.board);
@@ -252,7 +261,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     return (
       <div role="alert" className="flex flex-col items-center gap-4 text-center">
         <p className="text-lg font-bold text-[var(--title-text)]">
-          {t(joinError === 'room-full' ? 'sudoku.roomFull' : 'sudoku.serverFull')}
+          {t(joinErrorMessages[joinError])}
         </p>
         <Link href="/" className="font-bold text-[var(--subtitle-text)] underline hover:text-[var(--title-text)]">
           {t('sudoku.backHome')}

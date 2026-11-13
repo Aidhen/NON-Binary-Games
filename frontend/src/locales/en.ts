@@ -25,6 +25,7 @@ export const en = {
     room: "Room",
     roomFull: "This room is full.",
     serverFull: "The server has too many games running right now. Try again in a few minutes.",
+    tooFast: "Too many games were started in a short time. Wait a moment and try again.",
     backHome: "Back to the home page"
   },
   loader: {

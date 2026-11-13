@@ -12,6 +12,7 @@ const createRoom = (): RoomState => {
     players: new Map(),
     filledCells: 0,
     notesGrid: {},
+    played: true,
   };
 };
 
@@ -49,6 +50,15 @@ describe('RoomStore', () => {
   it('deletes the room immediately when the grace period is 0', () => {
     const store = new RoomStore(0);
     store.set('a', createRoom());
+
+    store.expireWhenEmpty('a');
+
+    expect(store.has('a')).toBe(false);
+  });
+
+  it('deletes an empty room immediately when nobody played in it', () => {
+    const store = new RoomStore();
+    store.set('a', { ...createRoom(), played: false });
 
     store.expireWhenEmpty('a');
 

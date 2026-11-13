@@ -1,11 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
-import { setupSocketHandlers, rooms, eventLimit } from './event';
+import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit } from './event';
 import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM } from '@nbg/shared';
 import type { JoinError } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
+
+// Read before any test changes them: a limit that is not finite protects nothing.
+const defaultLimits = { roomCreation: roomCreationLimit.max, restart: restartLimit.max, boardGeneration: boardGenerationLimit.max };
 
 type TestClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
 type TestServerSocket = ServerSocket<ClientToServerEvents, ServerToClientEvents>;
@@ -99,8 +103,11 @@ describe('Socket Events Security & Bounds Checking', () => {
   };
 
   beforeAll(async () => {
-    // Tests send bursts of events: the rate limit has its own tests.
+    // Tests send bursts of events and create many rooms: the limits have their own tests.
     eventLimit.max = Number.POSITIVE_INFINITY;
+    roomCreationLimit.max = Number.POSITIVE_INFINITY;
+    restartLimit.max = Number.POSITIVE_INFINITY;
+    boardGenerationLimit.max = Number.POSITIVE_INFINITY;
     const httpServer = createServer();
 
     io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
@@ -137,6 +144,9 @@ describe('Socket Events Security & Bounds Checking', () => {
     rooms.emptyRoomTtlMs = 0;
     rooms.maxRooms = 1000;
     eventLimit.max = Number.POSITIVE_INFINITY;
+    roomCreationLimit.max = Number.POSITIVE_INFINITY;
+    restartLimit.max = Number.POSITIVE_INFINITY;
+    boardGenerationLimit.max = Number.POSITIVE_INFINITY;
   });
 
   // -------------------------------------------------------
@@ -739,6 +749,124 @@ describe('Socket Events Security & Bounds Checking', () => {
         flooder.disconnect();
       }
     });
+
+    it('limits how many rooms a socket can create, but not how many it can join', async () => {
+      // The limit is read when a socket connects.
+      roomCreationLimit.max = 2;
+      const [creator, other] = await connectPlayers(2, 'budget');
+
+      try {
+        await expect(joinOutcome(creator, 'budget-a')).resolves.toBe('joined');
+        await expect(joinOutcome(creator, 'budget-b')).resolves.toBe('joined');
+
+        await expect(joinOutcome(creator, 'budget-c')).resolves.toBe('too-fast');
+        expect(rooms.has('budget-c')).toBe(false);
+        expect(getServerSocket(creator).data.roomId).toBe('budget-b');
+
+        await expect(joinOutcome(other, 'budget-o')).resolves.toBe('joined');
+        await expect(joinOutcome(creator, 'budget-o')).resolves.toBe('joined');
+      } finally {
+        creator.disconnect();
+        other.disconnect();
+      }
+    });
+
+    it('limits how many times a socket can restart the game', async () => {
+      restartLimit.max = 2;
+      const player = await connectTestClient();
+
+      try {
+        await joinRoom(player, 'restart-budget');
+        const restarted = vi.fn();
+        player.on('game-started', restarted);
+
+        for (let i = 0; i < 5; i++) player.emit('restart-game', 'easy');
+        await flushSocketEvents(player);
+
+        expect(restarted).toHaveBeenCalledTimes(2);
+      } finally {
+        player.disconnect();
+      }
+    });
+
+    // The limit shared by all the sockets of a server is read when the server is set up, so these tests start their own.
+    const withBoardLimit = async (max: number, run: (connect: () => Promise<TestClientSocket>) => Promise<void>) => {
+      boardGenerationLimit.max = max;
+      const httpServer = createServer();
+      const otherIo = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
+      setupSocketHandlers(otherIo);
+      boardGenerationLimit.max = Number.POSITIVE_INFINITY;
+      await new Promise<void>((resolve) => { httpServer.listen(0, resolve); });
+      const url = `http://127.0.0.1:${(httpServer.address() as AddressInfo).port}`;
+
+      const sockets: TestClientSocket[] = [];
+      const connect = async () => {
+        const socket = Client(url) as TestClientSocket;
+        sockets.push(socket);
+        clients.add(socket);
+        await new Promise<void>((resolve) => { socket.once('connect', resolve); });
+        return socket;
+      };
+
+      try {
+        await run(connect);
+      } finally {
+        sockets.forEach((socket) => socket.disconnect());
+        await new Promise<void>((resolve) => { otherIo.close(() => resolve()); });
+      }
+    };
+
+    it('limits the boards generated for all the sockets together', async () => {
+      await withBoardLimit(2, async (connect) => {
+        const [first, second, third] = [await connect(), await connect(), await connect()];
+
+        await expect(joinOutcome(first, 'global-a')).resolves.toBe('joined');
+        await expect(joinOutcome(second, 'global-b')).resolves.toBe('joined');
+        await expect(joinOutcome(third, 'global-c')).resolves.toBe('too-fast');
+        expect(rooms.has('global-c')).toBe(false);
+      });
+    });
+
+    it('does not spend the budget of the server on a room the socket may not create', async () => {
+      roomCreationLimit.max = 1;
+
+      await withBoardLimit(2, async (connect) => {
+        const [first, second, third] = [await connect(), await connect(), await connect()];
+
+        await expect(joinOutcome(first, 'spent-a')).resolves.toBe('joined');
+        await expect(joinOutcome(first, 'spent-b')).resolves.toBe('too-fast');
+
+        // The refused attempt of the first socket did not use the second place of the server.
+        await expect(joinOutcome(second, 'spent-c')).resolves.toBe('joined');
+        await expect(joinOutcome(third, 'spent-d')).resolves.toBe('too-fast');
+      });
+    });
+
+    it('does not count the restarts of a socket that is not in a room', async () => {
+      restartLimit.max = 1;
+      const player = await connectTestClient();
+
+      try {
+        for (let i = 0; i < 3; i++) player.emit('restart-game', 'easy');
+        await flushSocketEvents(player);
+
+        await joinRoom(player, 'outsider-restart');
+        const restarted = vi.fn();
+        player.on('game-started', restarted);
+        player.emit('restart-game', 'easy');
+        await flushSocketEvents(player);
+
+        expect(restarted).toHaveBeenCalledTimes(1);
+      } finally {
+        player.disconnect();
+      }
+    });
+
+    it('ships finite limits', () => {
+      expect(Number.isFinite(defaultLimits.roomCreation)).toBe(true);
+      expect(Number.isFinite(defaultLimits.restart)).toBe(true);
+      expect(Number.isFinite(defaultLimits.boardGeneration)).toBe(true);
+    });
   });
 
   // -------------------------------------------------------
@@ -816,6 +944,13 @@ describe('Socket Events Security & Bounds Checking', () => {
       await closed;
     };
 
+    // An empty room nobody played in is deleted right away: the grace period is for rooms with a game in progress.
+    const makeMove = async (socket: TestClientSocket, room: { currentGrid: number[][] }) => {
+      const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+      socket.emit('cell-update', { r, c, v: 1 });
+      await flushSocketEvents(socket);
+    };
+
     it('keeps the room, with its board and notes, when the last player drops', async () => {
       rooms.emptyRoomTtlMs = 60_000;
       const first = await connectTestClient(playerId);
@@ -847,7 +982,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     it('deletes the room once the grace period is over', async () => {
       rooms.emptyRoomTtlMs = 50;
       const client = await connectTestClient();
-      await joinRoom(client, 'expiring-room');
+      await makeMove(client, await joinRoom(client, 'expiring-room'));
 
       await leaveAndWait(client);
       expect(rooms.has('expiring-room')).toBe(true);
@@ -858,7 +993,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     it('does not delete a room that someone came back to before the grace period was over', async () => {
       rooms.emptyRoomTtlMs = 100;
       const first = await connectTestClient();
-      await joinRoom(first, 'returning-room');
+      await makeMove(first, await joinRoom(first, 'returning-room'));
       await leaveAndWait(first);
 
       const second = await connectTestClient();
@@ -872,6 +1007,36 @@ describe('Socket Events Security & Bounds Checking', () => {
       } finally {
         second.disconnect();
       }
+    });
+
+    it('deletes a room right away when nobody changed anything in it', async () => {
+      rooms.emptyRoomTtlMs = 60_000;
+      const client = await connectTestClient();
+      await joinRoom(client, 'unplayed-room');
+
+      await leaveAndWait(client);
+
+      expect(rooms.has('unplayed-room')).toBe(false);
+    });
+
+    it('keeps a room for the grace period once a cell was changed', async () => {
+      rooms.emptyRoomTtlMs = 60_000;
+      const client = await connectTestClient();
+      await makeMove(client, await joinRoom(client, 'played-room'));
+      await leaveAndWait(client);
+
+      expect(rooms.has('played-room')).toBe(true);
+    });
+
+    it('treats a restarted game as not played yet', async () => {
+      rooms.emptyRoomTtlMs = 60_000;
+      const client = await connectTestClient();
+      await makeMove(client, await joinRoom(client, 'restarted-room'));
+      client.emit('restart-game', 'easy');
+      await flushSocketEvents(client);
+      await leaveAndWait(client);
+
+      expect(rooms.has('restarted-room')).toBe(false);
     });
   });
 

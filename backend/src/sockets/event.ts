@@ -13,6 +13,15 @@ export const rooms = new RoomStore();
 /** Per socket, all events together: far above what a player can do, low enough to stop a flood. */
 export const eventLimit = { max: 40, windowMs: 1000 };
 
+/** Per socket: rooms it can create. A room costs memory and a board costs CPU, so they cannot be opened in bulk. Joining a room that exists is free. */
+export const roomCreationLimit = { max: 5, windowMs: 10 * 60 * 1000 };
+
+/** Per socket: restarts of the game, each one generates a board. A few per session is what a player does. */
+export const restartLimit = { max: 6, windowMs: 60 * 1000 };
+
+/** All sockets together: boards generated per second. Generating one blocks the event loop for every room, so this is the safety net behind the limits above. */
+export const boardGenerationLimit = { max: 2, windowMs: 1000 };
+
 /**
  * Removes the socket from the room it is currently in (if any).
  * Used both when the socket moves to another room and when it disconnects.
@@ -62,9 +71,13 @@ const resolvePlayerId = (socket: GameSocket): string => {
 };
 
 export const setupSocketHandlers = (io: GameServer) => {
+  const allowBoardGeneration = createRateLimiter(boardGenerationLimit.max, boardGenerationLimit.windowMs);
+
   io.on("connection", (socket: GameSocket) => {
     socket.data.playerId = resolvePlayerId(socket);
     const allowEvent = createRateLimiter(eventLimit.max, eventLimit.windowMs);
+    const allowRoomCreation = createRateLimiter(roomCreationLimit.max, roomCreationLimit.windowMs);
+    const allowRestart = createRateLimiter(restartLimit.max, restartLimit.windowMs);
 
     socket.on("join-room", safeHandler(joinRoomArgsSchema, (roomId, difficulty) => {
       const existingRoom = rooms.get(roomId);
@@ -72,6 +85,11 @@ export const setupSocketHandlers = (io: GameServer) => {
       // Checked before leaving the current room, so a refused player stays where they are.
       if (!existingRoom && rooms.isFull()) {
         socket.emit("join-error", "server-full");
+        return;
+      }
+      // Creating a room generates a board: both the budget of this socket and the one of the server must allow it.
+      if (!existingRoom && !(allowRoomCreation() && allowBoardGeneration())) {
+        socket.emit("join-error", "too-fast");
         return;
       }
       if (existingRoom && !existingRoom.players.has(socket.data.playerId) && existingRoom.players.size >= MAX_PLAYERS_PER_ROOM) {
@@ -99,6 +117,7 @@ export const setupSocketHandlers = (io: GameServer) => {
           players: new Map(),
           filledCells: countInitialFilledCells(board.initial),
           notesGrid: {},
+          played: false,
         };
         rooms.set(roomId, room);
       }
@@ -149,6 +168,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       }
 
       room.currentGrid[r][c] = v;
+      room.played = true;
       socket.to(roomId).emit("cell-updated", { r, c, v });
       acknowledge?.({ ok: true });
 
@@ -180,9 +200,13 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (!current) return;
       const { roomId, room } = current;
 
+      // Dropped without an answer: an error screen here would replace the game of everyone who is playing.
+      if (!allowRestart() || !allowBoardGeneration()) return;
+
       const board = generateSudoku(difficulty);
 
       room.board = board;
+      room.played = false;
       room.difficulty = difficulty;
       room.currentGrid = board.initial.map(row => [...row]);
       room.filledCells = countInitialFilledCells(board.initial);
@@ -218,6 +242,8 @@ export const setupSocketHandlers = (io: GameServer) => {
       const size = room.board.size;
 
       if (r >= size || c >= size || v > size) return;
+
+      room.played = true;
 
       const cellKey = `${r}-${c}`;
       if (!room.notesGrid[cellKey]) {

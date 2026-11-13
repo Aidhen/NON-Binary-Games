@@ -258,6 +258,7 @@ describe('SudokuContainer', () => {
   it.each([
     ['room-full', 'sudoku.roomFull'],
     ['server-full', 'sudoku.serverFull'],
+    ['too-fast', 'sudoku.tooFast'],
   ])('shows why the game cannot be joined (%s)', async (reason, message) => {
     render(<SudokuContainer roomId="room-1" />);
 
@@ -267,6 +268,22 @@ describe('SudokuContainer', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent(message);
     expect(screen.getByRole('link', { name: 'sudoku.backHome' })).toHaveAttribute('href', '/');
+  });
+
+  it('shows the game when it starts after a refused join', async () => {
+    render(<SudokuContainer roomId="room-1" />);
+
+    await act(async () => {
+      mocks.dispatch('join-error', 'too-fast');
+    });
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+
+    await act(async () => {
+      mocks.dispatch('game-started', { board: testBoard, currentGrid: currentGrid.map((row) => [...row]), notesGrid: {}, difficulty: 'easy' });
+    });
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByTestId('board-state')).toBeInTheDocument();
   });
 
   it('does not update an initial fixed cell', async () => {

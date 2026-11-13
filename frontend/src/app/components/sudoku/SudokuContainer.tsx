@@ -201,22 +201,22 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       });
     });
 
-    socket.on("player-selected-cell", ({ playerId, r, c }) => {
+    socket.on("player-selected-cell", ({ alias, r, c }) => {
       setOthersSelections((prev) => {
         const next = { ...prev };
         if (r === null || c === null) {
-          delete next[playerId];
+          delete next[alias];
         } else {
-          next[playerId] = [r, c];
+          next[alias] = [r, c];
         }
         return next;
       });
     });
 
-    socket.on("player-disconnected", (playerId) => {
+    socket.on("player-disconnected", (alias) => {
       setOthersSelections((prev) => {
         const next = { ...prev };
-        delete next[playerId];
+        delete next[alias];
         return next;
       });
     });
@@ -226,20 +226,20 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       setSelectedCell(null);
     });
 
-    socket.on("note-toggled", ({ r, c, v, playerId }) => {
+    socket.on("note-toggled", ({ r, c, v, alias }) => {
       setNotesGrid((prev) => {
         const next = { ...prev };
         const key = `${r}-${c}`;
 
         if (!next[key]) next[key] = {};
 
-        if (playerId === null) {
+        if (alias === null) {
           delete next[key][v];
           if (Object.keys(next[key]).length === 0) {
             delete next[key];
           }
         } else {
-          next[key][v] = playerId;
+          next[key][v] = alias;
         }
         return next;
       });

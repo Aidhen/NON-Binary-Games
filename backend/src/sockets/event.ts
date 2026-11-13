@@ -1,14 +1,42 @@
+import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
 import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
+import type { RoomState } from "../rooms/roomStore";
 
 type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 
 export const rooms = new RoomStore();
+
+/** Tabs (sockets) one player can have open in the same room. */
+export const MAX_SOCKETS_PER_PLAYER = 3;
+
+/** Aliases kept per room: players that left are forgotten first, so a room never holds more than this. */
+export const MAX_ROOM_ALIASES = 20;
+
+/**
+ * The name a player has inside one room. The id of the player is what lets them back in after a
+ * dropped connection, so it must stay with the server: the other players only get this alias,
+ * which is random and different in every room.
+ */
+const aliasOf = (room: RoomState, playerId: string): string => {
+  const existing = room.aliases.get(playerId);
+  if (existing) return existing;
+
+  if (room.aliases.size >= MAX_ROOM_ALIASES) {
+    for (const knownId of room.aliases.keys()) {
+      if (!room.players.has(knownId)) room.aliases.delete(knownId);
+    }
+  }
+
+  const alias = randomBytes(6).toString("hex");
+  room.aliases.set(playerId, alias);
+  return alias;
+};
 
 /** Per socket, all events together: far above what a player can do, low enough to stop a flood. */
 export const eventLimit = { max: 40, windowMs: 1000 };
@@ -30,19 +58,20 @@ const leaveCurrentRoom = (socket: GameSocket) => {
   const roomId = socket.data.roomId;
   if (!roomId) return;
 
+  const { playerId, alias } = socket.data;
   socket.data.roomId = undefined;
+  socket.data.alias = undefined;
   void socket.leave(roomId);
 
   const room = rooms.get(roomId);
   if (!room) return;
 
-  const { playerId } = socket.data;
   const sockets = room.players.get(playerId);
   sockets?.delete(socket.id);
 
   if (!sockets?.size) {
     room.players.delete(playerId);
-    socket.to(roomId).emit("player-disconnected", playerId);
+    if (alias) socket.to(roomId).emit("player-disconnected", alias);
   }
 
   if (room.players.size === 0) {
@@ -59,9 +88,10 @@ const getCurrentRoom = (socket: GameSocket) => {
   if (!roomId) return undefined;
 
   const room = rooms.get(roomId);
-  if (!room) return undefined;
+  const alias = socket.data.alias;
+  if (!room || !alias) return undefined;
 
-  return { roomId, room };
+  return { roomId, room, alias };
 };
 
 /** The id the browser sent in the handshake, or the socket id for clients that sent none (or garbage). */
@@ -96,6 +126,11 @@ export const setupSocketHandlers = (io: GameServer) => {
         socket.emit("join-error", "room-full");
         return;
       }
+      const ownSockets = existingRoom?.players.get(socket.data.playerId);
+      if (ownSockets && !ownSockets.has(socket.id) && ownSockets.size >= MAX_SOCKETS_PER_PLAYER) {
+        socket.emit("join-error", "room-full");
+        return;
+      }
 
       if (socket.data.roomId !== roomId) {
         leaveCurrentRoom(socket);
@@ -117,11 +152,13 @@ export const setupSocketHandlers = (io: GameServer) => {
           players: new Map(),
           filledCells: countInitialFilledCells(board.initial),
           notesGrid: {},
+          aliases: new Map(),
           played: false,
         };
         rooms.set(roomId, room);
       }
 
+      socket.data.alias = aliasOf(room, socket.data.playerId);
       const sockets = room.players.get(socket.data.playerId) ?? new Set<string>();
       sockets.add(socket.id);
       room.players.set(socket.data.playerId, sockets);
@@ -183,12 +220,12 @@ export const setupSocketHandlers = (io: GameServer) => {
     socket.on("select-cell", safeHandler(selectCellArgsSchema, ({ r, c }) => {
       const current = getCurrentRoom(socket);
       if (!current) return;
-      const { roomId, room } = current;
+      const { roomId, room, alias } = current;
 
       const size = room.board.size;
       if ((r !== null && r >= size) || (c !== null && c >= size)) return;
 
-      socket.to(roomId).emit("player-selected-cell", { playerId: socket.data.playerId, r, c });
+      socket.to(roomId).emit("player-selected-cell", { alias, r, c });
     }, allowEvent));
 
     socket.on("disconnect", () => {
@@ -231,13 +268,13 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (lastEmoteAt !== undefined && now - lastEmoteAt < EMOTE_COOLDOWN_MS) return;
 
       socket.data.lastEmoteAt = now;
-      socket.to(current.roomId).emit("emote-received", { playerId: socket.data.playerId, emote });
+      socket.to(current.roomId).emit("emote-received", { alias: current.alias, emote });
     }, allowEvent));
 
     socket.on("toggle-note", safeHandler(toggleNoteArgsSchema, ({ r, c, v }) => {
       const current = getCurrentRoom(socket);
       if (!current) return;
-      const { roomId, room } = current;
+      const { roomId, room, alias } = current;
 
       const size = room.board.size;
 
@@ -250,7 +287,7 @@ export const setupSocketHandlers = (io: GameServer) => {
         room.notesGrid[cellKey] = {};
       }
 
-      let assignedPlayerId: string | null = null;
+      let assignedAlias: string | null = null;
 
       if (room.notesGrid[cellKey][v]) {
         delete room.notesGrid[cellKey][v];
@@ -259,11 +296,11 @@ export const setupSocketHandlers = (io: GameServer) => {
           delete room.notesGrid[cellKey];
         }
       } else {
-        room.notesGrid[cellKey][v] = socket.data.playerId;
-        assignedPlayerId = socket.data.playerId;
+        room.notesGrid[cellKey][v] = alias;
+        assignedAlias = alias;
       }
 
-      io.to(roomId).emit("note-toggled", { r, c, v, playerId: assignedPlayerId });
+      io.to(roomId).emit("note-toggled", { r, c, v, alias: assignedAlias });
     }, allowEvent));
   });
 };

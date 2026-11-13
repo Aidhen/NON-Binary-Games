@@ -38,8 +38,8 @@ const mocks = vi.hoisted(() => {
 vi.mock('@/lib/socket', () => ({ getSocket: () => mocks.socket }));
 
 const advance = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
-const receive = (emote: string, playerId = 'someone-else') =>
-  act(() => { mocks.dispatch('emote-received', { playerId, emote }); });
+const receive = (emote: string, alias = 'someone-else') =>
+  act(() => { mocks.dispatch('emote-received', { alias, emote }); });
 
 beforeEach(() => {
   vi.useFakeTimers();

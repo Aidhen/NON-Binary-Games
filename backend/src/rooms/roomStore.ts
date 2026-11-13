@@ -8,6 +8,8 @@ export interface RoomState {
   players: Map<string, Set<string>>;
   filledCells: number;
   notesGrid: NotesGrid;
+  /** The alias of each player (by player id) in this room: what the other players see instead of the id. */
+  aliases: Map<string, string>;
   /** A cell or a note was changed since the board was generated. An empty room nobody played in is not worth keeping. */
   played: boolean;
 }

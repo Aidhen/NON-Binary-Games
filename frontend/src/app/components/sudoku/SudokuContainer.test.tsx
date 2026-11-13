@@ -321,7 +321,7 @@ describe('SudokuContainer', () => {
   describe('delete key and notes', () => {
     const addNotes = async (...values: number[]) => {
       for (const v of values) {
-        await act(async () => { mocks.dispatch('note-toggled', { r: 0, c: 1, v, playerId: 'p-1' }); });
+        await act(async () => { mocks.dispatch('note-toggled', { r: 0, c: 1, v, alias: 'p-1' }); });
       }
     };
 
@@ -377,7 +377,7 @@ describe('SudokuContainer', () => {
       await renderGame();
       fireEvent.click(screen.getByRole('button', { name: /sudoku.notesMode OFF/ }));
       fireEvent.click(screen.getByTestId('select-empty-cell'));
-      await act(async () => { mocks.dispatch('note-toggled', { r: 3, c: 3, v: 9, playerId: 'p-1' }); });
+      await act(async () => { mocks.dispatch('note-toggled', { r: 3, c: 3, v: 9, alias: 'p-1' }); });
       await addNotes(6);
 
       fireEvent.click(screen.getByRole('button', { name: '⌫' }));
@@ -448,13 +448,13 @@ describe('SudokuContainer', () => {
     await renderGame();
 
     await act(async () => {
-      mocks.dispatch('player-selected-cell', { playerId: 'player-2', r: 2, c: 3 });
+      mocks.dispatch('player-selected-cell', { alias: 'player-2', r: 2, c: 3 });
     });
 
     expect(getBoardState().othersSelections['player-2']).toEqual([2, 3]);
 
     await act(async () => {
-      mocks.dispatch('player-selected-cell', { playerId: 'player-2', r: null, c: null });
+      mocks.dispatch('player-selected-cell', { alias: 'player-2', r: null, c: null });
     });
 
     expect(getBoardState().othersSelections['player-2']).toBeUndefined();
@@ -464,7 +464,7 @@ describe('SudokuContainer', () => {
     await renderGame();
 
     await act(async () => {
-      mocks.dispatch('player-selected-cell', { playerId: 'player-2', r: 1, c: 1 });
+      mocks.dispatch('player-selected-cell', { alias: 'player-2', r: 1, c: 1 });
       mocks.dispatch('player-disconnected', 'player-2');
     });
 
@@ -475,13 +475,13 @@ describe('SudokuContainer', () => {
     await renderGame();
 
     await act(async () => {
-      mocks.dispatch('note-toggled', { r: 0, c: 1, v: 3, playerId: 'player-2' });
+      mocks.dispatch('note-toggled', { r: 0, c: 1, v: 3, alias: 'player-2' });
     });
 
     expect(getBoardState().notesGrid['0-1']['3']).toBe('player-2');
 
     await act(async () => {
-      mocks.dispatch('note-toggled', { r: 0, c: 1, v: 3, playerId: null });
+      mocks.dispatch('note-toggled', { r: 0, c: 1, v: 3, alias: null });
     });
 
     expect(getBoardState().notesGrid['0-1']).toBeUndefined();
@@ -707,7 +707,7 @@ describe('SudokuContainer', () => {
     it('shows the reactions sent by other players', async () => {
       await renderGame();
 
-      await act(async () => { mocks.dispatch('emote-received', { playerId: 'someone-else', emote: EMOTES[3] }); });
+      await act(async () => { mocks.dispatch('emote-received', { alias: 'someone-else', emote: EMOTES[3] }); });
 
       expect(screen.getAllByTestId('floating-emote').map((element) => element.textContent)).toEqual([EMOTES[3]]);
       expect(mocks.emitted.some(({ event }) => event === 'send-emote')).toBe(false);

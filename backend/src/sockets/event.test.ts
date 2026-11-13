@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
-import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit } from './event';
+import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
 import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM } from '@nbg/shared';
 import type { JoinError } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
@@ -77,6 +77,16 @@ describe('Socket Events Security & Bounds Checking', () => {
 
     return room;
   };
+
+  /**
+   * Joins a room and reports how it went: `joined`, or the reason the server gave.
+   */
+  const joinOutcome = (socket: TestClientSocket, roomId: string) =>
+    new Promise<JoinError | 'joined'>((resolve) => {
+      socket.once('game-started', () => resolve('joined'));
+      socket.once('join-error', resolve);
+      socket.emit('join-room', roomId, 'easy');
+    });
 
   /**
    * Returns the server-side socket associated with a client.
@@ -247,8 +257,10 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       clientSocket.emit('toggle-note', { r: 2, c: 3, v: 5 });
 
-      await expect(noteAdded).resolves.toEqual({ r: 2, c: 3, v: 5, playerId: clientSocket.id });
-      expect(room.notesGrid['2-3'][5]).toBe(clientSocket.id);
+      const alias = room.aliases.get(clientSocket.id!);
+      expect(alias).toBeDefined();
+      await expect(noteAdded).resolves.toEqual({ r: 2, c: 3, v: 5, alias });
+      expect(room.notesGrid['2-3'][5]).toBe(alias);
 
       const noteRemoved = new Promise<NoteToggledPayload>((resolve) => {
         clientSocket.once('note-toggled', resolve);
@@ -256,7 +268,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       clientSocket.emit('toggle-note', { r: 2, c: 3, v: 5 });
 
-      await expect(noteRemoved).resolves.toEqual({ r: 2, c: 3, v: 5, playerId: null });
+      await expect(noteRemoved).resolves.toEqual({ r: 2, c: 3, v: 5, alias: null });
       expect(room.notesGrid['2-3']).toBeUndefined();
     });
   });
@@ -469,7 +481,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
         clientSocket.emit('select-cell', { r: 2, c: 3 });
 
-        await expect(selection).resolves.toEqual({ playerId: clientSocket.id, r: 2, c: 3 });
+        await expect(selection).resolves.toEqual({ alias: rooms.get(testRoomId)!.aliases.get(clientSocket.id!), r: 2, c: 3 });
       } finally {
         observer.disconnect();
       }
@@ -487,7 +499,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
         clientSocket.emit('select-cell', { r: null, c: null });
 
-        await expect(selection).resolves.toEqual({ playerId: clientSocket.id, r: null, c: null });
+        await expect(selection).resolves.toEqual({ alias: rooms.get(testRoomId)!.aliases.get(clientSocket.id!), r: null, c: null });
       } finally {
         observer.disconnect();
       }
@@ -592,7 +604,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
         observer.disconnect();
 
-        await expect(playerDisconnected).resolves.toBe(observerId);
+        await expect(playerDisconnected).resolves.toBe(room.aliases.get(observerId));
         await serverDisconnected;
 
         expect(room.players.has(observerId)).toBe(false);
@@ -631,13 +643,6 @@ describe('Socket Events Security & Bounds Checking', () => {
   // -------------------------------------------------------
 
   describe('limits', () => {
-    const joinOutcome = (socket: TestClientSocket, roomId: string) =>
-      new Promise<JoinError | 'joined'>((resolve) => {
-        socket.once('game-started', () => resolve('joined'));
-        socket.once('join-error', resolve);
-        socket.emit('join-room', roomId, 'easy');
-      });
-
     const connectPlayers = async (count: number, prefix = 'cap-player') => {
       const players: TestClientSocket[] = [];
       for (let i = 0; i < count; i++) players.push(await connectTestClient(`${prefix}-${i}`));
@@ -973,7 +978,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
         expect(payload.board).toEqual(room.board);
         expect(payload.difficulty).toBe('easy');
-        expect(payload.notesGrid[`${r}-${c}`][2]).toBe(playerId);
+        expect(payload.notesGrid[`${r}-${c}`][2]).toBe(room.aliases.get(playerId));
       } finally {
         second.disconnect();
       }
@@ -1103,7 +1108,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
         const payload = await gameStarted;
         expect(first.id).not.toBe(second.id);
-        expect(payload.notesGrid[`${r}-${c}`][1]).toBe(playerId);
+        expect(payload.notesGrid[`${r}-${c}`][1]).toBe(room.aliases.get(playerId));
       } finally {
         observer.disconnect();
         second.disconnect();
@@ -1136,7 +1141,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         otherTab.disconnect();
         await lastClosed;
 
-        await expect(playerLeft).resolves.toBe(playerId);
+        await expect(playerLeft).resolves.toBe(room.aliases.get(playerId));
         expect(room.players.has(playerId)).toBe(false);
       } finally {
         observer.disconnect();
@@ -1145,24 +1150,132 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     });
 
-    it('reports selections and emotes with the stable id', async () => {
+    it('reports selections and emotes with the alias of the player', async () => {
       const observer = await connectTestClient();
       const client = await connectTestClient(playerId);
 
       try {
         await joinRoom(observer, testRoomId);
-        await joinRoom(client, testRoomId);
+        const room = await joinRoom(client, testRoomId);
+        const alias = room.aliases.get(playerId);
 
         const selection = new Promise<PlayerSelectedCellPayload>((resolve) => { observer.once('player-selected-cell', resolve); });
         const emote = new Promise<EmoteReceivedPayload>((resolve) => { observer.once('emote-received', resolve); });
         client.emit('select-cell', { r: 0, c: 0 });
         client.emit('send-emote', EMOTES[0]);
 
-        await expect(selection).resolves.toMatchObject({ playerId });
-        await expect(emote).resolves.toEqual({ playerId, emote: EMOTES[0] });
+        await expect(selection).resolves.toMatchObject({ alias });
+        await expect(emote).resolves.toEqual({ alias, emote: EMOTES[0] });
       } finally {
         observer.disconnect();
         client.disconnect();
+      }
+    });
+
+    it('never sends the id of a player to the others', async () => {
+      const observer = await connectTestClient();
+      const client = await connectTestClient(playerId);
+      const late = await connectTestClient();
+
+      try {
+        await joinRoom(observer, testRoomId);
+        const seen: string[] = [];
+        observer.onAny((_event, ...args) => { seen.push(JSON.stringify(args)); });
+
+        const room = await joinRoom(client, testRoomId);
+        const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+        const noted = new Promise<NoteToggledPayload>((resolve) => { observer.once('note-toggled', resolve); });
+        client.emit('select-cell', { r, c });
+        client.emit('send-emote', EMOTES[0]);
+        client.emit('toggle-note', { r, c, v: 1 });
+        const note = await noted;
+
+        const lateStarted = new Promise<GameStartedPayload>((resolve) => { late.once('game-started', resolve); });
+        late.emit('join-room', testRoomId, 'easy');
+        const lateGame = await lateStarted;
+
+        const closed = waitForServerDisconnect(client);
+        client.disconnect();
+        await closed;
+        await flushSocketEvents(observer);
+
+        expect(note.alias).toMatch(/^[0-9a-f]{12}$/);
+        expect(seen.length).toBeGreaterThan(0);
+        expect(seen.join()).not.toContain(playerId);
+        expect(JSON.stringify(lateGame.notesGrid)).not.toContain(playerId);
+      } finally {
+        observer.disconnect();
+        client.disconnect();
+        late.disconnect();
+      }
+    });
+
+    it('gives the same player a different alias in each room', async () => {
+      const client = await connectTestClient(playerId);
+
+      try {
+        await joinRoom(client, 'alias-room-a');
+        const first = rooms.get('alias-room-a')!.aliases.get(playerId);
+        await joinRoom(client, 'alias-room-b');
+        const second = rooms.get('alias-room-b')!.aliases.get(playerId);
+
+        expect(first).toBeDefined();
+        expect(second).toBeDefined();
+        expect(first).not.toBe(second);
+        expect(getServerSocket(client).data.alias).toBe(second);
+      } finally {
+        client.disconnect();
+      }
+    });
+
+    it('gives every tab of a player the same alias', async () => {
+      const tab = await connectTestClient(playerId);
+      const otherTab = await connectTestClient(playerId);
+
+      try {
+        await joinRoom(tab, testRoomId);
+        await joinRoom(otherTab, testRoomId);
+
+        expect(getServerSocket(tab).data.alias).toBeDefined();
+        expect(getServerSocket(otherTab).data.alias).toBe(getServerSocket(tab).data.alias);
+      } finally {
+        tab.disconnect();
+        otherTab.disconnect();
+      }
+    });
+
+    it('limits the tabs one player can have open in a room', async () => {
+      const tabs: TestClientSocket[] = [];
+      for (let i = 0; i < MAX_SOCKETS_PER_PLAYER; i++) tabs.push(await connectTestClient(playerId));
+      const extra = await connectTestClient(playerId);
+
+      try {
+        for (const tab of tabs) await expect(joinOutcome(tab, testRoomId)).resolves.toBe('joined');
+
+        await expect(joinOutcome(extra, testRoomId)).resolves.toBe('room-full');
+        expect(rooms.get(testRoomId)!.players.get(playerId)!.size).toBe(MAX_SOCKETS_PER_PLAYER);
+      } finally {
+        [...tabs, extra].forEach((socket) => socket.disconnect());
+      }
+    });
+
+    it('forgets the aliases of players who left when a room has too many', async () => {
+      const observer = await connectTestClient();
+
+      try {
+        const room = await joinRoom(observer, testRoomId);
+
+        for (let i = 0; i < MAX_ROOM_ALIASES + 5; i++) {
+          const guest = await connectTestClient(`alias-bound-guest-${String(i).padStart(3, '0')}`);
+          await joinRoom(guest, testRoomId);
+          const closed = waitForServerDisconnect(guest);
+          guest.disconnect();
+          await closed;
+        }
+
+        expect(room.aliases.size).toBeLessThanOrEqual(MAX_ROOM_ALIASES);
+      } finally {
+        observer.disconnect();
       }
     });
   });
@@ -1204,13 +1317,13 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       try {
         await joinRoom(stayer, 'room-a');
-        await joinRoom(mover, 'room-a');
+        const alias = (await joinRoom(mover, 'room-a')).aliases.get(mover.id!);
 
         const left = new Promise<string>((resolve) => { stayer.once('player-disconnected', resolve); });
 
         await joinRoom(mover, 'room-b');
 
-        await expect(left).resolves.toBe(mover.id);
+        await expect(left).resolves.toBe(alias);
         expect(rooms.get('room-a')!.players.has(mover.id!)).toBe(false);
         expect(rooms.get('room-a')!.players.has(stayer.id!)).toBe(true);
         expect(rooms.get('room-b')!.players.has(mover.id!)).toBe(true);
@@ -1296,7 +1409,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       await flushSocketEvents(sender);
       await flushSocketEvents(other);
 
-      expect(receivedByOther).toEqual([{ playerId: sender.id, emote: EMOTES[0] }]);
+      expect(receivedByOther).toEqual([{ alias: rooms.get(testRoomId)!.aliases.get(sender.id!), emote: EMOTES[0] }]);
       expect(receivedBySender).toEqual([]);
     });
 

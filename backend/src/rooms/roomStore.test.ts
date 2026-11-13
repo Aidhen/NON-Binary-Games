@@ -12,6 +12,7 @@ const createRoom = (): RoomState => {
     players: new Map(),
     filledCells: 0,
     notesGrid: {},
+    aliases: new Map(),
     played: true,
   };
 };

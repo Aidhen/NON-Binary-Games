@@ -143,8 +143,8 @@ export function SudokuBoardUI({
 
   const cellOccupantsMap = useMemo(() => {
     const map = new Map<string, string>();
-    Object.entries(othersSelections).forEach(([playerId, [r, c]]) => {
-      map.set(`${r}-${c}`, playerId);
+    Object.entries(othersSelections).forEach(([alias, [r, c]]) => {
+      map.set(`${r}-${c}`, alias);
     });
     return map;
   }, [othersSelections]);

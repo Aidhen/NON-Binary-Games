@@ -40,7 +40,7 @@ export function useEmotes() {
 
   useEffect(() => {
     const socket = getSocket();
-    const onEmote = ({ emote }: { playerId: string; emote: Emote }) => show(emote);
+    const onEmote = ({ emote }: { alias: string; emote: Emote }) => show(emote);
     const pending = timers.current;
 
     socket.on('emote-received', onEmote);

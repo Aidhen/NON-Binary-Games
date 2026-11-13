@@ -19,7 +19,7 @@ const io = new Server(httpServer, {
 });
 
 const addressOf = addressResolverFromEnv();
-if (!addressOf) logger.warn("Limits per address are off: set CLIENT_IP_HEADER (or LIMIT_BY_PEER_ADDRESS=true when there is no proxy).");
+if (!addressOf) logger.warn("Limits on connections are off, they need to know the address of each player: set CLIENT_IP_HEADER (or LIMIT_BY_PEER_ADDRESS=true when there is no proxy).");
 applyConnectionLimits(io, addressOf);
 setupSocketHandlers(io);
 

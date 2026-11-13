@@ -23,8 +23,9 @@ export const createRateLimiter = (limit: number, windowMs: number, now: () => nu
  * Like `createRateLimiter`, with one window per key (an address, for example), so that the
  * limit follows whoever it is for and not one connection: reconnecting does not start over.
  *
- * The windows are kept in memory only. Windows that are over are dropped when the map is full,
- * and if it is still full after that, new keys are refused: the memory it uses has a bound.
+ * The windows are kept in memory only. Windows that are over are dropped when the map is full, and
+ * if it is still full after that the oldest one is forgotten: the memory it uses has a bound. Refusing
+ * the new key instead would let one client lock everybody else out just by inventing keys.
  */
 export const createKeyedRateLimiter = (limit: number, windowMs: number, now: () => number = Date.now, maxKeys = 10_000) => {
   const windows = new Map<string, { start: number; count: number }>();
@@ -46,7 +47,7 @@ export const createKeyedRateLimiter = (limit: number, windowMs: number, now: () 
 
     if (!window) {
       if (windows.size >= maxKeys) dropFinished(current);
-      if (windows.size >= maxKeys) return false;
+      if (windows.size >= maxKeys) windows.delete(windows.keys().next().value as string);
 
       window = { start: current, count: 0 };
       windows.set(key, window);

@@ -44,16 +44,28 @@ describe('createKeyedRateLimiter', () => {
     expect(allow('a')).toBe(true);
   });
 
-  it('refuses new keys while the map is full, and takes them again once the windows are over', () => {
-    let time = 0;
-    const allow = createKeyedRateLimiter(5, 1000, () => time, 2);
+  it('forgets the oldest key when the map is full, instead of refusing the new one', () => {
+    const allow = createKeyedRateLimiter(1, 1000, () => 0, 2);
 
     expect(allow('a')).toBe(true);
     expect(allow('b')).toBe(true);
-    expect(allow('c')).toBe(false);
-    expect(allow('a')).toBe(true);
-
-    time = 1000;
     expect(allow('c')).toBe(true);
+
+    // b is still counted, a was forgotten and starts over.
+    expect(allow('b')).toBe(false);
+    expect(allow('a')).toBe(true);
+  });
+
+  it('drops the windows that are over before forgetting a live one', () => {
+    let time = 0;
+    const allow = createKeyedRateLimiter(1, 1000, () => time, 2);
+
+    allow('a');
+    time = 500;
+    allow('b');
+    time = 1000;
+
+    expect(allow('c')).toBe(true);
+    expect(allow('b')).toBe(false);
   });
 });

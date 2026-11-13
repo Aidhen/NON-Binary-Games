@@ -12,6 +12,8 @@ export const MAX_MESSAGE_BYTES = 4096;
  * Limits on connections. They exist because every other limit counts events per connection: a client that
  * opens many connections would get a full allowance on each one.
  * Per address the numbers are generous: a family or a café shares one address.
+ * They only apply where the address is known. Without it one machine could use up the limit of the whole
+ * server and lock everybody out, which is worse than the memory it would otherwise use.
  */
 export const connectionLimit = {
   /** Connections open at the same time on the whole server. */
@@ -41,11 +43,12 @@ const lastEntry = (value: IncomingHttpHeaders[string]): string | undefined => {
  * - `CLIENT_IP_HEADER`: name of the header the hosting platform puts it in (production).
  * - `LIMIT_BY_PEER_ADDRESS=true`: the address of the connection itself (local development, or no proxy).
  * With neither, the limits per address are off: with every client behind the same proxy address they
- * would count everybody as one.
+ * would count everybody as one. A header that is missing or unusable falls back to the address of the
+ * connection, so that sending a bad header is not a way out of the limits.
  */
 export const addressResolverFromEnv = (env: NodeJS.ProcessEnv = process.env): AddressOf | undefined => {
   const header = env.CLIENT_IP_HEADER?.trim().toLowerCase();
-  if (header) return (socket) => lastEntry(socket.handshake.headers[header]);
+  if (header) return (socket) => lastEntry(socket.handshake.headers[header]) ?? socket.handshake.address;
   if (env.LIMIT_BY_PEER_ADDRESS === "true") return (socket) => socket.handshake.address;
   return undefined;
 };
@@ -61,14 +64,13 @@ export const applyConnectionLimits = (io: GameServer, addressOf?: AddressOf) => 
   let total = 0;
 
   io.use((socket, next) => {
-    const refuse = () => next(new Error("too-many-connections"));
-    if (total >= connectionLimit.maxTotal) return refuse();
-
     const address = addressOf?.(socket);
-    if (address !== undefined) {
-      if (!allowNew(address) || (openPerAddress.get(address) ?? 0) >= connectionLimit.maxPerAddress) return refuse();
-      socket.data.address = address;
+    if (address === undefined) return next();
+
+    if (total >= connectionLimit.maxTotal || !allowNew(address) || (openPerAddress.get(address) ?? 0) >= connectionLimit.maxPerAddress) {
+      return next(new Error("too-many-connections"));
     }
+    socket.data.address = address;
     next();
   });
 

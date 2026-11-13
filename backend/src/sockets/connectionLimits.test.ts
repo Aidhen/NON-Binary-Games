@@ -4,9 +4,11 @@ import type { AddressInfo } from 'node:net';
 import { Server } from 'socket.io';
 import Client from 'socket.io-client';
 import type { Socket as ClientSocket } from 'socket.io-client';
+import { MAX_PLAYER_ID_LENGTH, MAX_ROOM_ID_LENGTH } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
 import { addressResolverFromEnv, applyConnectionLimits, connectionLimit, MAX_MESSAGE_BYTES } from './connectionLimits';
 import type { AddressOf } from './connectionLimits';
+import { rooms, setupSocketHandlers } from './event';
 
 type TestClient = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -46,20 +48,19 @@ describe('applyConnectionLimits', () => {
     clients.splice(0).forEach((client) => client.disconnect());
     await new Promise<void>((resolve) => { io ? io.close(() => resolve()) : resolve(); });
     io = undefined;
+    rooms.clear();
   });
 
   it('refuses connections over the limit of the whole server, and takes them again when one closes', async () => {
     connectionLimit.maxTotal = 2;
-    const { url } = await start();
+    const { url } = await start(byAddress);
 
-    const first = await attempt(url);
-    await attempt(url);
-    expect((await attempt(url)).result).toBe('too-many-connections');
+    const first = await attempt(url, { address: 'a' });
+    await attempt(url, { address: 'b' });
+    expect((await attempt(url, { address: 'c' })).result).toBe('too-many-connections');
 
-    await vi.waitFor(async () => {
-      await closeAndWait(first.client).catch(() => undefined);
-    });
-    await vi.waitFor(async () => expect((await attempt(url)).result).toBe('connected'));
+    await closeAndWait(first.client);
+    await vi.waitFor(async () => expect((await attempt(url, { address: 'd' })).result).toBe('connected'));
   });
 
   it('refuses connections over the limit of one address and leaves the other addresses alone', async () => {
@@ -87,8 +88,9 @@ describe('applyConnectionLimits', () => {
     expect((await attempt(url, { address: 'b' })).result).toBe('connected');
   });
 
-  it('only counts the whole server when the address is not known', async () => {
+  it('puts no limit on connections whose address is not known', async () => {
     connectionLimit.maxPerAddress = 1;
+    connectionLimit.maxTotal = 1;
     const { url } = await start(() => undefined);
 
     expect((await attempt(url)).result).toBe('connected');
@@ -124,11 +126,18 @@ describe('applyConnectionLimits', () => {
     await expect(closed).resolves.toBeTypeOf('string');
   });
 
-  it('leaves room for the largest message a client really sends', () => {
-    // A room id of 64 characters is the biggest piece of data in any event; this is generous framing on top of it.
-    const largest = JSON.stringify(['join-room', 'x'.repeat(64), 'medium', { r: 8, c: 8, v: 9 }]);
+  it('still accepts the largest message a client really sends', async () => {
+    const { url } = await start(undefined, MAX_MESSAGE_BYTES);
+    setupSocketHandlers(io!);
+    // The longest room id and the longest player id the schemas allow.
+    const { client, result } = await attempt(url, { playerId: 'p'.repeat(MAX_PLAYER_ID_LENGTH) });
+    expect(result).toBe('connected');
+    const started = new Promise<string>((resolve) => { client.once('game-started', () => resolve('started')); });
+    const closed = new Promise<string>((resolve) => { client.once('disconnect', () => resolve('closed')); });
 
-    expect(largest.length * 10).toBeLessThan(MAX_MESSAGE_BYTES);
+    client.emit('join-room', 'r'.repeat(MAX_ROOM_ID_LENGTH), 'hard');
+
+    await expect(Promise.race([started, closed])).resolves.toBe('started');
   });
 });
 
@@ -152,8 +161,8 @@ describe('addressResolverFromEnv', () => {
     expect(resolve(socketWith({ 'x-forwarded-for': ['1.1.1.1', '203.0.113.9'] }))).toBe('203.0.113.9');
   });
 
-  it.each<Record<string, string>>([{}, { 'x-forwarded-for': '' }, { 'x-forwarded-for': 'a'.repeat(65) }])('has no address when the header is missing or unusable (%j)', (headers) => {
-    expect(addressResolverFromEnv({ CLIENT_IP_HEADER: 'x-forwarded-for' })!(socketWith(headers))).toBeUndefined();
+  it.each<Record<string, string>>([{}, { 'x-forwarded-for': '' }, { 'x-forwarded-for': 'a'.repeat(65) }])('falls back to the address of the connection when the header is missing or unusable (%j)', (headers) => {
+    expect(addressResolverFromEnv({ CLIENT_IP_HEADER: 'x-forwarded-for' })!(socketWith(headers, '10.0.0.1'))).toBe('10.0.0.1');
   });
 
   it('prefers the header over the address of the connection', () => {

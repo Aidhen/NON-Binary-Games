@@ -39,7 +39,9 @@ const aliasOf = (room: RoomState, playerId: string): string => {
     }
   }
 
-  const alias = randomBytes(6).toString("hex");
+  const taken = new Set(room.aliases.values());
+  let alias: string;
+  do alias = randomBytes(6).toString("hex"); while (taken.has(alias));
   room.aliases.set(playerId, alias);
   return alias;
 };
@@ -133,11 +135,6 @@ export const setupSocketHandlers = (io: GameServer) => {
         socket.emit("join-error", "room-full");
         return;
       }
-      const ownSockets = existingRoom?.players.get(socket.data.playerId);
-      if (ownSockets && !ownSockets.has(socket.id) && ownSockets.size >= MAX_SOCKETS_PER_PLAYER) {
-        socket.emit("join-error", "room-full");
-        return;
-      }
 
       if (socket.data.roomId !== roomId) {
         leaveCurrentRoom(socket);
@@ -163,6 +160,14 @@ export const setupSocketHandlers = (io: GameServer) => {
           played: false,
         };
         rooms.set(roomId, room);
+      }
+
+      // After a dropped connection the old socket stays until the ping timeout. When a player is over the
+      // limit the oldest tab goes, so that a bad network does not lock them out of their own room.
+      const ownSockets = room.players.get(socket.data.playerId);
+      if (ownSockets && !ownSockets.has(socket.id) && ownSockets.size >= MAX_SOCKETS_PER_PLAYER) {
+        const oldest = ownSockets.values().next().value;
+        if (oldest) io.sockets.sockets.get(oldest)?.disconnect(true);
       }
 
       socket.data.alias = aliasOf(room, socket.data.playerId);

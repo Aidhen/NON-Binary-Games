@@ -1263,18 +1263,54 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     });
 
-    it('limits the tabs one player can have open in a room', async () => {
+    it('keeps at most a few tabs of a player in a room, closing the oldest one', async () => {
       const tabs: TestClientSocket[] = [];
       for (let i = 0; i < MAX_SOCKETS_PER_PLAYER; i++) tabs.push(await connectTestClient(playerId));
       const extra = await connectTestClient(playerId);
 
       try {
         for (const tab of tabs) await expect(joinOutcome(tab, testRoomId)).resolves.toBe('joined');
+        const oldestId = tabs[0].id!;
+        const oldestClosed = new Promise<void>((resolve) => { tabs[0].once('disconnect', () => resolve()); });
 
-        await expect(joinOutcome(extra, testRoomId)).resolves.toBe('room-full');
-        expect(rooms.get(testRoomId)!.players.get(playerId)!.size).toBe(MAX_SOCKETS_PER_PLAYER);
+        await expect(joinOutcome(extra, testRoomId)).resolves.toBe('joined');
+        await oldestClosed;
+
+        const sockets = rooms.get(testRoomId)!.players.get(playerId)!;
+        expect(sockets.size).toBe(MAX_SOCKETS_PER_PLAYER);
+        expect(sockets.has(oldestId)).toBe(false);
+        expect(sockets.has(extra.id!)).toBe(true);
       } finally {
         [...tabs, extra].forEach((socket) => socket.disconnect());
+      }
+    });
+
+    it('does not send the socket id of a player who sent no id of their own either', async () => {
+      const observer = await connectTestClient();
+      const client = await connectTestClient();
+
+      try {
+        await joinRoom(observer, testRoomId);
+        const seen: string[] = [];
+        observer.onAny((_event, ...args) => { seen.push(JSON.stringify(args)); });
+
+        const room = await joinRoom(client, testRoomId);
+        const { r, c } = findCell(room.currentGrid, (value) => value === 0);
+        const clientId = client.id!;
+        client.emit('select-cell', { r, c });
+        client.emit('send-emote', EMOTES[0]);
+        client.emit('toggle-note', { r, c, v: 1 });
+        await flushSocketEvents(client);
+        const closed = waitForServerDisconnect(client);
+        client.disconnect();
+        await closed;
+        await flushSocketEvents(observer);
+
+        expect(seen.length).toBeGreaterThan(0);
+        expect(seen.join()).not.toContain(clientId);
+      } finally {
+        observer.disconnect();
+        client.disconnect();
       }
     });
 

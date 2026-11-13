@@ -3,12 +3,12 @@ import { Server, Socket, DefaultEventsMap } from "socket.io";
 import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
-import { createRateLimiter } from "./rateLimiter";
+import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
 import type { RoomState } from "../rooms/roomStore";
 
-type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
-type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
+export type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
+export type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 
 export const rooms = new RoomStore();
 
@@ -47,10 +47,10 @@ const aliasOf = (room: RoomState, playerId: string): string => {
 /** Per socket, all events together: far above what a player can do, low enough to stop a flood. */
 export const eventLimit = { max: 40, windowMs: 1000 };
 
-/** Per socket: rooms it can create. A room costs memory and a board costs CPU, so they cannot be opened in bulk. Joining a room that exists is free. */
+/** Per address (per socket where the address is not known): rooms that can be created. A room costs memory and a board costs CPU, so they cannot be opened in bulk, and opening a new connection does not start over. Joining a room that exists is free. */
 export const roomCreationLimit = { max: 5, windowMs: 10 * 60 * 1000 };
 
-/** Per socket: restarts of the game, each one generates a board. A few per session is what a player does. */
+/** Per address (per socket where the address is not known): restarts of the game, each one generates a board. A few per session is what a player does. */
 export const restartLimit = { max: 6, windowMs: 60 * 1000 };
 
 /** All sockets together: boards generated per second. Generating one blocks the event loop for every room, so this is the safety net behind the limits above. */
@@ -108,12 +108,13 @@ const resolvePlayerId = (socket: GameSocket): string => {
 
 export const setupSocketHandlers = (io: GameServer) => {
   const allowBoardGeneration = createRateLimiter(boardGenerationLimit.max, boardGenerationLimit.windowMs);
+  const allowRoomCreation = createKeyedRateLimiter(roomCreationLimit.max, roomCreationLimit.windowMs);
+  const allowRestart = createKeyedRateLimiter(restartLimit.max, restartLimit.windowMs);
 
   io.on("connection", (socket: GameSocket) => {
     socket.data.playerId = resolvePlayerId(socket);
     const allowEvent = createRateLimiter(eventLimit.max, eventLimit.windowMs);
-    const allowRoomCreation = createRateLimiter(roomCreationLimit.max, roomCreationLimit.windowMs);
-    const allowRestart = createRateLimiter(restartLimit.max, restartLimit.windowMs);
+    const budgetKey = () => socket.data.address ?? socket.id;
 
     socket.on("join-room", safeHandler(joinRoomArgsSchema, (roomId, difficulty) => {
       const existingRoom = rooms.get(roomId);
@@ -123,8 +124,8 @@ export const setupSocketHandlers = (io: GameServer) => {
         socket.emit("join-error", "server-full");
         return;
       }
-      // Creating a room generates a board: both the budget of this socket and the one of the server must allow it.
-      if (!existingRoom && !(allowRoomCreation() && allowBoardGeneration())) {
+      // Creating a room generates a board: both the budget of this address and the one of the server must allow it.
+      if (!existingRoom && !(allowRoomCreation(budgetKey()) && allowBoardGeneration())) {
         socket.emit("join-error", "too-fast");
         return;
       }
@@ -244,7 +245,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       const { roomId, room } = current;
 
       // Dropped without an answer: an error screen here would replace the game of everyone who is playing.
-      if (!allowRestart() || !allowBoardGeneration()) return;
+      if (!allowRestart(budgetKey()) || !allowBoardGeneration()) return;
 
       const board = generateSudoku(difficulty);
 

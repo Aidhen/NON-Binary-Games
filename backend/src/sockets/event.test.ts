@@ -4,6 +4,8 @@ import type { AddressInfo } from 'node:net';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
 import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
+import { applyConnectionLimits } from './connectionLimits';
+import type { AddressOf } from './connectionLimits';
 import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM } from '@nbg/shared';
 import type { JoinError } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
@@ -755,58 +757,34 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     });
 
-    it('limits how many rooms a socket can create, but not how many it can join', async () => {
-      // The limit is read when a socket connects.
-      roomCreationLimit.max = 2;
-      const [creator, other] = await connectPlayers(2, 'budget');
+    type Budgets = { roomCreation?: number; restart?: number; boardGeneration?: number };
 
-      try {
-        await expect(joinOutcome(creator, 'budget-a')).resolves.toBe('joined');
-        await expect(joinOutcome(creator, 'budget-b')).resolves.toBe('joined');
+    // These budgets are read when a server is set up, so each of these tests starts a server of its own.
+    const withServer = async (
+      budgets: Budgets,
+      run: (connect: (auth?: Record<string, unknown>) => Promise<TestClientSocket>) => Promise<void>,
+      addressOf?: AddressOf,
+    ) => {
+      roomCreationLimit.max = budgets.roomCreation ?? Number.POSITIVE_INFINITY;
+      restartLimit.max = budgets.restart ?? Number.POSITIVE_INFINITY;
+      boardGenerationLimit.max = budgets.boardGeneration ?? Number.POSITIVE_INFINITY;
 
-        await expect(joinOutcome(creator, 'budget-c')).resolves.toBe('too-fast');
-        expect(rooms.has('budget-c')).toBe(false);
-        expect(getServerSocket(creator).data.roomId).toBe('budget-b');
-
-        await expect(joinOutcome(other, 'budget-o')).resolves.toBe('joined');
-        await expect(joinOutcome(creator, 'budget-o')).resolves.toBe('joined');
-      } finally {
-        creator.disconnect();
-        other.disconnect();
-      }
-    });
-
-    it('limits how many times a socket can restart the game', async () => {
-      restartLimit.max = 2;
-      const player = await connectTestClient();
-
-      try {
-        await joinRoom(player, 'restart-budget');
-        const restarted = vi.fn();
-        player.on('game-started', restarted);
-
-        for (let i = 0; i < 5; i++) player.emit('restart-game', 'easy');
-        await flushSocketEvents(player);
-
-        expect(restarted).toHaveBeenCalledTimes(2);
-      } finally {
-        player.disconnect();
-      }
-    });
-
-    // The limit shared by all the sockets of a server is read when the server is set up, so these tests start their own.
-    const withBoardLimit = async (max: number, run: (connect: () => Promise<TestClientSocket>) => Promise<void>) => {
-      boardGenerationLimit.max = max;
       const httpServer = createServer();
       const otherIo = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
+      if (addressOf) applyConnectionLimits(otherIo, addressOf);
       setupSocketHandlers(otherIo);
+      // Same synchronisation event as the main test server, for flushSocketEvents.
+      otherIo.on('connection', (socket) => { (socket as any).on('__test-barrier', (ack: () => void) => ack()); });
+
+      roomCreationLimit.max = Number.POSITIVE_INFINITY;
+      restartLimit.max = Number.POSITIVE_INFINITY;
       boardGenerationLimit.max = Number.POSITIVE_INFINITY;
       await new Promise<void>((resolve) => { httpServer.listen(0, resolve); });
       const url = `http://127.0.0.1:${(httpServer.address() as AddressInfo).port}`;
 
       const sockets: TestClientSocket[] = [];
-      const connect = async () => {
-        const socket = Client(url) as TestClientSocket;
+      const connect = async (auth: Record<string, unknown> = {}) => {
+        const socket = Client(url, { auth }) as TestClientSocket;
         sockets.push(socket);
         clients.add(socket);
         await new Promise<void>((resolve) => { socket.once('connect', resolve); });
@@ -821,8 +799,54 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     };
 
+    it('limits how many rooms a socket can create, but not how many it can join', async () => {
+      await withServer({ roomCreation: 2 }, async (connect) => {
+        const [creator, other] = [await connect(), await connect()];
+
+        await expect(joinOutcome(creator, 'budget-a')).resolves.toBe('joined');
+        await expect(joinOutcome(creator, 'budget-b')).resolves.toBe('joined');
+
+        await expect(joinOutcome(creator, 'budget-c')).resolves.toBe('too-fast');
+        expect(rooms.has('budget-c')).toBe(false);
+        expect(rooms.get('budget-b')!.players.has(creator.id!)).toBe(true);
+
+        await expect(joinOutcome(other, 'budget-o')).resolves.toBe('joined');
+        await expect(joinOutcome(creator, 'budget-o')).resolves.toBe('joined');
+      });
+    });
+
+    it('counts the rooms created from one address together, also after reconnecting', async () => {
+      const addressOf: AddressOf = (socket) => socket.handshake.auth.address as string;
+
+      await withServer({ roomCreation: 1 }, async (connect) => {
+        const first = await connect({ address: 'address-x' });
+        await expect(joinOutcome(first, 'address-a')).resolves.toBe('joined');
+        first.disconnect();
+
+        const again = await connect({ address: 'address-x' });
+        await expect(joinOutcome(again, 'address-b')).resolves.toBe('too-fast');
+
+        const elsewhere = await connect({ address: 'address-y' });
+        await expect(joinOutcome(elsewhere, 'address-c')).resolves.toBe('joined');
+      }, addressOf);
+    });
+
+    it('limits how many times a socket can restart the game', async () => {
+      await withServer({ restart: 2 }, async (connect) => {
+        const player = await connect();
+        await joinOutcome(player, 'restart-budget');
+        const restarted = vi.fn();
+        player.on('game-started', restarted);
+
+        for (let i = 0; i < 5; i++) player.emit('restart-game', 'easy');
+        await flushSocketEvents(player);
+
+        expect(restarted).toHaveBeenCalledTimes(2);
+      });
+    });
+
     it('limits the boards generated for all the sockets together', async () => {
-      await withBoardLimit(2, async (connect) => {
+      await withServer({ boardGeneration: 2 }, async (connect) => {
         const [first, second, third] = [await connect(), await connect(), await connect()];
 
         await expect(joinOutcome(first, 'global-a')).resolves.toBe('joined');
@@ -833,9 +857,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('does not spend the budget of the server on a room the socket may not create', async () => {
-      roomCreationLimit.max = 1;
-
-      await withBoardLimit(2, async (connect) => {
+      await withServer({ roomCreation: 1, boardGeneration: 2 }, async (connect) => {
         const [first, second, third] = [await connect(), await connect(), await connect()];
 
         await expect(joinOutcome(first, 'spent-a')).resolves.toBe('joined');
@@ -848,23 +870,20 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('does not count the restarts of a socket that is not in a room', async () => {
-      restartLimit.max = 1;
-      const player = await connectTestClient();
+      await withServer({ restart: 1 }, async (connect) => {
+        const player = await connect();
 
-      try {
         for (let i = 0; i < 3; i++) player.emit('restart-game', 'easy');
         await flushSocketEvents(player);
 
-        await joinRoom(player, 'outsider-restart');
+        await joinOutcome(player, 'outsider-restart');
         const restarted = vi.fn();
         player.on('game-started', restarted);
         player.emit('restart-game', 'easy');
         await flushSocketEvents(player);
 
         expect(restarted).toHaveBeenCalledTimes(1);
-      } finally {
-        player.disconnect();
-      }
+      });
     });
 
     it('ships finite limits', () => {

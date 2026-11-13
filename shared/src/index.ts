@@ -55,6 +55,8 @@ export interface SocketData {
    * for every tab of the player. It cannot be used to recognise the player in another room, or to act as them.
    */
   alias?: string;
+  /** Where the connection comes from, for the limits per address. Kept in memory only: never sent, never logged. */
+  address?: string;
   /** Timestamp (ms) of the last emote accepted from this socket, for the cooldown. */
   lastEmoteAt?: number;
 }

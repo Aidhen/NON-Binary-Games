@@ -59,11 +59,24 @@ In a cloud session where the Docker daemon is not available, run the same npm co
 - One branch per feature or fix, from `main`: `feat/...`, `fix/...`, `chore/...`, `sec/...`.
 - Conventional commit subjects (`feat:`, `fix:`, `chore:`, `test:`, `docs:`).
 - PR descriptions use these sections: Summary, Problem, Changes, Breaking change, Testing. Short for small changes. Plain professional wording.
+- A PR that resolves an issue says so in its Summary with `Fixes #N`, so the issue closes on merge. One PR per issue when possible.
 - No attribution lines: no `Co-Authored-By` trailer, no session link, no "generated with" footer in commits or PRs.
+
+## Issues
+
+GitHub Issues are the backlog. Nothing that needs doing lives only in a chat or in an agent file.
+
+- **One issue per problem.** Title that says what is wrong or what is wanted. Body: where (file, event, screen), why it matters, and what "done" means as a short checklist.
+- **Labels:** one type (`bug`, `enhancement`, `security`, `infra`, `documentation`) and one priority (`priority: high`, `priority: medium`, `priority: low`).
+- **Work starts from an issue.** When the owner says "work on #N", read the issue first. If the work has no issue yet and is more than a small fix, propose one.
+- **Things noticed along the way** that are outside the current change are not fixed on the spot: they are listed at the end of the report as proposed issues (title, labels, two lines of body).
+- **Issues are created only after the owner agrees** to the proposed list. Check for an existing issue on the same problem first.
+- **Exploitable vulnerabilities never go in a public issue**, PR, commit message or file of this public repository until they are fixed. `secops` writes them up privately for the owner (see its instructions).
+- In cloud sessions the `gh issue` and `gh pr` subcommands do not work: use the REST API through `gh api repos/Aidhen/NON-Binary-Games/...`.
 
 ## Agents
 
 - `fullstack` builds features and fixes across the three workspaces.
 - `secops` reviews every change before it becomes a PR and owns Docker, CI, dependencies and hosting configuration.
 
-Default flow for a feature: short plan agreed with the owner, `fullstack` implements with tests, `secops` reviews the diff, `fullstack` addresses blocking findings, then the owner decides about commit and PR.
+Default flow: the owner picks an issue, short plan agreed with the owner, `fullstack` implements with tests, `secops` reviews the diff, `fullstack` addresses blocking findings, remaining findings become proposed issues, then the owner decides about commit and PR.

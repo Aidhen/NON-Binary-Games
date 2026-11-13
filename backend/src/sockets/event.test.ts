@@ -1311,6 +1311,28 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     });
 
+    it('keeps the rooms apart from the private room every socket has', async () => {
+      const first = await connectTestClient();
+      const second = await connectTestClient();
+
+      try {
+        await joinRoom(first, 'separate-room');
+        const received = vi.fn();
+        first.on('game-started', received);
+
+        // The id of a room is chosen by the client: this one is the id of the other socket.
+        await joinRoom(second, first.id!);
+        second.emit('restart-game', 'easy');
+        await flushSocketEvents(second);
+        await flushSocketEvents(first);
+
+        expect(received).not.toHaveBeenCalled();
+      } finally {
+        first.disconnect();
+        second.disconnect();
+      }
+    });
+
     it('removes the player from the previous room when joining another one', async () => {
       const mover = await connectTestClient();
       const stayer = await connectTestClient();

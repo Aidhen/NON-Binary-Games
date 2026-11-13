@@ -12,6 +12,12 @@ type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEven
 
 export const rooms = new RoomStore();
 
+/**
+ * The name of a room inside Socket.IO. Every socket is already in a Socket.IO room named after its own id,
+ * and a client picks the room id: without a prefix it could name the private room of another socket.
+ */
+const channelOf = (roomId: string) => `room:${roomId}`;
+
 /** Tabs (sockets) one player can have open in the same room. */
 export const MAX_SOCKETS_PER_PLAYER = 3;
 
@@ -61,7 +67,7 @@ const leaveCurrentRoom = (socket: GameSocket) => {
   const { playerId, alias } = socket.data;
   socket.data.roomId = undefined;
   socket.data.alias = undefined;
-  void socket.leave(roomId);
+  void socket.leave(channelOf(roomId));
 
   const room = rooms.get(roomId);
   if (!room) return;
@@ -71,7 +77,7 @@ const leaveCurrentRoom = (socket: GameSocket) => {
 
   if (!sockets?.size) {
     room.players.delete(playerId);
-    if (alias) socket.to(roomId).emit("player-disconnected", alias);
+    if (alias) socket.to(channelOf(roomId)).emit("player-disconnected", alias);
   }
 
   if (room.players.size === 0) {
@@ -136,7 +142,7 @@ export const setupSocketHandlers = (io: GameServer) => {
         leaveCurrentRoom(socket);
       }
 
-      void socket.join(roomId);
+      void socket.join(channelOf(roomId));
       socket.data.roomId = roomId;
 
       let room = rooms.get(roomId);
@@ -206,13 +212,13 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       room.currentGrid[r][c] = v;
       room.played = true;
-      socket.to(roomId).emit("cell-updated", { r, c, v });
+      socket.to(channelOf(roomId)).emit("cell-updated", { r, c, v });
       acknowledge?.({ ok: true });
 
       const totalCells = size * size;
       if (room.filledCells === totalCells) {
         if (checkWinCondition(room.currentGrid, room.board.solution)) {
-          io.to(roomId).emit("game-won");
+          io.to(channelOf(roomId)).emit("game-won");
         }
       }
     }, allowEvent));
@@ -225,7 +231,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       const size = room.board.size;
       if ((r !== null && r >= size) || (c !== null && c >= size)) return;
 
-      socket.to(roomId).emit("player-selected-cell", { alias, r, c });
+      socket.to(channelOf(roomId)).emit("player-selected-cell", { alias, r, c });
     }, allowEvent));
 
     socket.on("disconnect", () => {
@@ -249,7 +255,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       room.filledCells = countInitialFilledCells(board.initial);
       room.notesGrid = {};
 
-      io.to(roomId).emit("game-started", {
+      io.to(channelOf(roomId)).emit("game-started", {
         board: room.board,
         difficulty: room.difficulty,
         currentGrid: room.currentGrid,
@@ -268,7 +274,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (lastEmoteAt !== undefined && now - lastEmoteAt < EMOTE_COOLDOWN_MS) return;
 
       socket.data.lastEmoteAt = now;
-      socket.to(current.roomId).emit("emote-received", { alias: current.alias, emote });
+      socket.to(channelOf(current.roomId)).emit("emote-received", { alias: current.alias, emote });
     }, allowEvent));
 
     socket.on("toggle-note", safeHandler(toggleNoteArgsSchema, ({ r, c, v }) => {
@@ -300,7 +306,7 @@ export const setupSocketHandlers = (io: GameServer) => {
         assignedAlias = alias;
       }
 
-      io.to(roomId).emit("note-toggled", { r, c, v, alias: assignedAlias });
+      io.to(channelOf(roomId)).emit("note-toggled", { r, c, v, alias: assignedAlias });
     }, allowEvent));
   });
 };

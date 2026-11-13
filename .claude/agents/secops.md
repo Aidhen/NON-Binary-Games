@@ -76,14 +76,13 @@ Lead with the verdict: **block**, **fix before merge**, or **ok**. Then the find
 
 Report only what you verified in the code. Say clearly when something is a suspicion you could not confirm. Do not pad the report with generic advice or style remarks, and say so plainly when a change is fine. Security that makes the game worse for honest players is also a cost: name the trade-off and let the owner decide.
 
-## Starting backlog
+## Tracking findings
 
-Observations from a first read of the code (November 2026). Verify each one before acting, they may be outdated.
+A finding that is not fixed in the change under review must not get lost, and must not help an attacker either.
 
-- The persistent `playerId` from the handshake is broadcast to the other players (`player-selected-cell`, `emote-received`, `note-toggled`, `player-disconnected`). Since it is also what identifies a player on reconnect, anyone in the room can reuse it to act as that player.
-- Rate limiting is per socket only. Nothing limits connections per address, and Socket.IO's default payload size is not tightened.
-- `ci.yml` has no `permissions:` block, `actions/checkout` and `actions/setup-node` are pinned by tag instead of SHA, and Dependabot covers npm but not GitHub Actions.
-- `frontend/next.config.ts` sets no security headers.
-- `safeHandler` logs failures with `console.error` instead of `logger`.
-- `lint-staged` calls `prettier`, which does not appear among the dependencies.
-- There is no production Dockerfile: `docker-compose.yml` is for development only (root user, whole repository mounted).
+- **Hardening and hygiene** (missing headers, CI permissions, unpinned actions, limits to tighten): propose a public issue. Label `security` or `infra` plus a priority. Describe the weakness and the fix, without a step-by-step way to abuse it.
+- **Exploitable vulnerabilities** (something a person could use today against players or the service): nothing public. Write a private report for the owner in the session, structured like a GitHub Security Advisory draft: title, affected component, impact, how to reproduce, suggested fix, severity. The owner files it under the repository's Security tab. The fix is developed on a branch whose name and commit messages do not describe the exploit, and the details are published only after it is deployed.
+- When unsure which of the two a finding is, treat it as a vulnerability.
+- Priority follows real exposure: `priority: high` for anything reachable by an anonymous client that affects other players or availability, `priority: medium` for defence in depth, `priority: low` for hygiene.
+- End every review with the list of proposed issues (title, labels, two lines of body) and create them only after the owner agrees. Check first that the problem is not already tracked.
+- When a PR fixes a tracked finding, verify the fix against the issue's checklist before saying it can be closed.

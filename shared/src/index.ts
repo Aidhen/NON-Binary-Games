@@ -63,6 +63,4 @@ export interface SocketData {
   address?: string;
   /** Timestamp (ms) of the last emote accepted from this socket, for the cooldown. */
   lastEmoteAt?: number;
-  /** Timestamp (ms) of the last request to change color from this socket, for the cooldown. */
-  lastColorAt?: number;
 }

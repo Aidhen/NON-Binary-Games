@@ -4,6 +4,8 @@ import type { DifficultyLevel, NotesGrid, PlayerAnimal, PlayerColor, SudokuBoard
 export interface RoomProfile {
   animal: PlayerAnimal;
   color: PlayerColor;
+  /** Timestamp (ms) of the last request to change color from this player, for the cooldown. */
+  lastColorAt?: number;
 }
 
 export interface RoomState {

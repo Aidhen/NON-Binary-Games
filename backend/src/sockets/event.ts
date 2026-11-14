@@ -182,13 +182,16 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       socket.data.alias = aliasOf(room, socket.data.playerId);
       const sockets = room.players.get(socket.data.playerId) ?? new Set<string>();
+      // A second tab, or a join that is repeated, changes nothing for the others: they do not need the list again.
+      const isNewPlayer = sockets.size === 0;
       sockets.add(socket.id);
       room.players.set(socket.data.playerId, sockets);
 
       // Before the game starts, so that the player knows who they are as soon as the board is there.
       assignProfile(room, socket.data.playerId);
       socket.emit("joined-as", socket.data.alias);
-      io.to(channelOf(roomId)).emit("players-updated", { players: snapshotPlayers(room) });
+      if (isNewPlayer) io.to(channelOf(roomId)).emit("players-updated", { players: snapshotPlayers(room) });
+      else socket.emit("players-updated", { players: snapshotPlayers(room) });
 
       socket.emit("game-started", {
         board: room.board,
@@ -309,13 +312,15 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (!current) return;
       const { roomId, room } = current;
 
-      const now = Date.now();
-      const lastColorAt = socket.data.lastColorAt;
-      if (lastColorAt !== undefined && now - lastColorAt < colorLimit.cooldownMs) return;
-      socket.data.lastColorAt = now;
-
       const profile = room.profiles.get(socket.data.playerId);
-      if (!profile || profile.color === color) return;
+      if (!profile) return;
+
+      // Kept on the player, not on the socket: another tab does not get a cooldown of its own.
+      const now = Date.now();
+      if (profile.lastColorAt !== undefined && now - profile.lastColorAt < colorLimit.cooldownMs) return;
+      profile.lastColorAt = now;
+
+      if (profile.color === color) return;
 
       // Somebody else has it: the player who asked is shown the real state again, the others have nothing to learn.
       if (!colorIsFree(room, socket.data.playerId, color)) {

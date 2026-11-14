@@ -33,6 +33,7 @@ export const assignProfile = (room: RoomState, playerId: string): RoomProfile =>
   const freeAnimals = PLAYER_ANIMALS.filter((animal) => !animals.has(animal));
 
   const profile: RoomProfile = {
+    ...kept,
     color: kept && !colors.has(kept.color) ? kept.color : pickOne(freeColors.length ? freeColors : PLAYER_COLORS),
     animal: kept && !animals.has(kept.animal) ? kept.animal : pickOne(freeAnimals.length ? freeAnimals : PLAYER_ANIMALS),
   };

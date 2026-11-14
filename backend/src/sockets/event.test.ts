@@ -1745,6 +1745,66 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     });
 
+    it('counts the cooldown for the player, not for each tab: a second tab does not get its own', async () => {
+      colorLimit.cooldownMs = 300;
+      const now = 1_000_000;
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+      const tab = await connectTestClient('profile-cooldown-abc123');
+      const otherTab = await connectTestClient('profile-cooldown-abc123');
+      const other = await connectTestClient();
+      await joinRoom(tab);
+      await joinRoom(otherTab);
+      await joinRoom(other);
+      const profile = rooms.get(testRoomId)!.profiles.get('profile-cooldown-abc123')!;
+      const free = PLAYER_COLORS.filter((color) => color !== profile.color && color !== profileOf(other).color);
+
+      try {
+        tab.emit('set-color', free[0]);
+        await flushSocketEvents(tab);
+        otherTab.emit('set-color', free[1]);
+        await flushSocketEvents(otherTab);
+
+        expect(profile.color).toBe(free[0]);
+      } finally {
+        vi.restoreAllMocks();
+      }
+    });
+
+    it('tells only the one who joins again when a repeated join changes nothing in the room', async () => {
+      const observer = await connectTestClient();
+      const player = await connectTestClient();
+      await joinRoom(observer);
+      await joinRoom(player);
+      await flushSocketEvents(observer);
+      const seenByObserver = collectLists(observer);
+      const seenByPlayer = collectLists(player);
+
+      for (let i = 0; i < 5; i++) player.emit('join-room', testRoomId, 'easy');
+      await flushSocketEvents(player);
+      await flushSocketEvents(observer);
+
+      expect(seenByObserver).toEqual([]);
+      expect(seenByPlayer).toHaveLength(5);
+    });
+
+    it('does not tell the room again when a player opens another tab', async () => {
+      const observer = await connectTestClient();
+      const tab = await connectTestClient('profile-second-tab-abc123');
+      const otherTab = await connectTestClient('profile-second-tab-abc123');
+      await joinRoom(observer);
+      await joinRoom(tab);
+      await flushSocketEvents(observer);
+      const seenByObserver = collectLists(observer);
+      const seenByNewTab = collectLists(otherTab);
+
+      await joinRoom(otherTab);
+      await flushSocketEvents(observer);
+
+      expect(seenByObserver).toEqual([]);
+      expect(seenByNewTab).toHaveLength(1);
+      expect(seenByNewTab[0]).toHaveLength(2);
+    });
+
     it('is dropped like any other event when a socket sends too many', async () => {
       eventLimit.max = 3;
       const flooder = await connectTestClient();

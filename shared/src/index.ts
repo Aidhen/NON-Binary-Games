@@ -3,7 +3,6 @@ import type { Emote } from './emotes';
 import type { CellUpdatePayload, CellUpdateResult, ToggleNotePayload, SelectCellPayload } from './schemas';
 
 export * from './games/sudoku/index';
-export * from './gameLogic';
 export * from './schemas';
 export * from './emotes';
 
@@ -21,8 +20,6 @@ export type NotesGrid = Record<string, Record<number, string>>;
 export interface ServerToClientEvents {
   "game-started": (payload: { board: SudokuBoard; currentGrid: number[][]; notesGrid: NotesGrid; difficulty: DifficultyLevel }) => void;
   "cell-updated": (data: { r: number; c: number; v: number }) => void;
-  "move-rejected": (data: { r: number; c: number; reason: string }) => void;
-  "error": (message: string) => void;
   "player-selected-cell": (payload: { alias: string, r: number | null, c: number | null }) => void;
   "player-disconnected": (alias: string) => void;
   "join-error": (reason: JoinError) => void;

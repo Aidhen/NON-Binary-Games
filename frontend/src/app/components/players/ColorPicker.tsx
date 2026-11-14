@@ -5,7 +5,7 @@ import { PLAYER_COLORS } from '@nbg/shared';
 import type { PlayerColor, PlayerProfile } from '@nbg/shared';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { PLAYER_COLOR_STYLES } from '@/lib/playerPalette';
-import { PLAYER_ANIMAL_EMOJI, playerName } from '@/lib/playerNames';
+import { animalEmoji, playerName } from '@/lib/playerNames';
 import { cn } from '@/lib/utils';
 
 interface ColorPickerProps {
@@ -61,7 +61,8 @@ export function ColorPicker({ id, current, others, onPick, onClose }: ColorPicke
       role="radiogroup"
       aria-label={t('players.chooseColor')}
       onKeyDown={onKeyDown}
-      className="flex flex-wrap items-center justify-center gap-3 rounded-xl bg-[var(--numpad-background)] p-3"
+      // On a surface of the cells, where the contrast of every color is checked in every theme.
+      className="flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[var(--grid-border-inner)] bg-[var(--cell-background)] p-3"
     >
       {PLAYER_COLORS.map((color) => {
         const owner = takenBy(color);
@@ -86,13 +87,13 @@ export function ColorPicker({ id, current, others, onPick, onClose }: ColorPicke
             className={cn(
               'grid h-9 w-9 place-items-center rounded-full text-base font-black transition-transform',
               PLAYER_COLOR_STYLES[color].swatch,
-              'ring-offset-2 ring-offset-[var(--numpad-background)]',
+              'ring-offset-2 ring-offset-[var(--cell-background)]',
               isCurrent && ['ring-2', PLAYER_COLOR_STYLES[color].ring],
               owner ? 'cursor-not-allowed opacity-40' : 'hover:scale-110 active:scale-95',
             )}
           >
             {owner ? (
-              <span aria-hidden="true" className="text-sm">{PLAYER_ANIMAL_EMOJI[owner.animal]}</span>
+              <span aria-hidden="true" className="text-sm">{animalEmoji(owner.animal)}</span>
             ) : isCurrent ? (
               <span aria-hidden="true" className="text-[var(--bg)]">✓</span>
             ) : null}

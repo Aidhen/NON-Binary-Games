@@ -27,6 +27,9 @@ export const PLAYER_COLOR_STYLES: Record<PlayerColor, PlayerColorStyle> = {
   pink: { ring: 'ring-[var(--player-pink)]', tint: 'bg-[var(--player-pink)]/10', swatch: 'bg-[var(--player-pink)]', border: 'border-[var(--player-pink)]', text: 'text-[var(--player-pink-text)]' },
 };
 
+/** The style of a color, or the one of the theme for a color this page does not know (a newer server than the page). */
+export const styleOfColor = (color: string): PlayerColorStyle => (Object.hasOwn(PLAYER_COLOR_STYLES, color) ? PLAYER_COLOR_STYLES[color as PlayerColor] : UNKNOWN_PLAYER_STYLE);
+
 /** For a note or a cursor of somebody who is not in the list (they left before you came): the color of the theme. */
 export const UNKNOWN_PLAYER_STYLE: PlayerColorStyle = {
   ring: 'ring-[var(--number-player)]',

@@ -32,6 +32,13 @@ const ownChip = () => screen.getByRole('button', { name: 'Red Panda (you)' });
 const swatch = (name: RegExp) => screen.getByRole('radio', { name });
 
 describe('PlayerBar', () => {
+  it('shows a paw for an animal it does not know', () => {
+    setup({ players: [panda, { ...fox, animal: 'unicorn' as PlayerProfile['animal'] }] });
+
+    expect(screen.getByText('🐾')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show where Someone is playing' })).toBeInTheDocument();
+  });
+
   it('lists the players in the room, each with the emoji of the animal and the generated name', () => {
     setup();
 
@@ -171,6 +178,24 @@ describe('PlayerBar', () => {
     });
   });
 
+  it('does not break on a color it does not know, which a newer server could send', () => {
+    setup({ players: [panda, { ...fox, color: 'gold' as PlayerProfile['color'] }] });
+
+    fireEvent.click(ownChip());
+
+    expect(screen.getByRole('button', { name: 'Show where Fox is playing' })).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+  });
+
+  it('puts the swatches on a surface where every color can be seen in every theme', () => {
+    setup();
+
+    fireEvent.click(ownChip());
+
+    expect(screen.getByRole('radiogroup')).toHaveClass('bg-[var(--cell-background)]');
+    expect(screen.getByRole('radiogroup')).not.toHaveClass('bg-[var(--numpad-background)]');
+  });
+
   describe('the other players', () => {
     it('can be pointed out on the board by clicking their chip, without opening the picker', () => {
       const { onHighlight } = setup();
@@ -204,6 +229,17 @@ describe('PlayerBar', () => {
 
       update({ players: [panda, owl] });
       expect(screen.getByRole('status')).toHaveTextContent('Blue Fox left the room');
+    });
+
+    it('say it again when the same player comes back', () => {
+      const { update } = setup();
+
+      update({ players: [panda, fox, owl] });
+      expect(screen.getByRole('status')).toHaveTextContent('Green Owl joined the room');
+      update({ players: [panda, fox] });
+      expect(screen.getByRole('status')).toHaveTextContent('Green Owl left the room');
+      update({ players: [panda, fox, owl] });
+      expect(screen.getByRole('status')).toHaveTextContent('Green Owl joined the room');
     });
 
     it('do not announce the player to themselves', () => {

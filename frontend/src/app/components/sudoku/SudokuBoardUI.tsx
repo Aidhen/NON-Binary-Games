@@ -4,7 +4,7 @@ import { NotesGrid, PlayerProfile, SudokuBoard } from '@nbg/shared';
 import { GameSettings } from './SudokuContainer';
 import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils';
-import { PLAYER_COLOR_STYLES, UNKNOWN_PLAYER_STYLE } from '@/lib/playerPalette';
+import { UNKNOWN_PLAYER_STYLE, styleOfColor } from '@/lib/playerPalette';
 
 interface SudokuBoardUIProps {
   board: SudokuBoard;
@@ -40,7 +40,7 @@ export function SudokuBoardUI({
 
   // A player who is not in the list (a note by somebody who left before you came) gets the color of the theme.
   // The list comes from the server and an alias is a key of it: only a key it really has counts.
-  const styleOf = (alias: string) => (Object.hasOwn(profiles, alias) ? PLAYER_COLOR_STYLES[profiles[alias].color] : UNKNOWN_PLAYER_STYLE);
+  const styleOf = (alias: string) => (Object.hasOwn(profiles, alias) ? styleOfColor(profiles[alias].color) : UNKNOWN_PLAYER_STYLE);
 
   const isCellInitial = (r: number, c: number) => board.initial[r][c] !== 0;
   const isCellSelected = (r: number, c: number) => selectedCell?.[0] === r && selectedCell?.[1] === c;

@@ -37,6 +37,7 @@ export const en = {
     highlight: "Show where {name} is playing",
     joined: "{name} joined the room",
     left: "{name} left the room",
+    someone: "Someone",
     nameFormat: "{color} {animal}",
     colors: {
       red: { m: "Red", f: "Red" },

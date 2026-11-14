@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PLAYER_COLORS } from '@nbg/shared';
-import { PLAYER_COLOR_STYLES } from './playerPalette';
+import { PLAYER_COLOR_STYLES, UNKNOWN_PLAYER_STYLE, styleOfColor } from './playerPalette';
 
 const css = readFileSync(path.resolve(import.meta.dirname, '../app/globals.css'), 'utf8');
 
@@ -74,3 +74,17 @@ describe('PLAYER_COLOR_STYLES', () => {
     }
   });
 });
+
+describe('styleOfColor', () => {
+  it.each(PLAYER_COLORS)('gives %s its own style', (color) => {
+    expect(styleOfColor(color)).toBe(PLAYER_COLOR_STYLES[color]);
+  });
+
+  it.each(['gold', '', 'RED', '__proto__', 'constructor', 'toString'])(
+    'gives the color of the theme to a color it does not know (%j), such as one from a newer server',
+    (color) => {
+      expect(styleOfColor(color)).toBe(UNKNOWN_PLAYER_STYLE);
+    },
+  );
+});
+

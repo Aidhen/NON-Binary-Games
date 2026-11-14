@@ -2,8 +2,8 @@
 import type { Ref } from 'react';
 import type { PlayerProfile } from '@nbg/shared';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
-import { PLAYER_COLOR_STYLES } from '@/lib/playerPalette';
-import { PLAYER_ANIMAL_EMOJI } from '@/lib/playerNames';
+import { styleOfColor } from '@/lib/playerPalette';
+import { animalEmoji } from '@/lib/playerNames';
 import { cn } from '@/lib/utils';
 
 interface PlayerChipProps {
@@ -27,7 +27,7 @@ interface PlayerChipProps {
  */
 export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, label, onClick, buttonRef }: PlayerChipProps) {
   const { t } = useTranslation();
-  const style = PLAYER_COLOR_STYLES[profile.color];
+  const style = styleOfColor(profile.color);
 
   return (
     <button
@@ -47,10 +47,10 @@ export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, lab
         isHighlighted && ['ring-4 motion-safe:animate-pulse', style.ring],
       )}
     >
-      <span aria-hidden="true" className="text-lg leading-none">{PLAYER_ANIMAL_EMOJI[profile.animal]}</span>
-      <span className="hidden sm:inline">{name}</span>
+      <span aria-hidden="true" className="text-lg leading-none">{animalEmoji(profile.animal)}</span>
+      <span>{name}</span>
       {isSelf && (
-        <span aria-hidden="true" className="hidden text-xs font-bold uppercase tracking-wider text-[var(--subtitle-text)] sm:inline">
+        <span aria-hidden="true" className="text-xs font-bold uppercase tracking-wider text-[var(--subtitle-text)]">
           {t('players.you')}
         </span>
       )}

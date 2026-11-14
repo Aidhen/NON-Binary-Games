@@ -3,7 +3,7 @@ import { PLAYER_ANIMALS, PLAYER_COLORS } from '@nbg/shared';
 import { en } from '@/locales/en';
 import { it as italian } from '@/locales/it';
 import type { Translations } from '@/locales/en';
-import { PLAYER_ANIMAL_EMOJI, playerName } from './playerNames';
+import { PLAYER_ANIMAL_EMOJI, animalEmoji, playerName } from './playerNames';
 
 /** Looks a path up in a dictionary the way the translation context does. */
 const translatorOf = (dictionary: Translations) => (path: string): string =>
@@ -36,6 +36,14 @@ describe('playerName', () => {
     }
   });
 
+  it('leaves the color out for a color it does not know, and names someone for an animal it does not know', () => {
+    expect(playerName(english, { animal: 'fox', color: 'gold' })).toBe('Fox');
+    expect(playerName(italiano, { animal: 'fox', color: 'gold' })).toBe('Volpe');
+    expect(playerName(english, { animal: 'unicorn', color: 'red' })).toBe('Someone');
+    expect(playerName(italiano, { animal: 'unicorn', color: 'red' })).toBe('Qualcuno');
+    expect(playerName(english, { animal: '__proto__', color: 'constructor' })).toBe('Someone');
+  });
+
   it('changes only the color word when the color changes, and only the animal word when the animal does', () => {
     expect(playerName(english, { animal: 'panda', color: 'blue' })).toBe('Blue Panda');
     expect(playerName(english, { animal: 'otter', color: 'blue' })).toBe('Blue Otter');
@@ -52,6 +60,27 @@ describe('the dictionaries of the players', () => {
       expect(Object.keys(dictionary.players.animals).sort()).toEqual([...PLAYER_ANIMALS].sort());
       expect(Object.keys(dictionary.players.colors).sort()).toEqual([...PLAYER_COLORS].sort());
     }
+  });
+});
+
+describe('the texts about a player', () => {
+  it.each([['English', en], ['Italian', italian]])('name the player in every one of them in %s', (_language, dictionary) => {
+    for (const text of [dictionary.players.joined, dictionary.players.left, dictionary.players.colorTaken, dictionary.players.highlight]) {
+      expect(text).toContain('{name}');
+    }
+  });
+
+  it('do not take a gender for the player in Italian: the name can be of an animal of either', () => {
+    expect(italian.players.joined).not.toMatch(/entrat|uscit/);
+    expect(italian.players.left).not.toMatch(/entrat|uscit/);
+  });
+});
+
+describe('animalEmoji', () => {
+  it('gives the emoji of an animal, and a paw for one it does not know', () => {
+    expect(animalEmoji('panda')).toBe('🐼');
+    expect(animalEmoji('unicorn')).toBe('🐾');
+    expect(animalEmoji('__proto__')).toBe('🐾');
   });
 });
 

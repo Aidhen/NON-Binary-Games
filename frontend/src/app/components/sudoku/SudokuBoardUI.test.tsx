@@ -287,6 +287,15 @@ describe('SudokuBoardUI', () => {
     expect(getCell(0, 1)).not.toHaveClass('ring-[var(--player-blue)]');
   });
 
+  it('draws a player with a color it does not know in the color of the theme, instead of failing', () => {
+    renderBoard({
+      othersSelections: { 'player-2': [0, 1] },
+      profiles: { 'player-2': { ...profiles['player-2'], color: 'gold' as PlayerProfile['color'] } },
+    });
+
+    expect(getCell(0, 1)).toHaveClass('ring-4', 'ring-[var(--number-player)]');
+  });
+
   it('follows a player who takes another color', () => {
     const props = createProps({ othersSelections: { 'player-2': [0, 1] } });
     const { rerender } = render(<SudokuBoardUI {...props} />);

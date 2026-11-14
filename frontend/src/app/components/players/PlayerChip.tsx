@@ -39,7 +39,7 @@ export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, lab
       aria-expanded={isSelf ? expanded : undefined}
       data-highlighted={isHighlighted || undefined}
       className={cn(
-        'flex items-center gap-2 whitespace-nowrap rounded-full border-2 px-2.5 py-1 text-sm font-bold',
+        'flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border-2 px-2.5 py-1 text-sm font-bold',
         'text-[var(--title-text)] transition-all duration-200',
         style.border,
         style.tint,

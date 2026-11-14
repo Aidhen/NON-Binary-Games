@@ -44,7 +44,7 @@ export default function RootLayout({
           <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem themes={['light', 'dark', 'retro', 'oled', 'non-binary']}>
             <header className="w-full p-4 sm:p-8 flex justify-between items-center gap-3 max-w-5xl mx-auto">
               <ThemeSelector />
-              <p className="font-display text-lg font-extrabold leading-none sm:text-xl">(non)BinaryGames</p>
+              <p className="min-w-0 truncate font-display text-base font-extrabold leading-none sm:text-xl">(non)BinaryGames</p>
               <LanguageSelector />
             </header>
             <main className="flex-grow flex flex-col items-center justify-center w-full">

@@ -295,6 +295,8 @@
   --box-lid: #fcf434;
   --box-lid-ink: #1a1a1a;
   --box-inside: #0d0d0d;
+  /* The accent is too close to the surfaces of this theme to be a focus ring: the yellow of the flag is not. */
+  --focus-ring: #fcf434;
   --box-soon-1: #9553cc;
   --box-soon-2: #ffffff;
   --box-soon-ink: #1a1a1a;
@@ -348,7 +350,7 @@ body::after {
 /* One focus ring for everything that can be focused. In the base layer, so that a component can still set its own. */
 @layer base {
   :focus-visible {
-    outline: 3px solid var(--accent);
+    outline: 3px solid var(--focus-ring, var(--accent));
     outline-offset: 3px;
   }
 }

@@ -1,4 +1,4 @@
-import type { DifficultyLevel, GameId, NotesGrid, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid, TakuzuBoard, TakuzuGrid } from "@nbg/shared";
+import type { DifficultyLevel, GameId, NotesGrid, FlowerGrid, FlowerMines, FlowerStatus, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid, TakuzuBoard, TakuzuGrid } from "@nbg/shared";
 
 /** How a player is shown to the others in one room: the animal of their name and their color. */
 export interface RoomProfile {
@@ -27,8 +27,29 @@ export interface TakuzuGame {
   filledCells: number;
 }
 
-/** A game played on a square grid of cells: it is what `cell-update` and `select-cell` work on. */
-export type GridGame = SudokuGame | TakuzuGame;
+/** The state of a Flower Field that a room is playing. */
+export interface FlowerFieldGame {
+  id: 'flower-field';
+  difficulty: DifficultyLevel;
+  size: number;
+  mineCount: number;
+  /** Opening a mine loses the game for the room. Off, the mine is only marked. It stays from one game of the room to the next. */
+  explosive: boolean;
+  /** Where the mines are. Laid out at the first cell that is opened, so that it is never a mine: null until then. */
+  mines: FlowerMines | null;
+  /** What the players see of each cell. */
+  grid: FlowerGrid;
+  /** Who put the flag on each cell, by alias, under the key `r-c`. At most one per cell. */
+  flags: Map<string, string>;
+  openedCells: number;
+  status: FlowerStatus;
+}
+
+/** A game where the players write a value in a cell: it is what `cell-update` works on. */
+export type ValueGridGame = SudokuGame | TakuzuGame;
+
+/** A game played on a square grid of cells: it is what `select-cell` and `restart-game` work on. */
+export type GridGame = ValueGridGame | FlowerFieldGame;
 
 /** The game a room has open. A new game adds its own state here, told apart by `id`. */
 export type RoomGame = GridGame;

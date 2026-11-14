@@ -43,8 +43,6 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
 
   const { t } = useTranslation();
   const { status, retry } = useConnectionStatus();
-  const [hasEntered, setHasEntered] = useState(false);
-  const enterGame = useCallback(() => setHasEntered(true), []);
   const { emotes, sendEmote, isCoolingDown } = useEmotes();
   // Before the effect that joins the room: the server answers the join with who is in it.
   const { self, players, profiles, setColor } = usePlayers(roomId);
@@ -276,8 +274,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     );
   }
 
-  if (!board || !playerGrid || !hasEntered) {
-    return <ServerLoader status={status} ready={!!board && !!playerGrid} onEnter={enterGame} onRetry={retry} />;
+  if (!board || !playerGrid) {
+    return <ServerLoader status={status} onRetry={retry} />;
   }
 
   return (

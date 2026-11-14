@@ -68,34 +68,10 @@ export const en = {
     wakingDetails: "To keep this game free and ad-free, it runs on a free hosting plan. The server goes to sleep after 15 minutes without visitors and takes about a minute to start again. Thanks for waiting!",
     failed: "We can't reach the server",
     failedDetails: "It is taking longer than usual. We keep trying in the background.",
-    retry: "Try again",
-    ready: "The server is ready!",
-    join: "Join the game"
+    retry: "Try again"
   },
   emotes: {
     title: "Reactions"
-  },
-  minigames: {
-    pick: "Pick a game",
-    garden: {
-      name: "Garden",
-      water: "Water",
-      plantSeed: "Plant a new seed",
-      flowers: "Flowers grown",
-      seed: "A tiny seed. Give it some water.",
-      sprout: "Something is sprouting!",
-      leaves: "Look at those leaves.",
-      bloom: "It bloomed! Take a moment to enjoy it."
-    },
-    blob: {
-      name: "Blob",
-      poke: "Poke the blob",
-      idle: "The blob is waiting. Poke it or send it a reaction!",
-      happy: "The blob is delighted!",
-      surprised: "Whoa!",
-      sad: "The blob is a bit sad.",
-      thinking: "The blob is thinking about it..."
-    }
   }
 };
 

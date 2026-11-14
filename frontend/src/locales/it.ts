@@ -31,6 +31,39 @@ export const it: Translations = {
     tooFast: "Sono state avviate troppe partite in poco tempo. Aspetta un attimo e riprova.",
     backHome: "Torna alla home"
   },
+  players: {
+    title: "Giocatori in questa stanza",
+    you: "tu",
+    chooseColor: "Scegli il tuo colore",
+    colorTaken: "Lo ha {name}",
+    highlight: "Mostra dove sta giocando {name}",
+    joined: "{name} è entrato nella stanza",
+    left: "{name} è uscito dalla stanza",
+    nameFormat: "{animal} {color}",
+    colors: {
+      red: { m: "Rosso", f: "Rossa" },
+      orange: { m: "Arancione", f: "Arancione" },
+      green: { m: "Verde", f: "Verde" },
+      teal: { m: "Turchese", f: "Turchese" },
+      blue: { m: "Blu", f: "Blu" },
+      purple: { m: "Viola", f: "Viola" },
+      pink: { m: "Rosa", f: "Rosa" }
+    },
+    animals: {
+      panda: { name: "Panda", gender: "m" },
+      fox: { name: "Volpe", gender: "f" },
+      otter: { name: "Lontra", gender: "f" },
+      owl: { name: "Gufo", gender: "m" },
+      frog: { name: "Rana", gender: "f" },
+      koala: { name: "Koala", gender: "m" },
+      hedgehog: { name: "Riccio", gender: "m" },
+      penguin: { name: "Pinguino", gender: "m" },
+      rabbit: { name: "Coniglio", gender: "m" },
+      turtle: { name: "Tartaruga", gender: "f" },
+      octopus: { name: "Polpo", gender: "m" },
+      dolphin: { name: "Delfino", gender: "m" }
+    }
+  },
   loader: {
     waking: "Il server si sta svegliando",
     wakingDetails: "Per tenere il gioco gratuito e senza pubblicità, gira su un hosting gratuito. Il server va a dormire dopo 15 minuti senza visitatori e ci mette circa un minuto a ripartire. Grazie per l'attesa!",

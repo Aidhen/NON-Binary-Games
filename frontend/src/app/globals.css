@@ -50,6 +50,21 @@
   --numpad-text: #0f172a;
   --numpad-hover: #e2e8f0;
   --numpad-active: #cbd5e1;
+  /* Colors of the players: the first of each pair is for rings and swatches (3:1 on every surface), the second for the digits of notes (4.5:1). */
+  --player-red: #dc2626;
+  --player-red-text: #b91c1c;
+  --player-orange: #c2410c;
+  --player-orange-text: #9a3412;
+  --player-green: #15803d;
+  --player-green-text: #166534;
+  --player-teal: #0f766e;
+  --player-teal-text: #115e59;
+  --player-blue: #2563eb;
+  --player-blue-text: #1d4ed8;
+  --player-purple: #9333ea;
+  --player-purple-text: #7e22ce;
+  --player-pink: #db2777;
+  --player-pink-text: #be185d;
 }
 
 /* Theme: DARK */
@@ -74,6 +89,21 @@
   --numpad-text: #f8fafc;
   --numpad-hover: #334155;
   --numpad-active: #475569;
+  /* Colors of the players: the first of each pair is for rings and swatches (3:1 on every surface), the second for the digits of notes (4.5:1). */
+  --player-red: #f87171;
+  --player-red-text: #fca5a5;
+  --player-orange: #f97316;
+  --player-orange-text: #fb923c;
+  --player-green: #22c55e;
+  --player-green-text: #22c55e;
+  --player-teal: #14b8a6;
+  --player-teal-text: #14b8a6;
+  --player-blue: #60a5fa;
+  --player-blue-text: #60a5fa;
+  --player-purple: #c084fc;
+  --player-purple-text: #c084fc;
+  --player-pink: #f472b6;
+  --player-pink-text: #f472b6;
 }
 
 /* Theme: RETRO */
@@ -98,6 +128,21 @@
   --numpad-text: #4a3c31;
   --numpad-hover: #d1bfae;
   --numpad-active: #b8ad9e;
+  /* Colors of the players: the first of each pair is for rings and swatches (3:1 on every surface), the second for the digits of notes (4.5:1). */
+  --player-red: #b91c1c;
+  --player-red-text: #991b1b;
+  --player-orange: #9a3412;
+  --player-orange-text: #9a3412;
+  --player-green: #166534;
+  --player-green-text: #166534;
+  --player-teal: #0f766e;
+  --player-teal-text: #115e59;
+  --player-blue: #1d4ed8;
+  --player-blue-text: #1e40af;
+  --player-purple: #7e22ce;
+  --player-purple-text: #7e22ce;
+  --player-pink: #be185d;
+  --player-pink-text: #9d174d;
 }
 
 /* Theme: OLED */
@@ -122,6 +167,21 @@
   --numpad-text: #ffffff;
   --numpad-hover: #1a1a1a;
   --numpad-active: #333333;
+  /* Colors of the players: the first of each pair is for rings and swatches (3:1 on every surface), the second for the digits of notes (4.5:1). */
+  --player-red: #ef4444;
+  --player-red-text: #f87171;
+  --player-orange: #f97316;
+  --player-orange-text: #f97316;
+  --player-green: #22c55e;
+  --player-green-text: #22c55e;
+  --player-teal: #14b8a6;
+  --player-teal-text: #14b8a6;
+  --player-blue: #3b82f6;
+  --player-blue-text: #60a5fa;
+  --player-purple: #c084fc;
+  --player-purple-text: #c084fc;
+  --player-pink: #ec4899;
+  --player-pink-text: #ec4899;
 }
 
 /* Theme: NON-BINARY */
@@ -147,6 +207,21 @@
   --numpad-text: #ffffff;
   --numpad-hover: #8347b5;
   --numpad-active: #6b3a94;
+  /* Colors of the players: the first of each pair is for rings and swatches (3:1 on every surface), the second for the digits of notes (4.5:1). */
+  --player-red: #f87171;
+  --player-red-text: #fca5a5;
+  --player-orange: #f97316;
+  --player-orange-text: #fb923c;
+  --player-green: #22c55e;
+  --player-green-text: #22c55e;
+  --player-teal: #14b8a6;
+  --player-teal-text: #14b8a6;
+  --player-blue: #60a5fa;
+  --player-blue-text: #60a5fa;
+  --player-purple: #c084fc;
+  --player-purple-text: #d8b4fe;
+  --player-pink: #f472b6;
+  --player-pink-text: #f9a8d4;
 }
 
 /* Mini game animations (used with Tailwind's motion-safe: variant) */

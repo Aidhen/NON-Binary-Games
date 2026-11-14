@@ -5,6 +5,7 @@ import { ServerLoader } from '../loader/ServerLoader';
 import { GAMES, findGame } from '../games/registry';
 import type { GameEntry } from '../games/types';
 import { Lobby } from './Lobby';
+import { RoomHeader } from './RoomHeader';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { joinErrorMessages } from '@/lib/joinErrors';
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
@@ -40,10 +41,21 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
     );
   }
 
-  if (!lobby) return <ServerLoader status={status} onRetry={retry} />;
-
-  if (lobby.game === null) {
-    return <Lobby games={games} players={players} self={self} votes={lobby.votes} onVote={vote} onPickColor={setColor} />;
+  // The table is there from the first moment, also while the server is still waking up: only the vote waits.
+  if (!lobby || lobby.game === null) {
+    return (
+      <Lobby
+        roomId={roomId}
+        games={games}
+        players={players}
+        self={self}
+        votes={lobby?.votes ?? null}
+        status={status}
+        onRetry={retry}
+        onVote={vote}
+        onPickColor={setColor}
+      />
+    );
   }
 
   const game = findGame(lobby.game, games);
@@ -54,8 +66,11 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
   }
 
   return (
-    <Suspense fallback={<ServerLoader status={status} onRetry={retry} />}>
-      <game.Game roomId={roomId} />
-    </Suspense>
+    <div className="flex w-full flex-col items-center">
+      <RoomHeader roomId={roomId} />
+      <Suspense fallback={<ServerLoader status={status} onRetry={retry} />}>
+        <game.Game roomId={roomId} />
+      </Suspense>
+    </div>
   );
 }

@@ -63,15 +63,27 @@ export const en = {
     }
   },
   lobby: {
-    title: "Choose the game",
-    hint: "Everybody picks one. The game opens when more than half of the room wants it.",
-    votes: "{count} of {total}",
+    yourRoom: "Your room",
+    invite: "Send the link to whoever you want at the table.",
+    title: "Pick a box",
+    hint: "Everybody picks one. A box opens when more than half of the room wants it.",
+    games: "Games",
+    open: "Open the box",
+    takeBack: "Take my vote back",
+    progress: "{count} of {total} want {game}",
+    votes: "{count} of {total} votes",
+    players: "{min}–{max} players",
+    playersExact: "{count} players",
+    connecting: "Setting the table…",
     soon: "Soon",
     unknownGame: "This room is playing a game this page does not know yet. Reload the page to get the latest version."
   },
   games: {
     sudoku: {
       title: "Sudoku"
+    },
+    mystery: {
+      title: "Mystery box"
     }
   },
   loader: {

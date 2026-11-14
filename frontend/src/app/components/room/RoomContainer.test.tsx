@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameId, LobbyState } from '@nbg/shared';
 import { RoomContainer } from './RoomContainer';
 import type { GameEntry } from '../games/types';
+import { getRoomEmoji } from '@/lib/roomEmoji';
 
 const mocks = vi.hoisted(() => {
   type Handler = (...args: unknown[]) => void;
@@ -49,6 +50,7 @@ const games: GameEntry[] = [
     id: 'sudoku',
     status: 'available',
     titleKey: 'games.sudoku.title',
+    Cover: () => null,
     minPlayers: 1,
     maxPlayers: 5,
     Game: ({ roomId }) => <div data-testid="game" data-room-id={roomId} />,
@@ -62,12 +64,26 @@ const serverSays = (state: LobbyState) => act(() => { mocks.dispatch('lobby-upda
 beforeEach(() => { mocks.reset(); });
 
 describe('RoomContainer', () => {
-  it('joins the room and waits for the server before showing anything to choose', () => {
+  it('joins the room and shows the table at once, with nothing to vote until the server answers', () => {
     render(<RoomContainer roomId={ROOM} games={games} />);
 
     expect(mocks.socket.emit).toHaveBeenCalledWith('join-room', ROOM);
-    expect(screen.getByText('sudoku.loading')).toBeInTheDocument();
-    expect(screen.queryByText('lobby.title')).not.toBeInTheDocument();
+    expect(screen.getByText('lobby.title')).toBeInTheDocument();
+    expect(screen.getByText('lobby.connecting')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'lobby.open' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /games.sudoku.title/ })).toBeDisabled();
+  });
+
+  it('shows the label of the room, never its id, at the table and above the game', () => {
+    const label = getRoomEmoji(ROOM).join('');
+    render(<RoomContainer roomId={ROOM} games={games} />);
+
+    expect(screen.getByText(label)).toBeInTheDocument();
+    serverSays({ game: 'sudoku', votes: [] });
+
+    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sudoku.copyLink/ })).toBeInTheDocument();
+    expect(screen.queryByText(ROOM)).not.toBeInTheDocument();
   });
 
   it('shows the table while the room has no game, and sends the vote of the player', () => {
@@ -77,7 +93,7 @@ describe('RoomContainer', () => {
     expect(screen.getByText('lobby.title')).toBeInTheDocument();
     expect(screen.queryByTestId('game')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /games.sudoku.title/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'lobby.open' }));
 
     expect(mocks.socket.emit).toHaveBeenLastCalledWith('vote-game', 'sudoku');
   });
@@ -86,7 +102,7 @@ describe('RoomContainer', () => {
     render(<RoomContainer roomId={ROOM} games={games} />);
     serverSays({ game: null, votes: [] });
 
-    fireEvent.click(screen.getByRole('button', { name: /games.sudoku.title/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'lobby.open' }));
 
     expect(screen.queryByTestId('game')).not.toBeInTheDocument();
   });

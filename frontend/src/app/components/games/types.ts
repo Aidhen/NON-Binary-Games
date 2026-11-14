@@ -6,7 +6,14 @@ export interface GameProps {
   roomId: string;
 }
 
+/** What a cover is told: where its box is on the table, so that boxes with the same cover need not look the same. */
+export interface GameCoverProps {
+  index: number;
+}
+
 interface GameBase {
+  /** The picture on the lid of the box. It fills the lid and is decoration only: the name of the game is written next to it. */
+  Cover: ComponentType<GameCoverProps>;
   /** Translation key of the name of the game. */
   titleKey: string;
   minPlayers: number;

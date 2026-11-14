@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import type { Server as HttpServer } from 'node:http';
 import type { Server } from 'socket.io';
-import { createHttpServer, DEFAULT_PORT, installCrashLogging, parsePort, shutdown, SHUTDOWN_TIMEOUT_MS } from './server';
+import { createHttpServer, DEFAULT_FRONTEND_URL, DEFAULT_PORT, installCrashLogging, parsePort, resolveAllowedOrigin, shutdown, SHUTDOWN_TIMEOUT_MS } from './server';
 import { logger } from './logger';
 
 describe('parsePort', () => {
@@ -12,6 +12,22 @@ describe('parsePort', () => {
 
   it.each([undefined, '', 'abc', '0', '-1', '70000', '80.5'])('falls back to the default for %s', (value) => {
     expect(parsePort(value)).toBe(DEFAULT_PORT);
+  });
+});
+
+describe('resolveAllowedOrigin', () => {
+  it('uses FRONTEND_URL when it is set', () => {
+    expect(resolveAllowedOrigin({ FRONTEND_URL: 'https://games.example.com' })).toBe('https://games.example.com');
+    expect(resolveAllowedOrigin({ FRONTEND_URL: 'https://games.example.com', NODE_ENV: 'production' })).toBe('https://games.example.com');
+  });
+
+  it('falls back to the local frontend when developing', () => {
+    expect(resolveAllowedOrigin({})).toBe(DEFAULT_FRONTEND_URL);
+    expect(resolveAllowedOrigin({ NODE_ENV: 'development' })).toBe(DEFAULT_FRONTEND_URL);
+  });
+
+  it.each([undefined, '', '   '])('has no origin in production when FRONTEND_URL is %j', (value) => {
+    expect(resolveAllowedOrigin({ NODE_ENV: 'production', FRONTEND_URL: value })).toBeUndefined();
   });
 });
 

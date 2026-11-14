@@ -4,12 +4,23 @@ import type { Server } from "socket.io";
 import { logger } from "./logger";
 
 export const DEFAULT_PORT = 4000;
+export const DEFAULT_FRONTEND_URL = "http://localhost:3000";
 export const SHUTDOWN_TIMEOUT_MS = 10_000;
 
 /** Falls back to the default port when PORT is missing or is not a valid port number. */
 export const parsePort = (value: string | undefined): number => {
   const port = Number(value);
   return Number.isInteger(port) && port > 0 && port <= 65535 ? port : DEFAULT_PORT;
+};
+
+/**
+ * The origin the browser is allowed to connect from (CORS). In production there is no default: a missing
+ * FRONTEND_URL would start a server that no browser can reach and hide the mistake, so the caller refuses to start.
+ */
+export const resolveAllowedOrigin = (env: NodeJS.ProcessEnv = process.env): string | undefined => {
+  const value = env.FRONTEND_URL?.trim();
+  if (value) return value;
+  return env.NODE_ENV === "production" ? undefined : DEFAULT_FRONTEND_URL;
 };
 
 /**

@@ -22,12 +22,19 @@ interface ColorPickerProps {
  * A row of swatches under the chip of the player. A color that somebody else has is shown with their
  * emoji and cannot be picked; the server decides in the end, this only saves a wrong try.
  */
-export function ColorPicker({ id, current, others, onPick, onClose }: ColorPickerProps) {
+export function ColorPicker({ id, current, others, onPick, onClose }: Readonly<ColorPickerProps>) {
   const { t } = useTranslation();
   const swatches = useRef<Partial<Record<PlayerColor, HTMLButtonElement | null>>>({});
   const [focused, setFocused] = useState<PlayerColor>(current);
 
   const takenBy = (color: PlayerColor) => others.find((player) => player.color === color);
+
+  // What is inside a swatch: the emoji of whoever has the color, a check mark on the color the player has.
+  const markOf = (color: PlayerColor, owner: PlayerProfile | undefined) => {
+    if (owner) return <span aria-hidden="true" className="text-sm">{animalEmoji(owner.animal)}</span>;
+    if (color === current) return <span aria-hidden="true" className="text-[var(--bg)]">✓</span>;
+    return null;
+  };
 
   // It opens on the color the player has, so that the arrow keys start from there.
   useEffect(() => { swatches.current[current]?.focus(); }, [current]);
@@ -60,6 +67,8 @@ export function ColorPicker({ id, current, others, onPick, onClose }: ColorPicke
       id={id}
       role="radiogroup"
       aria-label={t('players.chooseColor')}
+      // Focusable as a whole, but not a stop of its own: the swatches are (one at a time, with the arrow keys).
+      tabIndex={-1}
       onKeyDown={onKeyDown}
       // On a surface of the cells, where the contrast of every color is checked in every theme.
       className="flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[var(--grid-border-inner)] bg-[var(--cell-background)] p-3"
@@ -92,11 +101,7 @@ export function ColorPicker({ id, current, others, onPick, onClose }: ColorPicke
               owner ? 'cursor-not-allowed opacity-40' : 'hover:scale-110 active:scale-95',
             )}
           >
-            {owner ? (
-              <span aria-hidden="true" className="text-sm">{animalEmoji(owner.animal)}</span>
-            ) : isCurrent ? (
-              <span aria-hidden="true" className="text-[var(--bg)]">✓</span>
-            ) : null}
+            {markOf(color, owner)}
           </button>
         );
       })}

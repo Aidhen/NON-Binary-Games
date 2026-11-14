@@ -22,7 +22,7 @@ interface PlayerBarProps {
  * picker; clicking another chip points that player out on the board. A hidden status line tells screen
  * reader users who comes and who leaves.
  */
-export function PlayerBar({ players, self, highlightedAlias, onPickColor, onHighlight }: PlayerBarProps) {
+export function PlayerBar({ players, self, highlightedAlias, onPickColor, onHighlight }: Readonly<PlayerBarProps>) {
   const { t } = useTranslation();
   const pickerId = useId();
   const ownChip = useRef<HTMLButtonElement>(null);
@@ -56,6 +56,13 @@ export function PlayerBar({ players, self, highlightedAlias, onPickColor, onHigh
     ownChip.current?.focus();
   };
 
+  // The own chip opens and closes the picker; the chip of another player points that player out.
+  const onChipClick = (player: PlayerProfile) => {
+    if (player.alias !== self) onHighlight(player.alias);
+    else if (open) closePicker();
+    else setPickerOpen(true);
+  };
+
   return (
     <div className="flex w-full flex-col items-center gap-3">
       {players.length > 0 && (
@@ -74,7 +81,7 @@ export function PlayerBar({ players, self, highlightedAlias, onPickColor, onHigh
                   expanded={open}
                   label={isSelf ? `${name} (${t('players.you')})` : t('players.highlight').replace('{name}', name)}
                   buttonRef={isSelf ? ownChip : undefined}
-                  onClick={() => (isSelf ? (open ? closePicker() : setPickerOpen(true)) : onHighlight(player.alias))}
+                  onClick={() => onChipClick(player)}
                 />
               </li>
             );
@@ -92,7 +99,7 @@ export function PlayerBar({ players, self, highlightedAlias, onPickColor, onHigh
         />
       )}
 
-      <p role="status" className="sr-only">{announcement}</p>
+      <output className="sr-only">{announcement}</output>
     </div>
   );
 }

@@ -25,7 +25,7 @@ interface PlayerChipProps {
  * chip opens the color picker; the chips of the others point them out on the board. The emoji and the name
  * are what tells players apart without relying on color.
  */
-export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, label, onClick, buttonRef }: PlayerChipProps) {
+export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, label, onClick, buttonRef }: Readonly<PlayerChipProps>) {
   const { t } = useTranslation();
   const style = styleOfColor(profile.color);
 

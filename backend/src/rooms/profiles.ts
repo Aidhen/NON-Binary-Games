@@ -31,11 +31,13 @@ export const assignProfile = (room: RoomState, playerId: string): RoomProfile =>
   const { colors, animals } = inUse(room, playerId);
   const freeColors = PLAYER_COLORS.filter((color) => !colors.has(color));
   const freeAnimals = PLAYER_ANIMALS.filter((animal) => !animals.has(animal));
+  const colorsToPickFrom = freeColors.length ? freeColors : PLAYER_COLORS;
+  const animalsToPickFrom = freeAnimals.length ? freeAnimals : PLAYER_ANIMALS;
 
   const profile: RoomProfile = {
     ...kept,
-    color: kept && !colors.has(kept.color) ? kept.color : pickOne(freeColors.length ? freeColors : PLAYER_COLORS),
-    animal: kept && !animals.has(kept.animal) ? kept.animal : pickOne(freeAnimals.length ? freeAnimals : PLAYER_ANIMALS),
+    color: kept && !colors.has(kept.color) ? kept.color : pickOne(colorsToPickFrom),
+    animal: kept && !animals.has(kept.animal) ? kept.animal : pickOne(animalsToPickFrom),
   };
   room.profiles.set(playerId, profile);
   return profile;

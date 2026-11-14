@@ -141,6 +141,15 @@ describe('PlayerBar', () => {
       expect(ownChip()).toHaveFocus();
     });
 
+    it('can be reached by the keyboard as a whole, and by one swatch at a time', () => {
+      setup();
+      fireEvent.click(ownChip());
+
+      expect(screen.getByRole('radiogroup')).toHaveAttribute('tabindex', '-1');
+      const reachable = screen.getAllByRole('radio').filter((radio) => radio.getAttribute('tabindex') === '0');
+      expect(reachable).toHaveLength(1);
+    });
+
     it('opens with the focus on the color the player has', () => {
       setup();
 
@@ -215,6 +224,12 @@ describe('PlayerBar', () => {
   });
 
   describe('the announcements for screen readers', () => {
+    it('are in an output element, which screen readers announce as a status', () => {
+      setup();
+
+      expect(screen.getByRole('status').tagName).toBe('OUTPUT');
+    });
+
     it('say nothing for the players who are there when the page opens', () => {
       setup();
 

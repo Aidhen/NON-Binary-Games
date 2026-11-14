@@ -5,6 +5,7 @@ import type { PlayerColor, PlayerProfile } from './players';
 import type { CellUpdatePayload, CellUpdateResult, ToggleNotePayload, SelectCellPayload } from './schemas';
 
 export * from './games/sudoku/index';
+export * from './games/takuzu/index';
 export * from './schemas';
 export * from './emotes';
 export * from './games';

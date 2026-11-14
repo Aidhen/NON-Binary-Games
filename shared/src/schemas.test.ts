@@ -18,11 +18,11 @@ import { GAME_IDS } from './games';
 const garbage: unknown[] = [undefined, null, 0, 1, NaN, 'text', true, [], {}, () => 1];
 
 describe('difficultySchema', () => {
-  it.each(['easy', 'medium', 'hard'])('accepts "%s"', (value) => {
+  it.each(['beginner', 'easy', 'medium', 'hard', 'expert'])('accepts "%s"', (value) => {
     expect(difficultySchema.safeParse(value).success).toBe(true);
   });
 
-  it.each(['banana', 'EASY', '', 'constructor', '__proto__', 1, null, undefined])(
+  it.each(['banana', 'EASY', 'Expert', 'master', '', 'constructor', '__proto__', 1, null, undefined])(
     'rejects %j',
     (value) => {
       expect(difficultySchema.safeParse(value).success).toBe(false);

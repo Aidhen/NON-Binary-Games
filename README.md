@@ -14,7 +14,7 @@ Open the site and you are already in a room: send the link to your partner or yo
 
 - **A table with boxes.** Every game is a box. Each of you picks one, and the box opens when more than half of the room wants it. Whoever arrives later joins the game that is open.
 
-- **Sudoku, together.** Three difficulty levels, and the whole room can start a new game when you are ready for another.
+- **Sudoku, together.** Five difficulty levels, every one solvable by deduction alone, and the whole room can start a new game when you are ready for another.
 - **Shared notes.** Each note is colored after the person who wrote it, so you can see who had which idea.
 - **Seeing each other.** You see where the other players are looking, in their own color.
 - **Emotes.** Ten quick reactions (💜 🌹 🔥 ...) float over the board, for when you want to say something without typing.
@@ -36,6 +36,7 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 - [x] Shared notes and live cell selections.
 - [x] A name for each player, like Red Panda, and a color of your own to pick; the list of players shows who is who, and a tap on a player points them out on the board.
 - [x] Win detection and a "play again" screen.
+- [x] Five difficulty levels, from beginner to expert. Every puzzle has exactly one solution and can be solved by pure deduction: you never have to guess.
 - [x] Emotes between players.
 - [x] A friendly wait while the server wakes up.
 - [x] English and Italian translations, several themes.

@@ -18,6 +18,9 @@ const LEVELS: Record<Difficulty, { size: number; mines: number }> = {
 /** Fields that need a guess are thrown away and laid out again: a try costs little, but there must be an end. */
 const MAX_ATTEMPTS = 200;
 
+/** The search also stops after this long. It runs on the one thread that serves every room, so it cannot take as long as the attempts allow. */
+const MAX_LAYOUT_MS = 50;
+
 export function getFlowerFieldLevel(difficulty: Difficulty): { size: number; mines: number } {
   // Fail loudly: an unknown difficulty would otherwise give a field of nothing.
   if (!Object.hasOwn(LEVELS, difficulty)) throw new Error(`Unknown difficulty: ${String(difficulty)}`);
@@ -28,7 +31,7 @@ export function getFlowerFieldLevel(difficulty: Difficulty): { size: number; min
 /**
  * Lays out the mines once the first cell is chosen: that cell and the ones around it are free, so that the first
  * move always opens an area, and the field is one that deduction alone can finish (see canBeSolvedWithoutGuessing).
- * It throws when there is no room for the mines, or when no field without a guess was found in time.
+ * It throws when there is no room for the mines, or when no field without a guess was found in time (a number of tries, or a few milliseconds).
  */
 export function layMines(size: number, mineCount: number, firstR: number, firstC: number): FlowerMines {
   const candidates: number[] = [];
@@ -39,7 +42,10 @@ export function layMines(size: number, mineCount: number, firstR: number, firstC
   }
   if (mineCount > candidates.length) throw new Error('There is no room for that many mines');
 
+  const deadline = Date.now() + MAX_LAYOUT_MS;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    // The first try is always made: the time only decides whether to go on.
+    if (attempt > 0 && Date.now() > deadline) break;
     shuffleArray(candidates);
     const mines: FlowerMines = Array.from({ length: size }, () => new Array<boolean>(size).fill(false));
     for (const cell of candidates.slice(0, mineCount)) mines[Math.floor(cell / size)][cell % size] = true;

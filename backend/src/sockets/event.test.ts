@@ -8,7 +8,7 @@ import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit
 import { applyConnectionLimits } from './connectionLimits';
 import { logger } from '../logger';
 import type { AddressOf } from './connectionLimits';
-import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM, PLAYER_ANIMALS, PLAYER_COLORS } from '@nbg/shared';
+import { DIFFICULTIES, EMOTE_COOLDOWN_MS, EMOTES, getCluesCount, MAX_PLAYERS_PER_ROOM, PLAYER_ANIMALS, PLAYER_COLORS, solveWithSingles } from '@nbg/shared';
 import type { JoinError } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
 
@@ -521,6 +521,47 @@ describe('Socket Events Security & Bounds Checking', () => {
   // -------------------------------------------------------
   // RESTART GAME
   // -------------------------------------------------------
+
+  describe('difficulty levels', () => {
+    const cluesOf = (grid: number[][]) => grid.flat().filter((cell) => cell !== 0).length;
+
+    it.each(DIFFICULTIES)('gives the players of a new %s room a puzzle with that level, that deduction can finish', async (level) => {
+      const client = await connectTestClient();
+      const started = new Promise<GameStartedPayload>((resolve) => { client.once('game-started', resolve); });
+
+      client.emit('join-room', idOf(`level-${level}`), level);
+      const { board, difficulty } = await started;
+
+      expect(difficulty).toBe(level);
+      expect(rooms.get(idOf(`level-${level}`))!.difficulty).toBe(level);
+      expect(cluesOf(board.initial)).toBeGreaterThanOrEqual(getCluesCount(level, 9));
+      expect(solveWithSingles(board.initial, board.size, board.boxSize)).toEqual(board.solution);
+    });
+
+    it.each(DIFFICULTIES)('restarts the game at the %s level with a puzzle that deduction can finish', async (level) => {
+      const client = await connectTestClient();
+      await joinRoom(client, idOf('restart-level'), level === 'easy' ? 'medium' : 'easy');
+      const restarted = new Promise<GameStartedPayload>((resolve) => { client.once('game-started', resolve); });
+
+      client.emit('restart-game', level);
+      const { board, difficulty } = await restarted;
+
+      expect(difficulty).toBe(level);
+      expect(rooms.get(idOf('restart-level'))!.difficulty).toBe(level);
+      expect(solveWithSingles(board.initial, board.size, board.boxSize)).toEqual(board.solution);
+    });
+
+    it.each(['master', 'EXPERT', '', 'constructor'])('does not start a game at the level %j', async (invalid) => {
+      const client = await connectTestClient();
+      await joinRoom(client, idOf('invalid-level'));
+      const before = rooms.get(idOf('invalid-level'))!.board;
+
+      (client as unknown as { emit: (event: string, ...args: unknown[]) => void }).emit('restart-game', invalid);
+      await flushSocketEvents(client);
+
+      expect(rooms.get(idOf('invalid-level'))!.board).toBe(before);
+    });
+  });
 
   describe('restart-game', () => {
     beforeEach(async () => { await joinRoom(); });

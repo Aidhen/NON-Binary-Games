@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { Server } from 'socket.io';
 import Client from 'socket.io-client';
 import type { Socket as ClientSocket } from 'socket.io-client';
-import { MAX_PLAYER_ID_LENGTH, MAX_ROOM_ID_LENGTH } from '@nbg/shared';
+import { MAX_PLAYER_ID_LENGTH } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
 import { addressResolverFromEnv, applyConnectionLimits, connectionLimit, MAX_MESSAGE_BYTES } from './connectionLimits';
 import type { AddressOf } from './connectionLimits';
@@ -129,13 +129,13 @@ describe('applyConnectionLimits', () => {
   it('still accepts the largest message a client really sends', async () => {
     const { url } = await start(undefined, MAX_MESSAGE_BYTES);
     setupSocketHandlers(io!);
-    // The longest room id and the longest player id the schemas allow.
+    // A room id is always 36 characters; the player id is the longest the schema allows.
     const { client, result } = await attempt(url, { playerId: 'p'.repeat(MAX_PLAYER_ID_LENGTH) });
     expect(result).toBe('connected');
     const started = new Promise<string>((resolve) => { client.once('game-started', () => resolve('started')); });
     const closed = new Promise<string>((resolve) => { client.once('disconnect', () => resolve('closed')); });
 
-    client.emit('join-room', 'r'.repeat(MAX_ROOM_ID_LENGTH), 'hard');
+    client.emit('join-room', crypto.randomUUID(), 'hard');
 
     await expect(Promise.race([started, closed])).resolves.toBe('started');
   });

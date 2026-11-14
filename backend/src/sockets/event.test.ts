@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Server, Socket as ServerSocket } from 'socket.io';
@@ -14,6 +15,12 @@ import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
 // Read before any test changes them: a limit that is not finite protects nothing.
 const defaultLimits = { roomCreation: roomCreationLimit.max, restart: restartLimit.max, boardGeneration: boardGenerationLimit.max };
 
+// Room ids are UUIDs: a readable name always gives the same valid id.
+const idOf = (name: string): string => {
+  const hex = createHash('sha1').update(name).digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${'89ab'[Number.parseInt(hex[16], 16) % 4]}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+};
+
 type TestClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
 type TestServerSocket = ServerSocket<ClientToServerEvents, ServerToClientEvents>;
 type GameStartedPayload = Parameters<ServerToClientEvents['game-started']>[0];
@@ -27,7 +34,7 @@ describe('Socket Events Security & Bounds Checking', () => {
   let clientSocket!: TestClientSocket;
 
   const port = 4001;
-  const testRoomId = 'security-test-room';
+  const testRoomId = idOf('security-test-room');
   const clients = new Set<TestClientSocket>();
   const serverSockets = new Map<string, TestServerSocket>();
 
@@ -623,7 +630,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const observer = await connectTestClient();
 
       try {
-        await joinRoom(observer, 'failing-leave-room');
+        await joinRoom(observer, idOf('failing-leave-room'));
         const serverDisconnected = new Promise<void>((resolve) => { getServerSocket(observer).once('disconnect', () => resolve()); });
         const get = vi.spyOn(rooms, 'get').mockImplementationOnce(() => { throw new Error('store failure'); });
 
@@ -642,7 +649,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
     it('deletes the room when the last player disconnects', async () => {
       const observer = await connectTestClient();
-      const roomId = 'solo-disconnect-room';
+      const roomId = idOf('solo-disconnect-room');
 
       try {
         await joinRoom(observer, roomId);
@@ -679,11 +686,11 @@ describe('Socket Events Security & Bounds Checking', () => {
       const extra = await connectTestClient('cap-player-extra');
 
       try {
-        for (const player of players) await expect(joinOutcome(player, 'full-room')).resolves.toBe('joined');
+        for (const player of players) await expect(joinOutcome(player, idOf('full-room'))).resolves.toBe('joined');
 
-        await expect(joinOutcome(extra, 'full-room')).resolves.toBe('room-full');
-        expect(rooms.get('full-room')!.players.size).toBe(MAX_PLAYERS_PER_ROOM);
-        expect(rooms.get('full-room')!.players.has('cap-player-extra')).toBe(false);
+        await expect(joinOutcome(extra, idOf('full-room'))).resolves.toBe('room-full');
+        expect(rooms.get(idOf('full-room'))!.players.size).toBe(MAX_PLAYERS_PER_ROOM);
+        expect(rooms.get(idOf('full-room'))!.players.has('cap-player-extra')).toBe(false);
       } finally {
         [...players, extra].forEach((socket) => socket.disconnect());
       }
@@ -694,9 +701,9 @@ describe('Socket Events Security & Bounds Checking', () => {
       const otherTab = await connectTestClient('cap-player-0');
 
       try {
-        for (const player of players) await joinOutcome(player, 'full-room');
+        for (const player of players) await joinOutcome(player, idOf('full-room'));
 
-        await expect(joinOutcome(otherTab, 'full-room')).resolves.toBe('joined');
+        await expect(joinOutcome(otherTab, idOf('full-room'))).resolves.toBe('joined');
       } finally {
         [...players, otherTab].forEach((socket) => socket.disconnect());
       }
@@ -707,14 +714,14 @@ describe('Socket Events Security & Bounds Checking', () => {
       const extra = await connectTestClient('cap-player-extra');
 
       try {
-        for (const player of players) await joinOutcome(player, 'full-room');
-        await expect(joinOutcome(extra, 'full-room')).resolves.toBe('room-full');
+        for (const player of players) await joinOutcome(player, idOf('full-room'));
+        await expect(joinOutcome(extra, idOf('full-room'))).resolves.toBe('room-full');
 
         const closed = new Promise<void>((resolve) => { getServerSocket(players[0]).once('disconnect', () => resolve()); });
         players[0].disconnect();
         await closed;
 
-        await expect(joinOutcome(extra, 'full-room')).resolves.toBe('joined');
+        await expect(joinOutcome(extra, idOf('full-room'))).resolves.toBe('joined');
       } finally {
         [...players, extra].forEach((socket) => socket.disconnect());
       }
@@ -725,13 +732,13 @@ describe('Socket Events Security & Bounds Checking', () => {
       const extra = await connectTestClient('cap-player-extra');
 
       try {
-        for (const player of players) await joinOutcome(player, 'full-room');
-        await joinOutcome(extra, 'other-room');
+        for (const player of players) await joinOutcome(player, idOf('full-room'));
+        await joinOutcome(extra, idOf('other-room'));
 
-        await expect(joinOutcome(extra, 'full-room')).resolves.toBe('room-full');
+        await expect(joinOutcome(extra, idOf('full-room'))).resolves.toBe('room-full');
 
-        expect(rooms.get('other-room')!.players.has('cap-player-extra')).toBe(true);
-        expect(getServerSocket(extra).data.roomId).toBe('other-room');
+        expect(rooms.get(idOf('other-room'))!.players.has('cap-player-extra')).toBe(true);
+        expect(getServerSocket(extra).data.roomId).toBe(idOf('other-room'));
       } finally {
         [...players, extra].forEach((socket) => socket.disconnect());
       }
@@ -742,12 +749,12 @@ describe('Socket Events Security & Bounds Checking', () => {
       const [first, second] = await connectPlayers(2, 'room-cap');
 
       try {
-        await expect(joinOutcome(first, 'only-room')).resolves.toBe('joined');
+        await expect(joinOutcome(first, idOf('only-room'))).resolves.toBe('joined');
 
-        await expect(joinOutcome(second, 'one-too-many')).resolves.toBe('server-full');
-        expect(rooms.has('one-too-many')).toBe(false);
+        await expect(joinOutcome(second, idOf('one-too-many'))).resolves.toBe('server-full');
+        expect(rooms.has(idOf('one-too-many'))).toBe(false);
 
-        await expect(joinOutcome(second, 'only-room')).resolves.toBe('joined');
+        await expect(joinOutcome(second, idOf('only-room'))).resolves.toBe('joined');
       } finally {
         first.disconnect();
         second.disconnect();
@@ -826,15 +833,15 @@ describe('Socket Events Security & Bounds Checking', () => {
       await withServer({ roomCreation: 2 }, async (connect) => {
         const [creator, other] = [await connect(), await connect()];
 
-        await expect(joinOutcome(creator, 'budget-a')).resolves.toBe('joined');
-        await expect(joinOutcome(creator, 'budget-b')).resolves.toBe('joined');
+        await expect(joinOutcome(creator, idOf('budget-a'))).resolves.toBe('joined');
+        await expect(joinOutcome(creator, idOf('budget-b'))).resolves.toBe('joined');
 
-        await expect(joinOutcome(creator, 'budget-c')).resolves.toBe('too-fast');
-        expect(rooms.has('budget-c')).toBe(false);
-        expect(rooms.get('budget-b')!.players.has(creator.id!)).toBe(true);
+        await expect(joinOutcome(creator, idOf('budget-c'))).resolves.toBe('too-fast');
+        expect(rooms.has(idOf('budget-c'))).toBe(false);
+        expect(rooms.get(idOf('budget-b'))!.players.has(creator.id!)).toBe(true);
 
-        await expect(joinOutcome(other, 'budget-o')).resolves.toBe('joined');
-        await expect(joinOutcome(creator, 'budget-o')).resolves.toBe('joined');
+        await expect(joinOutcome(other, idOf('budget-o'))).resolves.toBe('joined');
+        await expect(joinOutcome(creator, idOf('budget-o'))).resolves.toBe('joined');
       });
     });
 
@@ -843,21 +850,21 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       await withServer({ roomCreation: 1 }, async (connect) => {
         const first = await connect({ address: 'address-x' });
-        await expect(joinOutcome(first, 'address-a')).resolves.toBe('joined');
+        await expect(joinOutcome(first, idOf('address-a'))).resolves.toBe('joined');
         first.disconnect();
 
         const again = await connect({ address: 'address-x' });
-        await expect(joinOutcome(again, 'address-b')).resolves.toBe('too-fast');
+        await expect(joinOutcome(again, idOf('address-b'))).resolves.toBe('too-fast');
 
         const elsewhere = await connect({ address: 'address-y' });
-        await expect(joinOutcome(elsewhere, 'address-c')).resolves.toBe('joined');
+        await expect(joinOutcome(elsewhere, idOf('address-c'))).resolves.toBe('joined');
       }, addressOf);
     });
 
     it('limits how many times a socket can restart the game', async () => {
       await withServer({ restart: 2 }, async (connect) => {
         const player = await connect();
-        await joinOutcome(player, 'restart-budget');
+        await joinOutcome(player, idOf('restart-budget'));
         const restarted = vi.fn();
         player.on('game-started', restarted);
 
@@ -872,10 +879,10 @@ describe('Socket Events Security & Bounds Checking', () => {
       await withServer({ boardGeneration: 2 }, async (connect) => {
         const [first, second, third] = [await connect(), await connect(), await connect()];
 
-        await expect(joinOutcome(first, 'global-a')).resolves.toBe('joined');
-        await expect(joinOutcome(second, 'global-b')).resolves.toBe('joined');
-        await expect(joinOutcome(third, 'global-c')).resolves.toBe('too-fast');
-        expect(rooms.has('global-c')).toBe(false);
+        await expect(joinOutcome(first, idOf('global-a'))).resolves.toBe('joined');
+        await expect(joinOutcome(second, idOf('global-b'))).resolves.toBe('joined');
+        await expect(joinOutcome(third, idOf('global-c'))).resolves.toBe('too-fast');
+        expect(rooms.has(idOf('global-c'))).toBe(false);
       });
     });
 
@@ -883,12 +890,12 @@ describe('Socket Events Security & Bounds Checking', () => {
       await withServer({ roomCreation: 1, boardGeneration: 2 }, async (connect) => {
         const [first, second, third] = [await connect(), await connect(), await connect()];
 
-        await expect(joinOutcome(first, 'spent-a')).resolves.toBe('joined');
-        await expect(joinOutcome(first, 'spent-b')).resolves.toBe('too-fast');
+        await expect(joinOutcome(first, idOf('spent-a'))).resolves.toBe('joined');
+        await expect(joinOutcome(first, idOf('spent-b'))).resolves.toBe('too-fast');
 
         // The refused attempt of the first socket did not use the second place of the server.
-        await expect(joinOutcome(second, 'spent-c')).resolves.toBe('joined');
-        await expect(joinOutcome(third, 'spent-d')).resolves.toBe('too-fast');
+        await expect(joinOutcome(second, idOf('spent-c'))).resolves.toBe('joined');
+        await expect(joinOutcome(third, idOf('spent-d'))).resolves.toBe('too-fast');
       });
     });
 
@@ -899,7 +906,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         for (let i = 0; i < 3; i++) player.emit('restart-game', 'easy');
         await flushSocketEvents(player);
 
-        await joinOutcome(player, 'outsider-restart');
+        await joinOutcome(player, idOf('outsider-restart'));
         const restarted = vi.fn();
         player.on('game-started', restarted);
         player.emit('restart-game', 'easy');
@@ -1001,21 +1008,21 @@ describe('Socket Events Security & Bounds Checking', () => {
     it('keeps the room, with its board and notes, when the last player drops', async () => {
       rooms.emptyRoomTtlMs = 60_000;
       const first = await connectTestClient(playerId);
-      const room = await joinRoom(first, 'grace-room');
+      const room = await joinRoom(first, idOf('grace-room'));
       const { r, c } = findCell(room.currentGrid, (value) => value === 0);
 
       first.emit('toggle-note', { r, c, v: 2 });
       await flushSocketEvents(first);
       await leaveAndWait(first);
 
-      expect(rooms.has('grace-room')).toBe(true);
-      expect(rooms.get('grace-room')!.players.size).toBe(0);
+      expect(rooms.has(idOf('grace-room'))).toBe(true);
+      expect(rooms.get(idOf('grace-room'))!.players.size).toBe(0);
 
       const second = await connectTestClient(playerId);
 
       try {
         const gameStarted = new Promise<GameStartedPayload>((resolve) => { second.once('game-started', resolve); });
-        second.emit('join-room', 'grace-room', 'hard');
+        second.emit('join-room', idOf('grace-room'), 'hard');
         const payload = await gameStarted;
 
         expect(payload.board).toEqual(room.board);
@@ -1029,28 +1036,28 @@ describe('Socket Events Security & Bounds Checking', () => {
     it('deletes the room once the grace period is over', async () => {
       rooms.emptyRoomTtlMs = 50;
       const client = await connectTestClient();
-      await makeMove(client, await joinRoom(client, 'expiring-room'));
+      await makeMove(client, await joinRoom(client, idOf('expiring-room')));
 
       await leaveAndWait(client);
-      expect(rooms.has('expiring-room')).toBe(true);
+      expect(rooms.has(idOf('expiring-room'))).toBe(true);
 
-      await vi.waitFor(() => expect(rooms.has('expiring-room')).toBe(false));
+      await vi.waitFor(() => expect(rooms.has(idOf('expiring-room'))).toBe(false));
     });
 
     it('does not delete a room that someone came back to before the grace period was over', async () => {
       rooms.emptyRoomTtlMs = 100;
       const first = await connectTestClient();
-      await makeMove(first, await joinRoom(first, 'returning-room'));
+      await makeMove(first, await joinRoom(first, idOf('returning-room')));
       await leaveAndWait(first);
 
       const second = await connectTestClient();
 
       try {
-        await joinRoom(second, 'returning-room');
+        await joinRoom(second, idOf('returning-room'));
         await new Promise((resolve) => setTimeout(resolve, 250));
 
-        expect(rooms.has('returning-room')).toBe(true);
-        expect(rooms.get('returning-room')!.players.size).toBe(1);
+        expect(rooms.has(idOf('returning-room'))).toBe(true);
+        expect(rooms.get(idOf('returning-room'))!.players.size).toBe(1);
       } finally {
         second.disconnect();
       }
@@ -1059,31 +1066,31 @@ describe('Socket Events Security & Bounds Checking', () => {
     it('deletes a room right away when nobody changed anything in it', async () => {
       rooms.emptyRoomTtlMs = 60_000;
       const client = await connectTestClient();
-      await joinRoom(client, 'unplayed-room');
+      await joinRoom(client, idOf('unplayed-room'));
 
       await leaveAndWait(client);
 
-      expect(rooms.has('unplayed-room')).toBe(false);
+      expect(rooms.has(idOf('unplayed-room'))).toBe(false);
     });
 
     it('keeps a room for the grace period once a cell was changed', async () => {
       rooms.emptyRoomTtlMs = 60_000;
       const client = await connectTestClient();
-      await makeMove(client, await joinRoom(client, 'played-room'));
+      await makeMove(client, await joinRoom(client, idOf('played-room')));
       await leaveAndWait(client);
 
-      expect(rooms.has('played-room')).toBe(true);
+      expect(rooms.has(idOf('played-room'))).toBe(true);
     });
 
     it('treats a restarted game as not played yet', async () => {
       rooms.emptyRoomTtlMs = 60_000;
       const client = await connectTestClient();
-      await makeMove(client, await joinRoom(client, 'restarted-room'));
+      await makeMove(client, await joinRoom(client, idOf('restarted-room')));
       client.emit('restart-game', 'easy');
       await flushSocketEvents(client);
       await leaveAndWait(client);
 
-      expect(rooms.has('restarted-room')).toBe(false);
+      expect(rooms.has(idOf('restarted-room'))).toBe(false);
     });
   });
 
@@ -1256,10 +1263,10 @@ describe('Socket Events Security & Bounds Checking', () => {
       const client = await connectTestClient(playerId);
 
       try {
-        await joinRoom(client, 'alias-room-a');
-        const first = rooms.get('alias-room-a')!.aliases.get(playerId);
-        await joinRoom(client, 'alias-room-b');
-        const second = rooms.get('alias-room-b')!.aliases.get(playerId);
+        await joinRoom(client, idOf('alias-room-a'));
+        const first = rooms.get(idOf('alias-room-a'))!.aliases.get(playerId);
+        await joinRoom(client, idOf('alias-room-b'));
+        const second = rooms.get(idOf('alias-room-b'))!.aliases.get(playerId);
 
         expect(first).toBeDefined();
         expect(second).toBeDefined();
@@ -1389,25 +1396,41 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     });
 
-    it('keeps the rooms apart from the private room every socket has', async () => {
+    it('does not take the id of a socket as the id of a room', async () => {
       const first = await connectTestClient();
       const second = await connectTestClient();
 
       try {
-        await joinRoom(first, 'separate-room');
+        await joinRoom(first, idOf('separate-room'));
         const received = vi.fn();
         first.on('game-started', received);
 
-        // The id of a room is chosen by the client: this one is the id of the other socket.
-        await joinRoom(second, first.id!);
+        second.emit('join-room', first.id!, 'easy');
         second.emit('restart-game', 'easy');
         await flushSocketEvents(second);
         await flushSocketEvents(first);
 
+        expect(getServerSocket(second).data.roomId).toBeUndefined();
         expect(received).not.toHaveBeenCalled();
       } finally {
         first.disconnect();
         second.disconnect();
+      }
+    });
+
+    it('keeps the name of a room in Socket.IO apart from the private room every socket has', async () => {
+      const client = await connectTestClient();
+
+      try {
+        await joinRoom(client, idOf('separate-room'));
+
+        const names = io.sockets.adapter.rooms;
+        expect(names.has(`room:${idOf('separate-room')}`)).toBe(true);
+        expect(names.has(idOf('separate-room'))).toBe(false);
+        // The private room of the socket itself is still there, under its own name.
+        expect(names.has(client.id!)).toBe(true);
+      } finally {
+        client.disconnect();
       }
     });
 
@@ -1416,17 +1439,17 @@ describe('Socket Events Security & Bounds Checking', () => {
       const stayer = await connectTestClient();
 
       try {
-        await joinRoom(stayer, 'room-a');
-        const alias = (await joinRoom(mover, 'room-a')).aliases.get(mover.id!);
+        await joinRoom(stayer, idOf('room-a'));
+        const alias = (await joinRoom(mover, idOf('room-a'))).aliases.get(mover.id!);
 
         const left = new Promise<string>((resolve) => { stayer.once('player-disconnected', resolve); });
 
-        await joinRoom(mover, 'room-b');
+        await joinRoom(mover, idOf('room-b'));
 
         await expect(left).resolves.toBe(alias);
-        expect(rooms.get('room-a')!.players.has(mover.id!)).toBe(false);
-        expect(rooms.get('room-a')!.players.has(stayer.id!)).toBe(true);
-        expect(rooms.get('room-b')!.players.has(mover.id!)).toBe(true);
+        expect(rooms.get(idOf('room-a'))!.players.has(mover.id!)).toBe(false);
+        expect(rooms.get(idOf('room-a'))!.players.has(stayer.id!)).toBe(true);
+        expect(rooms.get(idOf('room-b'))!.players.has(mover.id!)).toBe(true);
       } finally {
         mover.disconnect();
         stayer.disconnect();
@@ -1437,11 +1460,11 @@ describe('Socket Events Security & Bounds Checking', () => {
       const mover = await connectTestClient();
 
       try {
-        await joinRoom(mover, 'room-a');
-        await joinRoom(mover, 'room-b');
+        await joinRoom(mover, idOf('room-a'));
+        await joinRoom(mover, idOf('room-b'));
 
-        expect(rooms.has('room-a')).toBe(false);
-        expect(rooms.has('room-b')).toBe(true);
+        expect(rooms.has(idOf('room-a'))).toBe(false);
+        expect(rooms.has(idOf('room-b'))).toBe(true);
       } finally {
         mover.disconnect();
       }
@@ -1449,8 +1472,8 @@ describe('Socket Events Security & Bounds Checking', () => {
 
     it('leaves no ghost players behind after moving between rooms and disconnecting', async () => {
       const mover = await connectTestClient();
-      await joinRoom(mover, 'room-a');
-      await joinRoom(mover, 'room-b');
+      await joinRoom(mover, idOf('room-a'));
+      await joinRoom(mover, idOf('room-b'));
 
       const serverDisconnected = new Promise<void>((resolve) => {
         getServerSocket(mover).once('disconnect', () => resolve());
@@ -1519,7 +1542,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const otherRoom = await connectTestClient();
       await joinRoom(sender);
       await joinRoom(sameRoom);
-      await joinRoom(otherRoom, 'another-room');
+      await joinRoom(otherRoom, idOf('another-room'));
       const receivedInOtherRoom = collectEmotes(otherRoom);
 
       sender.emit('send-emote', EMOTES[1]);
@@ -1665,23 +1688,24 @@ describe('Socket Events Security & Bounds Checking', () => {
       client.on('game-started', () => received.push('game-started'));
 
       try {
-        rawEmit(client, 'join-room', 'room-bad-difficulty', 'banana');
+        rawEmit(client, 'join-room', idOf('room-bad-difficulty'), 'banana');
         await flushSocketEvents(client);
 
-        expect(rooms.has('room-bad-difficulty')).toBe(false);
+        expect(rooms.has(idOf('room-bad-difficulty'))).toBe(false);
         expect(received).toEqual([]);
       } finally {
         client.disconnect();
       }
     });
 
-    it('does not create rooms for invalid room ids', async () => {
+    it('does not create rooms for ids the app did not generate', async () => {
       const client = await connectTestClient();
 
       try {
         rawEmit(client, 'join-room', '', 'easy');
         rawEmit(client, 'join-room', 'a'.repeat(65), 'easy');
         rawEmit(client, 'join-room', 'room with spaces', 'easy');
+        rawEmit(client, 'join-room', 'a-name-someone-made-up', 'easy');
         rawEmit(client, 'join-room', '../etc/passwd', 'easy');
         await flushSocketEvents(client);
 

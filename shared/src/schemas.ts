@@ -15,13 +15,14 @@ export const difficultySchema = z.enum(DIFFICULTIES);
 
 export const emoteSchema = z.enum(EMOTES);
 
-export const MAX_ROOM_ID_LENGTH = 64;
+/** The length of the UUID the app generates for a room (crypto.randomUUID()). */
+export const MAX_ROOM_ID_LENGTH = 36;
 
-/** Room ids appear in URLs (/play/[roomId]), so keep them URL-safe and bounded. */
-export const roomIdSchema = z
-  .string()
-  .max(MAX_ROOM_ID_LENGTH)
-  .regex(/^[A-Za-z0-9_-]+$/);
+/**
+ * Room ids appear in URLs (/play/[roomId]) and are the only thing that keeps a game private. The server only
+ * accepts the ones the app generates: a name that people can choose is a name that two groups can choose.
+ */
+export const roomIdSchema = z.uuidv4();
 
 export const MAX_PLAYER_ID_LENGTH = 64;
 

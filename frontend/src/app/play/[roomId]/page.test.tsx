@@ -1,10 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import PlayRoomPage from '@/app/play/[roomId]/page';
 import { getRoomEmoji } from '@/lib/roomEmoji';
 
+const mocks = vi.hoisted(() => ({ roomId: '3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c' as unknown }));
+
 vi.mock('next/navigation', () => ({
-  useParams: () => ({ roomId: 'test-room-123' }),
+  useParams: () => ({ roomId: mocks.roomId }),
 }));
 
 vi.mock('@/lib/i18n/TranslationContext', () => ({
@@ -17,17 +19,21 @@ vi.mock('@/app/components/sudoku/SudokuContainer', () => ({
   ),
 }));
 
+const ROOM = '3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c';
+
 describe('PlayRoomPage', () => {
+  beforeEach(() => { mocks.roomId = ROOM; });
+
   it('renders the room emoji label instead of the room ID', () => {
     render(<PlayRoomPage />);
-    expect(screen.getByText(getRoomEmoji('test-room-123').join(''))).toBeDefined();
-    expect(screen.queryByText('test-room-123')).toBeNull();
+    expect(screen.getByText(getRoomEmoji('3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c').join(''))).toBeDefined();
+    expect(screen.queryByText('3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c')).toBeNull();
   });
 
   it('renders the SudokuContainer with the correct roomId', () => {
     render(<PlayRoomPage />);
     const container = screen.getByTestId('sudoku-container');
-    expect(container.getAttribute('data-room-id')).toBe('test-room-123');
+    expect(container.getAttribute('data-room-id')).toBe('3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c');
   });
 
   it('renders the copy link button', () => {
@@ -50,5 +56,16 @@ describe('PlayRoomPage', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
       window.location.href
     );
+  });
+
+  it.each(['custom-room', 'us', '', ['a', 'b'], undefined])('shows a message instead of the game when the link has no valid room (%j)', (roomId) => {
+    mocks.roomId = roomId;
+
+    render(<PlayRoomPage />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('sudoku.invalidRoom');
+    expect(screen.getByRole('link', { name: 'sudoku.backHome' })).toHaveAttribute('href', '/');
+    expect(screen.queryByTestId('sudoku-container')).toBeNull();
+    expect(screen.queryByText(/sudoku.copyLink/)).toBeNull();
   });
 });

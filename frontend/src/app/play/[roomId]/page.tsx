@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { roomIdSchema } from '@nbg/shared';
 import { SudokuContainer } from '@/app/components/sudoku/SudokuContainer';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getRoomEmoji } from '@/lib/roomEmoji';
@@ -9,8 +11,8 @@ import { getRoomEmoji } from '@/lib/roomEmoji';
 export default function PlayRoomPage() {
   const { t } = useTranslation();
   const params = useParams();
-  const roomId = params.roomId as string;
-  const roomEmoji = getRoomEmoji(roomId).join('');
+  // The server only accepts the ids the app generates: a link with any other id would wait for a game that never starts.
+  const parsedRoomId = roomIdSchema.safeParse(params.roomId);
 
   const [copied, setCopied] = useState(false);
 
@@ -23,6 +25,20 @@ export default function PlayRoomPage() {
       console.error('Failed to copy text: ', err);
     }
   };
+
+  if (!parsedRoomId.success) {
+    return (
+      <div role="alert" className="flex flex-col items-center gap-4 p-4 text-center sm:p-8">
+        <p className="text-lg font-bold text-[var(--title-text)]">{t('sudoku.invalidRoom')}</p>
+        <Link href="/" className="font-bold text-[var(--subtitle-text)] underline hover:text-[var(--title-text)]">
+          {t('sudoku.backHome')}
+        </Link>
+      </div>
+    );
+  }
+
+  const roomId = parsedRoomId.data;
+  const roomEmoji = getRoomEmoji(roomId).join('');
 
   return (
     <div className="w-full flex flex-col items-center p-4 sm:p-8">

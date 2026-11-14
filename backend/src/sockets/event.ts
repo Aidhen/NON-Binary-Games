@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
 import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema } from "@nbg/shared";
-import type { ClientToServerEvents, DifficultyLevel, GameId, ServerToClientEvents, SocketData } from "@nbg/shared";
+import type { ClientToServerEvents, DifficultyLevel, GameId, ServerToClientEvents, SocketData, SudokuStartedPayload } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
 import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
@@ -47,7 +47,8 @@ const createGame: Record<GameId, () => RoomGame> = {
   sudoku: () => createSudoku(FIRST_DIFFICULTY),
 };
 
-const sudokuStarted = (game: SudokuGame) => ({
+const sudokuStarted = (game: SudokuGame): SudokuStartedPayload => ({
+  game: 'sudoku',
   board: game.board,
   difficulty: game.difficulty,
   currentGrid: game.currentGrid,

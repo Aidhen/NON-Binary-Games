@@ -24,7 +24,7 @@ const idOf = (name: string): string => {
 
 type TestClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
 type TestServerSocket = ServerSocket<ClientToServerEvents, ServerToClientEvents>;
-type GameStartedPayload = Parameters<ServerToClientEvents['game-started']>[0];
+type GameStartedPayload = Extract<Parameters<ServerToClientEvents['game-started']>[0], { game: 'sudoku' }>;
 type CellUpdatedPayload = Parameters<ServerToClientEvents['cell-updated']>[0];
 type PlayerSelectedCellPayload = Parameters<ServerToClientEvents['player-selected-cell']>[0];
 type NoteToggledPayload = Parameters<ServerToClientEvents['note-toggled']>[0];
@@ -256,6 +256,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const payload = await gameStarted;
       const room = playing(rooms.get(testRoomId)!);
 
+      expect(payload.game).toBe('sudoku');
       expect(payload.board).toBeDefined();
       expect(payload.currentGrid).toBeDefined();
       expect(payload.notesGrid).toEqual({});

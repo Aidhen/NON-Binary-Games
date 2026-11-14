@@ -174,6 +174,7 @@ const renderGame = async (roomId = 'room-1') => {
 
   await act(async () => {
     mocks.dispatch('game-started', {
+      game: 'sudoku',
       board: testBoard,
       currentGrid: currentGrid.map((row) => [...row]),
       notesGrid: {},
@@ -284,7 +285,7 @@ describe('SudokuContainer', () => {
     expect(screen.getByRole('alert')).toBeInTheDocument();
 
     await act(async () => {
-      mocks.dispatch('game-started', { board: testBoard, currentGrid: currentGrid.map((row) => [...row]), notesGrid: {}, difficulty: 'easy' });
+      mocks.dispatch('game-started', { game: 'sudoku', board: testBoard, currentGrid: currentGrid.map((row) => [...row]), notesGrid: {}, difficulty: 'easy' });
     });
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -533,6 +534,7 @@ describe('SudokuContainer', () => {
 
     await act(async () => {
       mocks.dispatch('game-started', {
+      game: 'sudoku',
         board: testBoard,
         currentGrid: testBoard.initial.map((row) => [...row]),
         notesGrid: {},
@@ -586,7 +588,7 @@ describe('SudokuContainer', () => {
     });
 
     await act(async () => {
-      mocks.dispatch('game-started', { board: testBoard, currentGrid, notesGrid: {}, difficulty: 'easy' });
+      mocks.dispatch('game-started', { game: 'sudoku', board: testBoard, currentGrid, notesGrid: {}, difficulty: 'easy' });
     });
 
     expect(getBoardState().isGameWon).toBe(false);
@@ -812,7 +814,7 @@ describe('SudokuContainer', () => {
 
     it('forgets the players of a room when it moves to another one', async () => {
       const { rerender } = render(<SudokuContainer roomId="room-1" />);
-      await act(async () => { mocks.dispatch('game-started', { board: testBoard, currentGrid, notesGrid: {}, difficulty: 'easy' }); });
+      await act(async () => { mocks.dispatch('game-started', { game: 'sudoku', board: testBoard, currentGrid, notesGrid: {}, difficulty: 'easy' }); });
       await tellPlayers();
       expect(screen.getAllByRole('listitem')).toHaveLength(2);
 
@@ -833,6 +835,7 @@ describe('SudokuContainer', () => {
         mocks.socket.connected = true;
         mocks.dispatch('connect');
         mocks.dispatch('game-started', {
+      game: 'sudoku',
           board: testBoard,
           currentGrid: currentGrid.map((row) => [...row]),
           notesGrid: {},

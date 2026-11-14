@@ -5,6 +5,7 @@ import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
 import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
 import { applyConnectionLimits } from './connectionLimits';
+import { logger } from '../logger';
 import type { AddressOf } from './connectionLimits';
 import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM } from '@nbg/shared';
 import type { JoinError } from '@nbg/shared';
@@ -613,6 +614,28 @@ describe('Socket Events Security & Bounds Checking', () => {
         expect(room.players.has(clientSocket.id!)).toBe(true);
         expect(rooms.has(testRoomId)).toBe(true);
       } finally {
+        observer.disconnect();
+      }
+    });
+
+    it('logs a failure while a player leaves instead of letting it stop the server', async () => {
+      const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+      const observer = await connectTestClient();
+
+      try {
+        await joinRoom(observer, 'failing-leave-room');
+        const serverDisconnected = new Promise<void>((resolve) => { getServerSocket(observer).once('disconnect', () => resolve()); });
+        const get = vi.spyOn(rooms, 'get').mockImplementationOnce(() => { throw new Error('store failure'); });
+
+        observer.disconnect();
+        await serverDisconnected;
+        // The event loop turn after the disconnect is where an escaped exception would show up.
+        await flushSocketEvents(clientSocket);
+
+        expect(get).toHaveBeenCalled();
+        expect(logged).toHaveBeenCalledWith('[socket] disconnect cleanup failed:', expect.objectContaining({ message: 'store failure' }));
+      } finally {
+        vi.restoreAllMocks();
         observer.disconnect();
       }
     });

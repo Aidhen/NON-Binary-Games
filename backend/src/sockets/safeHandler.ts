@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { logger } from "../logger";
 
 /**
  * Wraps a Socket.IO event handler with the guarantees every handler needs.
@@ -28,7 +29,7 @@ export function safeHandler<Args extends unknown[]>(
     try {
       handler(...parsed.data);
     } catch (error) {
-      console.error("[socket] handler failed:", error);
+      logger.error("[socket] handler failed:", error);
     }
   };
 }

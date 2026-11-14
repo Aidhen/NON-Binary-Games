@@ -30,6 +30,17 @@ export const createHttpServer = (): HttpServer =>
   });
 
 /**
+ * Leaves a line in the log before the process stops on an exception nothing caught. Without it the cause
+ * is only in the platform's raw output; the exit code stays the one Node uses by itself.
+ */
+export const installCrashLogging = (proc: NodeJS.Process = process, exit: (code: number) => void = process.exit) => {
+  proc.on("uncaughtException", (error) => {
+    logger.error("Uncaught exception, shutting down", error);
+    exit(1);
+  });
+};
+
+/**
  * Closes the server cleanly: connected clients are disconnected, then the process exits.
  * The timeout is a safety net in case a connection refuses to close.
  */

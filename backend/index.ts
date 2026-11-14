@@ -1,11 +1,13 @@
 import { Server } from "socket.io";
 import { setupSocketHandlers } from "./src/sockets/event";
 import { addressResolverFromEnv, applyConnectionLimits, MAX_MESSAGE_BYTES } from "./src/sockets/connectionLimits";
-import { createHttpServer, parsePort, shutdown } from "./src/server";
+import { createHttpServer, installCrashLogging, parsePort, shutdown } from "./src/server";
 import { logger } from "./src/logger";
 
 const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:3000";
 const port = parsePort(process.env.PORT);
+
+installCrashLogging();
 
 const httpServer = createHttpServer();
 

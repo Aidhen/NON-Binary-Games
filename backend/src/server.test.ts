@@ -2,7 +2,8 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import type { Server as HttpServer } from 'node:http';
 import type { Server } from 'socket.io';
-import { createHttpServer, DEFAULT_PORT, parsePort, shutdown, SHUTDOWN_TIMEOUT_MS } from './server';
+import { createHttpServer, DEFAULT_PORT, installCrashLogging, parsePort, shutdown, SHUTDOWN_TIMEOUT_MS } from './server';
+import { logger } from './logger';
 
 describe('parsePort', () => {
   it('uses the PORT value when it is a valid port', () => {
@@ -72,5 +73,24 @@ describe('shutdown', () => {
     vi.advanceTimersByTime(SHUTDOWN_TIMEOUT_MS);
 
     expect(exit).toHaveBeenCalledExactlyOnceWith(1);
+  });
+});
+
+describe('installCrashLogging', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('logs an uncaught exception and then exits with 1, as Node does without a handler', () => {
+    const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+    const handlers: Record<string, (error: Error) => void> = {};
+    const proc = { on: vi.fn((event: string, handler: (error: Error) => void) => { handlers[event] = handler; }) } as unknown as NodeJS.Process;
+    const exit = vi.fn();
+    const error = new Error('boom');
+
+    installCrashLogging(proc, exit);
+    handlers.uncaughtException(error);
+
+    expect(logged).toHaveBeenCalledWith('Uncaught exception, shutting down', error);
+    expect(exit).toHaveBeenCalledExactlyOnceWith(1);
+    expect(logged.mock.invocationCallOrder[0]).toBeLessThan(exit.mock.invocationCallOrder[0]);
   });
 });

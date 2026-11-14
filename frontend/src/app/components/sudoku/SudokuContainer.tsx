@@ -7,11 +7,14 @@ import { SettingsPanel } from './SettingsPanel';
 import { ServerLoader } from '../loader/ServerLoader';
 import { EmoteBar } from '../emotes/EmoteBar';
 import { EmoteOverlay } from '../emotes/EmoteOverlay';
+import { PlayerBar } from '../players/PlayerBar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from "@/lib/socket";
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
 import { useEmotes } from '@/lib/useEmotes';
+import { useHighlight } from '@/lib/useHighlight';
+import { usePlayers } from '@/lib/usePlayers';
 import { getCompletedNumbers } from '@/lib/completedNumbers';
 
 export interface GameSettings {
@@ -43,6 +46,9 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
   const [hasEntered, setHasEntered] = useState(false);
   const enterGame = useCallback(() => setHasEntered(true), []);
   const { emotes, sendEmote, isCoolingDown } = useEmotes();
+  // Before the effect that joins the room: the server answers the join with who is in it.
+  const { self, players, setColor } = usePlayers(roomId);
+  const { highlighted, highlight } = useHighlight();
 
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('easy');
   const difficultyRef = useRef<DifficultyLevel>('easy');
@@ -276,6 +282,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
+      <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={setColor} onHighlight={highlight} />
+
       <div className="w-full flex justify-between items-center">
         <div className="text-[var(--subtitle-text)] text-sm font-bold uppercase tracking-wider">
           {t('sudoku.mode')}: {t(`sudoku.${difficulty}`)}

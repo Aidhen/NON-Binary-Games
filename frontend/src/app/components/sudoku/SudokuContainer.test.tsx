@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SudokuContainer } from './SudokuContainer';
 import { WAKING_AFTER_MS } from '@/lib/useConnectionStatus';
+import { HIGHLIGHT_MS } from '@/lib/useHighlight';
 import { EMOTES } from '@nbg/shared';
 import type { Mock } from 'vitest';
 import type { DifficultyLevel, NotesGrid } from '@nbg/shared';
@@ -720,6 +721,85 @@ describe('SudokuContainer', () => {
       unmount();
 
       expect(mocks.listeners['emote-received'] ?? []).toHaveLength(0);
+    });
+  });
+
+  describe('players', () => {
+    const panda = { alias: 'aaaaaaaaaaaa', animal: 'panda', color: 'red' };
+    const fox = { alias: 'bbbbbbbbbbbb', animal: 'fox', color: 'blue' };
+
+    const tellPlayers = async (players = [panda, fox]) => {
+      await act(async () => {
+        mocks.dispatch('joined-as', panda.alias);
+        mocks.dispatch('players-updated', { players });
+      });
+    };
+
+    afterEach(() => {
+      vi.useRealTimers();
+      // The first test replaces emit to look at what is listening when the room is joined.
+      mocks.socket.emit.mockImplementation((event: string, ...args: unknown[]) => {
+        mocks.emitted.push({ event, args });
+        return mocks.socket;
+      });
+    });
+
+    it('is already listening to the players when the room is joined, because the server answers the join with them', () => {
+      const listeningAtJoin: string[][] = [];
+      mocks.socket.emit.mockImplementation((event: string) => {
+        if (event === 'join-room') listeningAtJoin.push(Object.keys(mocks.listeners));
+        return mocks.socket;
+      });
+
+      render(<SudokuContainer roomId="room-1" />);
+
+      expect(listeningAtJoin).toHaveLength(1);
+      expect(listeningAtJoin[0]).toEqual(expect.arrayContaining(['joined-as', 'players-updated']));
+    });
+
+    it('shows who is in the room above the board', async () => {
+      await renderGame();
+
+      expect(screen.queryByRole('list', { name: 'players.title' })).not.toBeInTheDocument();
+
+      await tellPlayers();
+
+      expect(screen.getByRole('list', { name: 'players.title' })).toBeInTheDocument();
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    });
+
+    it('asks the server for the color the player picks', async () => {
+      await renderGame();
+      await tellPlayers();
+
+      fireEvent.click(screen.getByRole('button', { name: 'players.nameFormat (players.you)' }));
+      fireEvent.click(screen.getAllByRole('radio')[1]);
+
+      expect(mocks.emitted).toContainEqual({ event: 'set-color', args: ['orange'] });
+    });
+
+    it('points out another player for a moment when their chip is clicked', async () => {
+      vi.useFakeTimers();
+      await renderGame();
+      await tellPlayers();
+      const chip = () => screen.getAllByRole('listitem')[1].querySelector('button')!;
+
+      fireEvent.click(chip());
+      expect(chip()).toHaveAttribute('data-highlighted', 'true');
+
+      act(() => { vi.advanceTimersByTime(HIGHLIGHT_MS); });
+      expect(chip()).not.toHaveAttribute('data-highlighted');
+    });
+
+    it('forgets the players of a room when it moves to another one', async () => {
+      const { rerender } = render(<SudokuContainer roomId="room-1" />);
+      await act(async () => { mocks.dispatch('game-started', { board: testBoard, currentGrid, notesGrid: {}, difficulty: 'easy' }); });
+      await tellPlayers();
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+
+      rerender(<SudokuContainer roomId="room-2" />);
+
+      expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
     });
   });
 

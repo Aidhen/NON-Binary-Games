@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DIFFICULTIES } from './games/sudoku/types';
 import { EMOTES } from './emotes';
+import { PLAYER_COLORS } from './players';
 
 // In a browser the page has a Content-Security-Policy without 'unsafe-eval', and zod would report a violation
 // when it checks whether it may compile validators (the check calls Function). That compiled path is only a
@@ -20,6 +21,8 @@ if (typeof window !== 'undefined') z.config({ jitless: true });
 export const difficultySchema = z.enum(DIFFICULTIES);
 
 export const emoteSchema = z.enum(EMOTES);
+
+export const playerColorSchema = z.enum(PLAYER_COLORS);
 
 /** The length of the UUID the app generates for a room (crypto.randomUUID()). */
 export const MAX_ROOM_ID_LENGTH = 36;
@@ -88,3 +91,4 @@ export const toggleNoteArgsSchema = z.tuple([toggleNotePayloadSchema]);
 export const selectCellArgsSchema = z.tuple([selectCellPayloadSchema]);
 export const restartGameArgsSchema = z.tuple([difficultySchema]);
 export const sendEmoteArgsSchema = z.tuple([emoteSchema]);
+export const setColorArgsSchema = z.tuple([playerColorSchema]);

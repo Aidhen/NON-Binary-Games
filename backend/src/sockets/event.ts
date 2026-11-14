@@ -430,8 +430,6 @@ export const setupSocketHandlers = (io: GameServer) => {
       io.to(channelOf(roomId)).emit("game-started", gameStarted(game));
     }, allowEvent));
 
-    // Fire and forget: the sender already shows its own emote, so only the others are notified.
-    // Emotes sent during the cooldown are dropped silently (the UI disables the bar for the same time).
     socket.on("flower-field:reveal", safeHandler(flowerFieldCellArgsSchema, ({ r, c }) => {
       const current = getCurrentFlowerField(socket);
       if (!current) return;
@@ -479,6 +477,8 @@ export const setupSocketHandlers = (io: GameServer) => {
       io.to(channelOf(roomId)).emit("flower-field:mode", { explosive });
     }, allowEvent));
 
+    // Fire and forget: the sender already shows its own emote, so only the others are notified.
+    // Emotes sent during the cooldown are dropped silently (the UI disables the bar for the same time).
     socket.on("send-emote", safeHandler(sendEmoteArgsSchema, (emote) => {
       const current = getCurrentRoom(socket);
       if (!current) return;

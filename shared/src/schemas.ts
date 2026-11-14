@@ -5,6 +5,7 @@ import { EMOTES } from './emotes';
 // In a browser the page has a Content-Security-Policy without 'unsafe-eval', and zod would report a violation
 // when it checks whether it may compile validators (the check calls Function). That compiled path is only a
 // speed-up: the browser validates a room id, while the server keeps it for the payloads of every connection.
+// (This is a side effect of loading the module: do not mark this package as free of side effects.)
 if (typeof window !== 'undefined') z.config({ jitless: true });
 
 /**
@@ -27,7 +28,7 @@ export const MAX_ROOM_ID_LENGTH = 36;
  * Room ids appear in URLs (/play/[roomId]) and are the only thing that keeps a game private. The server only
  * accepts the ones the app generates: a name that people can choose is a name that two groups can choose.
  */
-export const roomIdSchema = z.uuidv4();
+export const roomIdSchema = z.uuidv4().transform((id) => id.toLowerCase());
 
 export const MAX_PLAYER_ID_LENGTH = 64;
 

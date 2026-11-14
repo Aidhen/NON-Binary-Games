@@ -33,6 +33,13 @@ describe('roomIdSchema', () => {
     expect(crypto.randomUUID()).toHaveLength(MAX_ROOM_ID_LENGTH);
   });
 
+  it('turns an id written in capitals into the one the app generated, so that both links lead to the same room', () => {
+    const id = crypto.randomUUID();
+
+    expect(roomIdSchema.parse(id.toUpperCase())).toBe(id);
+    expect(roomIdSchema.parse(id)).toBe(id);
+  });
+
   it.each(['custom-room_1', 'us', 'a'.repeat(MAX_ROOM_ID_LENGTH), 'a'.repeat(MAX_ROOM_ID_LENGTH + 1)])(
     'rejects an id someone made up (%s)',
     (value) => {

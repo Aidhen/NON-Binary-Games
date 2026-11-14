@@ -19,7 +19,8 @@
     "prepare": "husky",
     "test": "vitest",
     "coverage-no-file": "vitest run --coverage --coverage.reporter=text",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit -p shared && tsc --noEmit -p backend && tsc --noEmit -p frontend"
   },
   "lint-staged": {
     "frontend/**/*.{ts,tsx,js,jsx,mjs}": "npm run lint --workspace=frontend -- --fix"

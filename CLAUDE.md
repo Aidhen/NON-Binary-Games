@@ -21,9 +21,10 @@ docker compose run --rm node-cli npm install
 docker compose up --build
 docker compose run --rm node-cli npm run coverage
 docker compose run --rm node-cli npm run lint --workspace=frontend
+docker compose run --rm node-cli npm run typecheck
 ```
 
-In a cloud session where the Docker daemon is not available, run the same npm commands directly (`npm ci --ignore-scripts`, `npx vitest run --coverage`, `npm run lint --workspace=frontend`). CI runs lint, tests with coverage and SonarQube on every PR to `main`.
+In a cloud session where the Docker daemon is not available, run the same npm commands directly (`npm ci --ignore-scripts`, `npx vitest run --coverage`, `npm run lint --workspace=frontend`, `npm run typecheck`). CI runs lint, typecheck, tests with coverage and SonarQube on every PR to `main`.
 
 ## Rules that hold for every change
 

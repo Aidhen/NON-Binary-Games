@@ -35,6 +35,20 @@ describe('createHttpServer', () => {
     expect(await response.text()).toBe('ok');
   });
 
+  it('shows the headers of the request that may carry the address of the caller', async () => {
+    const response = await fetch(`${await start()}/ip-header-check`, { headers: { 'x-forwarded-for': '1.2.3.4' } });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      'x-forwarded-for': '1.2.3.4',
+      'x-real-ip': null,
+      'true-client-ip': null,
+      'cf-connecting-ip': null,
+      forwarded: null,
+      'x-forwarded-proto': null,
+    });
+  });
+
   it('answers 404 to anything else', async () => {
     const response = await fetch(`${await start()}/nothing`);
 

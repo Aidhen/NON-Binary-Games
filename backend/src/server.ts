@@ -12,6 +12,9 @@ export const parsePort = (value: string | undefined): number => {
   return Number.isInteger(port) && port > 0 && port <= 65535 ? port : DEFAULT_PORT;
 };
 
+/** Temporary, for one check on the hosting platform: it must never be merged. */
+const IP_CHECK_HEADERS = ["x-forwarded-for", "x-real-ip", "true-client-ip", "cf-connecting-ip", "forwarded", "x-forwarded-proto"];
+
 /**
  * Plain HTTP server that Socket.IO attaches to.
  * GET /healthz is for the hosting platform's health check; everything else that
@@ -22,6 +25,15 @@ export const createHttpServer = (): HttpServer =>
     if (req.method === "GET" && req.url === "/healthz") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("ok");
+      return;
+    }
+
+    // Answers with the headers of the caller's own request, so that it is possible to see which of them the
+    // platform writes and whether it keeps the ones a client sends. Nothing is logged or stored.
+    if (req.method === "GET" && req.url === "/ip-header-check") {
+      const seen = Object.fromEntries(IP_CHECK_HEADERS.map((name) => [name, req.headers[name] ?? null]));
+      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      res.end(JSON.stringify(seen));
       return;
     }
 

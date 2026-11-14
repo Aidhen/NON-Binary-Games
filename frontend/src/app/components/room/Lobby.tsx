@@ -1,80 +1,95 @@
 'use client';
+import { useState } from 'react';
 import type { GameId, LobbyVote, PlayerColor, PlayerProfile } from '@nbg/shared';
-import { EmoteBar } from '../emotes/EmoteBar';
-import { EmoteOverlay } from '../emotes/EmoteOverlay';
-import { PlayerBar } from '../players/PlayerBar';
-import type { GameEntry } from '../games/types';
+import { GameCarousel } from '../games/GameCarousel';
+import type { AvailableGame, GameEntry } from '../games/types';
+import { RoomCard } from './RoomCard';
+import { WakeStatus } from './WakeStatus';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
-import { useEmotes } from '@/lib/useEmotes';
-import { useHighlight } from '@/lib/useHighlight';
+import type { ConnectionStatus } from '@/lib/useConnectionStatus';
 
 interface LobbyProps {
+  roomId: string;
   games: readonly GameEntry[];
   /** The players in the room, in the order they came. */
   players: PlayerProfile[];
   /** Who the player is in that list (their alias), once the server has said so. */
   self: string | null;
-  votes: LobbyVote[];
+  /** Null until the room has answered: the table is shown, but nothing can be voted yet. */
+  votes: LobbyVote[] | null;
+  status: ConnectionStatus;
+  onRetry: () => void;
   /** The game the player wants, or `null` to take their vote back. */
   onVote: (game: GameId | null) => void;
   onPickColor: (color: PlayerColor) => void;
 }
 
 /**
- * The room before a game is open: who is here and the games to choose from. Every player votes for one,
- * and the server opens the game that more than half of the room wants.
+ * The room before a game is open, as a table seen from above: the room in the middle, and one box per game.
+ * The player lifts the lid of a box and asks to open it: that is their vote, and the server opens the game
+ * that more than half of the room wants.
  */
-export function Lobby({ games, players, self, votes, onVote, onPickColor }: Readonly<LobbyProps>) {
+export function Lobby({ roomId, games, players, self, votes, status, onRetry, onVote, onPickColor }: Readonly<LobbyProps>) {
   const { t } = useTranslation();
-  const { emotes, sendEmote, isCoolingDown } = useEmotes();
-  const { highlighted, highlight } = useHighlight();
+  const playable = games.filter((game): game is AvailableGame => game.status === 'available');
+  const [lookedAt, setLookedAt] = useState<GameId | null>(null);
 
-  const ownVote = votes.find(({ alias }) => alias === self)?.game ?? null;
+  const ready = votes !== null;
+  const ownVote = votes?.find(({ alias }) => alias === self)?.game ?? null;
+  // The box the player touched last, else the one they voted for, else the first that can be played.
+  const selected = playable.find(({ id }) => id === (lookedAt ?? ownVote)) ?? playable[0];
+  const voted = selected !== undefined && ownVote === selected.id;
+  const count = selected ? (votes ?? []).filter((vote) => vote.game === selected.id).length : 0;
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
-      <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={onPickColor} onHighlight={highlight} />
+    <div className="mx-auto grid w-full max-w-md grid-cols-1 gap-8 lg:max-w-4xl lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start lg:gap-10">
+      <RoomCard roomId={roomId} players={players} self={self} onPickColor={onPickColor} />
 
-      <section aria-labelledby="lobby-title" className="flex w-full flex-col items-center gap-3">
-        <h2 id="lobby-title" className="text-2xl font-black text-[var(--title-text)]">{t('lobby.title')}</h2>
-        <p className="text-center text-sm font-medium text-[var(--subtitle-text)]">{t('lobby.hint')}</p>
+      <section aria-labelledby="lobby-title" className="flex min-w-0 flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 id="lobby-title" className="font-display text-3xl font-extrabold leading-tight text-[var(--title-text)]">{t('lobby.title')}</h2>
+          <p className="text-sm font-medium text-[var(--subtitle-text)]">{t('lobby.hint')}</p>
+        </div>
 
-        <ul className="flex w-full flex-col gap-2">
-          {games.map((game) => {
-            const count = votes.filter((vote) => vote.game === game.id).length;
-            const voted = game.status === 'available' && ownVote === game.id;
+        <GameCarousel
+          games={games}
+          selectedId={selected?.id ?? null}
+          onSelect={(id) => setLookedAt(playable.find((game) => game.id === id)?.id ?? null)}
+          votes={votes ?? []}
+          players={players}
+          enabled={ready}
+        />
 
-            return (
-              <li key={game.id}>
-                <button
-                  type="button"
-                  disabled={game.status === 'soon'}
-                  aria-pressed={game.status === 'available' ? voted : undefined}
-                  onClick={game.status === 'available' ? () => onVote(voted ? null : game.id) : undefined}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-lg border-2 px-4 py-3 text-left font-bold transition-colors duration-200",
-                    voted
-                      ? "bg-[var(--cell-background-selected)] text-[var(--title-text)] border-[var(--grid-border-outer)]"
-                      : "bg-[var(--numpad-background)] text-[var(--numpad-text)] border-transparent hover:bg-[var(--numpad-hover)]",
-                    "disabled:cursor-not-allowed disabled:opacity-60"
-                  )}
-                >
-                  <span>{t(game.titleKey)}</span>
-                  <span className="text-sm text-[var(--subtitle-text)]">
-                    {game.status === 'soon'
-                      ? t('lobby.soon')
-                      : t('lobby.votes').replace('{count}', String(count)).replace('{total}', String(players.length))}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <button
+          type="button"
+          aria-pressed={voted}
+          disabled={!ready || !selected}
+          onClick={() => selected && onVote(voted ? null : selected.id)}
+          className={cn(
+            "w-full cursor-pointer rounded-[var(--radius-paper)] px-6 py-4 font-display text-xl font-extrabold",
+            "shadow-[var(--shadow-paper)] transition-transform duration-150 motion-reduce:transition-none",
+            "active:translate-x-0.5 active:translate-y-1 active:shadow-none",
+            "disabled:cursor-not-allowed disabled:opacity-60",
+            voted
+              ? "bg-[var(--paper)] text-[var(--title-text)]"
+              : "bg-[var(--accent)] text-[var(--accent-ink)]"
+          )}
+        >
+          {voted ? t('lobby.takeBack') : t('lobby.open')}
+        </button>
+
+        {!ready && <WakeStatus status={status} onRetry={onRetry} />}
+
+        {ready && (
+          <p role="status" className="min-h-5 text-center text-sm font-bold text-[var(--subtitle-text)]">
+            {selected && count > 0 && t('lobby.progress')
+              .replace('{count}', String(count))
+              .replace('{total}', String(players.length))
+              .replace('{game}', t(selected.titleKey))}
+          </p>
+        )}
       </section>
-
-      <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
-      <EmoteOverlay emotes={emotes} />
     </div>
   );
 }

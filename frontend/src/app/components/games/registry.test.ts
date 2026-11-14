@@ -34,6 +34,10 @@ describe('GAMES', () => {
     }
   });
 
+  it('gives every box a cover', () => {
+    for (const game of GAMES) expect(game.Cover).toEqual(expect.any(Function));
+  });
+
   it('asks for a number of players a room can hold', () => {
     for (const { minPlayers, maxPlayers } of GAMES) {
       expect(minPlayers).toBeGreaterThanOrEqual(1);
@@ -53,8 +57,8 @@ describe('GAMES', () => {
 describe('findGame', () => {
   const Game = () => null;
   const games: GameEntry[] = [
-    { id: 'later', status: 'soon', titleKey: 'x', minPlayers: 1, maxPlayers: 2 },
-    { id: 'sudoku', status: 'available', titleKey: 'x', minPlayers: 1, maxPlayers: 2, Game },
+    { id: 'later', status: 'soon', titleKey: 'x', Cover: () => null, minPlayers: 1, maxPlayers: 2 },
+    { id: 'sudoku', status: 'available', titleKey: 'x', Cover: () => null, minPlayers: 1, maxPlayers: 2, Game },
   ];
 
   it('finds the playable entry of a game', () => {

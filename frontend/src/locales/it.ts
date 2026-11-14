@@ -65,15 +65,27 @@ export const it: Translations = {
     }
   },
   lobby: {
-    title: "Scegli il gioco",
-    hint: "Ognuno ne sceglie uno. Il gioco si apre quando lo vuole più di metà della stanza.",
-    votes: "{count} su {total}",
+    yourRoom: "La tua stanza",
+    invite: "Manda il link a chi vuoi al tavolo.",
+    title: "Scegli una scatola",
+    hint: "Ognuno ne sceglie una. La scatola si apre quando la vuole più di metà della stanza.",
+    games: "Giochi",
+    open: "Apri la scatola",
+    takeBack: "Ritiro il mio voto",
+    progress: "{count} su {total} vogliono {game}",
+    votes: "{count} voti su {total}",
+    players: "{min}–{max} giocatori",
+    playersExact: "{count} giocatori",
+    connecting: "Apparecchio il tavolo…",
     soon: "Presto",
     unknownGame: "In questa stanza si gioca a un gioco che questa pagina non conosce ancora. Ricarica la pagina per avere l'ultima versione."
   },
   games: {
     sudoku: {
       title: "Sudoku"
+    },
+    mystery: {
+      title: "Scatola misteriosa"
     }
   },
   loader: {

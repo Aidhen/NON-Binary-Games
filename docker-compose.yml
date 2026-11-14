@@ -1,6 +1,8 @@
+# For local development only: everything runs as root with the whole repository mounted, and the ports
+# are open on this machine alone. Production does not use this file (see render.yaml).
 services:
   node-cli:
-    image: node:24-slim
+    image: node:24.22-slim
     working_dir: /app
     volumes:
       - .:/app
@@ -12,13 +14,13 @@ services:
   #     - "6379:6379"
 
   backend:
-    image: node:24-slim
+    image: node:24.22-slim
     container_name: nbg_backend
     working_dir: /app/backend
     volumes:
       - .:/app
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     command: npm run dev
     # environment:
     #   - REDIS_URL=redis://redis:6379
@@ -26,13 +28,13 @@ services:
     #   - redis
 
   frontend:
-    image: node:24-slim
+    image: node:24.22-slim
     container_name: nbg_frontend
     working_dir: /app/frontend
     volumes:
       - .:/app
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     command: npm run dev
     environment:
       - NEXT_PUBLIC_SOCKET_URL=http://localhost:4000

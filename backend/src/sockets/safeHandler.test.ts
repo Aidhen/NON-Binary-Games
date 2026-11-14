@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { z } from 'zod';
 import { safeHandler } from './safeHandler';
+import { logger } from '../logger';
 
 describe('safeHandler', () => {
   afterEach(() => {
@@ -36,11 +37,11 @@ describe('safeHandler', () => {
 
   it('catches and logs exceptions thrown by the handler instead of letting them escape', () => {
     const error = new Error('boom');
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
     const wrapped = safeHandler<z.output<typeof schema>>(schema, () => { throw error; });
 
     expect(() => wrapped({ n: 1 })).not.toThrow();
-    expect(consoleError).toHaveBeenCalledWith('[socket] handler failed:', error);
+    expect(logged).toHaveBeenCalledWith('[socket] handler failed:', error);
   });
 
   it('drops the event without parsing it when the rate limit says no', () => {

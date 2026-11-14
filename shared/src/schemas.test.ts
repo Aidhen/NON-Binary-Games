@@ -28,18 +28,36 @@ describe('difficultySchema', () => {
 });
 
 describe('roomIdSchema', () => {
-  it('accepts UUIDs and url-safe ids', () => {
-    expect(roomIdSchema.safeParse(crypto.randomUUID()).success).toBe(true);
-    expect(roomIdSchema.safeParse('custom-room_1').success).toBe(true);
+  it('accepts the ids the app generates', () => {
+    for (let i = 0; i < 20; i++) expect(roomIdSchema.safeParse(crypto.randomUUID()).success).toBe(true);
+    expect(crypto.randomUUID()).toHaveLength(MAX_ROOM_ID_LENGTH);
   });
 
-  it('rejects empty, oversized and non url-safe ids', () => {
-    expect(roomIdSchema.safeParse('').success).toBe(false);
-    expect(roomIdSchema.safeParse('a'.repeat(MAX_ROOM_ID_LENGTH + 1)).success).toBe(false);
-    expect(roomIdSchema.safeParse('a'.repeat(MAX_ROOM_ID_LENGTH)).success).toBe(true);
-    expect(roomIdSchema.safeParse('room with spaces').success).toBe(false);
-    expect(roomIdSchema.safeParse('../etc/passwd').success).toBe(false);
-    expect(roomIdSchema.safeParse('<script>').success).toBe(false);
+  it('turns an id written in capitals into the one the app generated, so that both links lead to the same room', () => {
+    const id = crypto.randomUUID();
+
+    expect(roomIdSchema.parse(id.toUpperCase())).toBe(id);
+    expect(roomIdSchema.parse(id)).toBe(id);
+  });
+
+  it.each(['custom-room_1', 'us', 'a'.repeat(MAX_ROOM_ID_LENGTH), 'a'.repeat(MAX_ROOM_ID_LENGTH + 1)])(
+    'rejects an id someone made up (%s)',
+    (value) => {
+      expect(roomIdSchema.safeParse(value).success).toBe(false);
+    },
+  );
+
+  it.each([
+    '',
+    '00000000-0000-0000-0000-000000000000',
+    '3f2b8c1e-9d4a-1b7e-8a2c-5d6e7f8a9b0c',
+    '3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0cc',
+    ' 3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c',
+    'room with spaces',
+    '../etc/passwd',
+    '<script>',
+  ])('rejects anything that is not a version 4 UUID (%j)', (value) => {
+    expect(roomIdSchema.safeParse(value).success).toBe(false);
   });
 
   it('rejects non-string values', () => {
@@ -49,16 +67,18 @@ describe('roomIdSchema', () => {
   });
 });
 
+const ROOM = crypto.randomUUID();
+
 describe('joinRoomArgsSchema', () => {
   it('accepts a valid room id and difficulty', () => {
-    expect(joinRoomArgsSchema.safeParse(['room-1', 'hard']).success).toBe(true);
+    expect(joinRoomArgsSchema.safeParse([ROOM, 'hard']).success).toBe(true);
   });
 
   it('rejects an invalid difficulty, missing or extra arguments', () => {
-    expect(joinRoomArgsSchema.safeParse(['room-1', 'banana']).success).toBe(false);
-    expect(joinRoomArgsSchema.safeParse(['room-1']).success).toBe(false);
+    expect(joinRoomArgsSchema.safeParse([ROOM, 'banana']).success).toBe(false);
+    expect(joinRoomArgsSchema.safeParse([ROOM]).success).toBe(false);
     expect(joinRoomArgsSchema.safeParse([]).success).toBe(false);
-    expect(joinRoomArgsSchema.safeParse(['room-1', 'easy', () => 1]).success).toBe(false);
+    expect(joinRoomArgsSchema.safeParse([ROOM, 'easy', () => 1]).success).toBe(false);
   });
 });
 

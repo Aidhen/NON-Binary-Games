@@ -40,6 +40,10 @@ jobs:
       - name: Lint Frontend
         run: npm run lint --workspace=frontend
 
+      # The contract in shared is what keeps client and server from drifting: a type error there must stop the merge.
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Run Tests with Coverage
         run: npx --no-install vitest run --coverage
 

@@ -3,6 +3,7 @@ import { Server, Socket, DefaultEventsMap } from "socket.io";
 import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
+import { logger } from "../logger";
 import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
 import type { RoomState } from "../rooms/roomStore";
@@ -241,7 +242,13 @@ export const setupSocketHandlers = (io: GameServer) => {
     }, allowEvent));
 
     socket.on("disconnect", () => {
-      leaveCurrentRoom(socket);
+      // Not behind safeHandler (it carries no payload to parse), but it needs the same guarantee: an exception
+      // escaping a listener stops the whole process, and with it every room.
+      try {
+        leaveCurrentRoom(socket);
+      } catch (error) {
+        logger.error("[socket] disconnect cleanup failed:", error);
+      }
     });
 
     socket.on("restart-game", safeHandler(restartGameArgsSchema, (difficulty) => {

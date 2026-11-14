@@ -26,6 +26,7 @@ export const it: Translations = {
     copyLink: "Copia link",
     room: "Stanza",
     roomFull: "Questa stanza è piena.",
+    invalidRoom: "Questo link non porta a una partita. Inizia una nuova partita dalla home.",
     serverFull: "Ci sono troppe partite in corso al momento. Riprova tra qualche minuto.",
     tooFast: "Sono state avviate troppe partite in poco tempo. Aspetta un attimo e riprova.",
     backHome: "Torna alla home"

@@ -1,0 +1,22 @@
+# How the backend runs on Render. Render only reads this file when a Blueprint is created from it: the service
+# that exists today is configured in the dashboard, and these are the same settings, so that they are written down.
+services:
+  - type: web
+    # Must be the name of the service in the dashboard: with another name Render would create a second service.
+    name: non-binary-games
+    runtime: node
+    plan: free
+    rootDir: backend
+    # From the root of the repository: the backend needs the workspace of shared, and the lockfile decides the versions.
+    buildCommand: cd .. && npm ci --ignore-scripts
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Origin of the frontend (CORS), like https://games.example.com. The server does not start without it.
+      - key: FRONTEND_URL
+        sync: false
+      # Render puts the address of the player in this header and a client cannot set it. See backend/.env.example.
+      - key: CLIENT_IP_HEADER
+        value: cf-connecting-ip

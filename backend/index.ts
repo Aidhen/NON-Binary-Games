@@ -1,19 +1,24 @@
 import { Server } from "socket.io";
 import { setupSocketHandlers } from "./src/sockets/event";
 import { addressResolverFromEnv, applyConnectionLimits, MAX_MESSAGE_BYTES } from "./src/sockets/connectionLimits";
-import { createHttpServer, parsePort, shutdown } from "./src/server";
+import { createHttpServer, installCrashLogging, parsePort, resolveAllowedOrigin, shutdown } from "./src/server";
 import { logger } from "./src/logger";
 
-const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:3000";
+const allowedOrigin = resolveAllowedOrigin();
+if (!allowedOrigin) {
+  logger.error("FRONTEND_URL is missing or is not an http(s) URL: it is the only origin allowed to connect in production, so the server does not start.");
+  process.exit(1);
+}
 const port = parsePort(process.env.PORT);
+
+installCrashLogging();
 
 const httpServer = createHttpServer();
 
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigin,
-    methods: ["GET", "POST"],
-    credentials: true
+    methods: ["GET", "POST"]
   },
   maxHttpBufferSize: MAX_MESSAGE_BYTES
 });

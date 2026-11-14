@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "NONBinary Games | Sudoku",
-  description: "A fast, clean, and competitive Sudoku experience.",
+  description: "A calm, collaborative Sudoku to play together in real time.",
 };
 
 export default function RootLayout({

@@ -11,7 +11,6 @@
     "@vitest/coverage-v8": "^4.1.12",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
-    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.12"
   },
@@ -19,13 +18,11 @@
     "prepare": "husky",
     "test": "vitest",
     "coverage-no-file": "vitest run --coverage --coverage.reporter=text",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit -p shared && tsc --noEmit -p backend && tsc --noEmit -p frontend"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,mjs}": [
-      "eslint --fix",
-      "prettier --write"
-    ]
+    "frontend/**/*.{ts,tsx,js,jsx,mjs}": "npm run lint --workspace=frontend -- --fix"
   },
   "dependencies": {
     "clsx": "^2.1.1",

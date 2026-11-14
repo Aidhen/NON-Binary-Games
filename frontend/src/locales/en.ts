@@ -30,6 +30,18 @@ export const en = {
     tooFast: "Too many games were started in a short time. Wait a moment and try again.",
     backHome: "Back to the home page"
   },
+  takuzu: {
+    cleared: "Puzzle cleared!",
+    compliment: "Every row and column is in balance.",
+    rules: "How it works",
+    ruleBalance: "Each row and column has as many 0s as 1s.",
+    rulePairs: "No more than two equal numbers side by side.",
+    ruleUnique: "No two rows are the same, and no two columns.",
+    tapHint: "Tap a cell to go from empty to 0, to 1 and back to empty.",
+    showErrors: "Show clashes (red)",
+    cell: "Row {row}, column {column}: {value}",
+    empty: "empty"
+  },
   players: {
     title: "Players in this room",
     you: "you",
@@ -83,6 +95,9 @@ export const en = {
   games: {
     sudoku: {
       title: "Sudoku"
+    },
+    takuzu: {
+      title: "Takuzu"
     },
     mystery: {
       title: "Mystery box"

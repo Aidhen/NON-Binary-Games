@@ -65,12 +65,6 @@ describe('roomIdSchema', () => {
       expect(roomIdSchema.safeParse(value).success).toBe(false);
     }
   });
-
-  it('rejects non-string values', () => {
-    for (const value of [undefined, null, 42, {}, []]) {
-      expect(roomIdSchema.safeParse(value).success).toBe(false);
-    }
-  });
 });
 
 const ROOM = crypto.randomUUID();

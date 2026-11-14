@@ -1,5 +1,6 @@
 import type { Difficulty, SudokuBoard, SudokuGrid } from './types';
 import { isValid } from './validator';
+import { solveWithSingles } from './solver';
 
 export function generateSudoku(difficulty: Difficulty, size: number = 9): SudokuBoard {
   const boxSize = Math.sqrt(size);
@@ -12,6 +13,12 @@ export function generateSudoku(difficulty: Difficulty, size: number = 9): Sudoku
   const cluesTarget = getCluesCount(difficulty, size);
 
   pokeHoles(initial, cluesTarget, size, boxSize);
+
+  // Never expected to fail: every number was taken out only after deduction still finished the puzzle.
+  // If it ever does, a player would get a puzzle that needs a guess, so fail loudly instead.
+  if (!sameGrid(solveWithSingles(initial, size, boxSize), solution)) {
+    throw new Error("Generated a puzzle that cannot be solved by deduction alone");
+  }
 
   return { solution, initial, size, boxSize };
 }
@@ -90,10 +97,14 @@ function shuffleArray<T>(array: T[]): void {
 
 export function getCluesCount(difficulty: Difficulty, size: number): number {
   const totalCells = size * size;
+  // Share of the cells that stay given. The generator cannot always go as low as the hardest ask (it only removes a
+  // number while deduction still finishes the puzzle), so a puzzle may keep a few more.
   const ratios: Record<Difficulty, number> = {
+    beginner: 0.6,
     easy: 0.5,
     medium: 0.4,
-    hard: 0.3
+    hard: 0.35,
+    expert: 0.3
   };
 
   // Fail loudly: an unknown difficulty would otherwise yield NaN clues and a fully solved board.
@@ -104,6 +115,16 @@ export function getCluesCount(difficulty: Difficulty, size: number): number {
   return Math.floor(totalCells * ratios[difficulty]);
 }
 
+function sameGrid(a: SudokuGrid | null, b: SudokuGrid): boolean {
+  return a !== null && a.every((row, r) => row.every((value, c) => value === b[r][c]));
+}
+
+/**
+ * Empties cells one by one, in random order, until `target` clues are left or no more can go.
+ * A cell is emptied only if the two basic deductions (see solveWithSingles) can still finish the puzzle: that keeps
+ * every puzzle solvable without guessing, and it also keeps the solution unique, since numbers that deduction forces
+ * can only belong to the one solution.
+ */
 function pokeHoles(grid: SudokuGrid, target: number, size: number, boxSize: number): void {
   const coords: [number, number][] = [];
   for (let row = 0; row < size; row++) {
@@ -121,7 +142,7 @@ function pokeHoles(grid: SudokuGrid, target: number, size: number, boxSize: numb
     const t = grid[row][col];
     grid[row][col] = 0;
 
-    if (countSolutions(grid, size, boxSize) === 1) {
+    if (solveWithSingles(grid, size, boxSize) !== null) {
       counterClues--;
     } else {
       grid[row][col] = t;

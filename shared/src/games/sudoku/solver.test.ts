@@ -13,7 +13,7 @@ const EASY_SOLUTION = '534678912672195348198342567859761423426853791713924856961
 // Unique solution, 24 given numbers, and no cell with one candidate and no number with one place at the start:
 // a person must guess or use a deduction beyond the two basic ones. The tests of the guarantees check both claims
 // with checkers that share nothing with the code under test.
-export const NEEDS_A_GUESS = '097000000000014000301702000006000000030400007000090831000007350400000008810000060';
+const NEEDS_A_GUESS = '097000000000014000301702000006000000030400007000090831000007350400000008810000060';
 
 describe('solveWithSingles', () => {
   it('finishes a puzzle that the two basic deductions can finish, on the one solution', () => {

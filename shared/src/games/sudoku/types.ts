@@ -1,4 +1,5 @@
-export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+/** From the gentlest to the hardest: each level leaves fewer given numbers. Every one can be solved by deduction alone. */
+export const DIFFICULTIES = ['beginner', 'easy', 'medium', 'hard', 'expert'] as const;
 
 export type Difficulty = (typeof DIFFICULTIES)[number];
 

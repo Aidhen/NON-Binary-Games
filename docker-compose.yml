@@ -1,5 +1,5 @@
 # For local development only: everything runs as root with the whole repository mounted, and the ports
-# are open on this machine alone. Production does not use this file (see render.yaml / the README).
+# are open on this machine alone. Production does not use this file (see render.yaml).
 services:
   node-cli:
     image: node:24.22-slim

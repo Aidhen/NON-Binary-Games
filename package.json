@@ -22,10 +22,7 @@
     "coverage": "vitest run --coverage"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,mjs}": [
-      "eslint --fix",
-      "prettier --write"
-    ]
+    "frontend/**/*.{ts,tsx,js,jsx,mjs}": "npm run lint --workspace=frontend -- --fix"
   },
   "dependencies": {
     "clsx": "^2.1.1",

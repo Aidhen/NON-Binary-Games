@@ -1,47 +1,10 @@
 'use client';
 import { useMemo } from 'react';
-import { NotesGrid, SudokuBoard } from '@nbg/shared';
+import { NotesGrid, PlayerProfile, SudokuBoard } from '@nbg/shared';
 import { GameSettings } from './SudokuContainer';
 import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils';
-
-const MULTIPLAYER_COLORS = [
-  'ring-blue-500',   // P1
-  'ring-green-500',  // P2
-  'ring-purple-500', // P3
-  'ring-pink-500',   // P4
-  'ring-orange-500'  // P5
-];
-
-// Kept apart from the ring: tailwind-merge keeps only the last bg-* class,
-// so a tint added to the cell would hide the selected background.
-const MULTIPLAYER_BG_COLORS = [
-  'bg-blue-500/10',
-  'bg-green-500/10',
-  'bg-purple-500/10',
-  'bg-pink-500/10',
-  'bg-orange-500/10'
-];
-
-const MULTIPLAYER_TEXT_COLORS = [
-  'text-blue-500',
-  'text-green-500',
-  'text-purple-500',
-  'text-pink-500',
-  'text-orange-500'
-];
-
-const getStableColorIndex = (id: string): number => {
-  let hash = 0;
-  const multiplier = MULTIPLAYER_COLORS.length;
-
-  for (const char of id) {
-    const charCode = char.codePointAt(0) ?? 0;
-    hash = charCode + ((hash << 5) - hash);
-  }
-
-  return Math.abs(hash % multiplier);
-};
+import { PLAYER_COLOR_STYLES, UNKNOWN_PLAYER_STYLE } from '@/lib/playerPalette';
 
 interface SudokuBoardUIProps {
   board: SudokuBoard;
@@ -54,6 +17,10 @@ interface SudokuBoardUIProps {
   othersSelections?: Record<string, [number, number]>;
   notesGrid?: NotesGrid;
   completedNumbers?: Set<number>;
+  /** Every player the page has seen in the room, by alias: the color of a cursor or a note comes from here. */
+  profiles?: Record<string, PlayerProfile>;
+  /** The player being pointed out for a moment: their cursor and notes stand out. */
+  highlightedAlias?: string | null;
 }
 
 export function SudokuBoardUI({
@@ -66,8 +33,14 @@ export function SudokuBoardUI({
   isErrorPlacement,
   othersSelections = {},
   notesGrid = {},
-  completedNumbers = new Set<number>()
+  completedNumbers = new Set<number>(),
+  profiles = {},
+  highlightedAlias = null
 }: SudokuBoardUIProps) {
+
+  // A player who is not in the list (a note by somebody who left before you came) gets the color of the theme.
+  // The list comes from the server and an alias is a key of it: only a key it really has counts.
+  const styleOf = (alias: string) => (Object.hasOwn(profiles, alias) ? PLAYER_COLOR_STYLES[profiles[alias].color] : UNKNOWN_PLAYER_STYLE);
 
   const isCellInitial = (r: number, c: number) => board.initial[r][c] !== 0;
   const isCellSelected = (r: number, c: number) => selectedCell?.[0] === r && selectedCell?.[1] === c;
@@ -176,9 +149,10 @@ export function SudokuBoardUI({
 
             let ringClass = "";
             if (occupantId) {
-              const colorIndex = getStableColorIndex(occupantId);
-              const tintClass = selected ? '' : MULTIPLAYER_BG_COLORS[colorIndex];
-              ringClass = `ring-4 ring-inset z-10 ${MULTIPLAYER_COLORS[colorIndex]} ${tintClass}`;
+              const style = styleOf(occupantId);
+              const pointedOut = occupantId === highlightedAlias;
+              const tintClass = selected ? '' : style.tint;
+              ringClass = cn('ring-inset z-10', pointedOut ? 'ring-8 motion-safe:animate-pulse' : 'ring-4', style.ring, tintClass);
             }
 
             // Outline, not ring: it can sit next to the ring of another player on the same cell
@@ -194,7 +168,7 @@ export function SudokuBoardUI({
               for (const [noteVal, pid] of Object.entries(rawNotes)) {
                 const note = Number(noteVal);
                 if (completedNumbers.has(note) || isErrorPlacement(rIndex, cIndex, note)) continue;
-                parsedNotes[note] = MULTIPLAYER_TEXT_COLORS[getStableColorIndex(pid)];
+                parsedNotes[note] = cn(styleOf(pid).text, pid === highlightedAlias && 'font-black motion-safe:animate-pulse');
               }
             }
 

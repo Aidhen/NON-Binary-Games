@@ -47,7 +47,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
   const enterGame = useCallback(() => setHasEntered(true), []);
   const { emotes, sendEmote, isCoolingDown } = useEmotes();
   // Before the effect that joins the room: the server answers the join with who is in it.
-  const { self, players, setColor } = usePlayers(roomId);
+  const { self, players, profiles, setColor } = usePlayers(roomId);
   const { highlighted, highlight } = useHighlight();
 
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('easy');
@@ -347,6 +347,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
           othersSelections={othersSelections}
           notesGrid={notesGrid}
           completedNumbers={completedNumbers}
+          profiles={profiles}
+          highlightedAlias={highlighted}
         />
       </div>
 

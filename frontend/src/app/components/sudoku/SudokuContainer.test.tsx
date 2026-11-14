@@ -19,6 +19,8 @@ type BoardMockProps = {
   othersSelections?: Record<string, [number, number]>;
   notesGrid?: NotesGrid;
   completedNumbers?: Set<number>;
+  profiles?: Record<string, unknown>;
+  highlightedAlias?: string | null;
 };
 
 type SettingsPanelMockProps = {
@@ -124,6 +126,8 @@ vi.mock('./SudokuBoardUI', () => ({
             othersSelections: props.othersSelections,
             notesGrid: props.notesGrid,
             completedNumbers: Array.from(props.completedNumbers ?? []),
+            profiles: props.profiles,
+            highlightedAlias: props.highlightedAlias,
           })}
         </output>
       </div>
@@ -789,6 +793,21 @@ describe('SudokuContainer', () => {
 
       act(() => { vi.advanceTimersByTime(HIGHLIGHT_MS); });
       expect(chip()).not.toHaveAttribute('data-highlighted');
+    });
+
+    it('gives the board the colors of the players, and the player who is pointed out', async () => {
+      vi.useFakeTimers();
+      await renderGame();
+      await tellPlayers();
+
+      expect(getBoardState().profiles).toEqual({ [panda.alias]: panda, [fox.alias]: fox });
+      expect(getBoardState().highlightedAlias).toBeNull();
+
+      fireEvent.click(screen.getAllByRole('listitem')[1].querySelector('button')!);
+      expect(getBoardState().highlightedAlias).toBe(fox.alias);
+
+      act(() => { vi.advanceTimersByTime(HIGHLIGHT_MS); });
+      expect(getBoardState().highlightedAlias).toBeNull();
     });
 
     it('forgets the players of a room when it moves to another one', async () => {

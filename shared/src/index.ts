@@ -1,10 +1,12 @@
 import type { SudokuBoard, Difficulty } from './games/sudoku/types';
+import type { TakuzuGrid } from './games/takuzu/types';
 import type { Emote } from './emotes';
 import type { GameId } from './games';
 import type { PlayerColor, PlayerProfile } from './players';
 import type { CellUpdatePayload, CellUpdateResult, ToggleNotePayload, SelectCellPayload } from './schemas';
 
 export * from './games/sudoku/index';
+export * from './games/takuzu/index';
 export * from './schemas';
 export * from './emotes';
 export * from './games';
@@ -36,11 +38,39 @@ export interface LobbyState {
   votes: LobbyVote[];
 }
 
+/** The Sudoku of a room, with everything a player needs to show it. */
+export interface SudokuStartedPayload {
+  game: 'sudoku';
+  board: SudokuBoard;
+  currentGrid: number[][];
+  notesGrid: NotesGrid;
+  difficulty: DifficultyLevel;
+}
+
+/**
+ * The Takuzu of a room. The solution stays on the server: the page can show a broken rule without it, and the
+ * server is the one who says the puzzle is solved.
+ */
+export interface TakuzuStartedPayload {
+  game: 'takuzu';
+  size: number;
+  /** The cells the puzzle gave, which nobody can change. */
+  initial: TakuzuGrid;
+  currentGrid: TakuzuGrid;
+  difficulty: DifficultyLevel;
+}
+
+/**
+ * What the players are told when a game opens or restarts, and the one who joins a room that is playing it.
+ * `game` says which one it is: the page of a game ignores the start of any other.
+ */
+export type GameStartedPayload = SudokuStartedPayload | TakuzuStartedPayload;
+
 export interface ServerToClientEvents {
   /** Sent to a player who joins, and to everybody each time a vote changes, a voter leaves or the game opens. */
   "lobby-updated": (data: LobbyState) => void;
-  /** The Sudoku of the room: sent when it opens or restarts, and to whoever joins a room that is playing it. */
-  "game-started": (payload: { board: SudokuBoard; currentGrid: number[][]; notesGrid: NotesGrid; difficulty: DifficultyLevel }) => void;
+  /** The game of the room: sent when it opens or restarts, and to whoever joins a room that is playing it. */
+  "game-started": (payload: GameStartedPayload) => void;
   "cell-updated": (data: { r: number; c: number; v: number }) => void;
   "player-selected-cell": (payload: { alias: string, r: number | null, c: number | null }) => void;
   "player-disconnected": (alias: string) => void;

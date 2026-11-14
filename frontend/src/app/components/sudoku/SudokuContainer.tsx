@@ -172,6 +172,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     socket.on("join-error", onJoinError);
 
     socket.on("game-started", (payload) => {
+      // The room can be playing another game: its start is not a board for this page.
+      if (payload.game !== 'sudoku') return;
       // A refusal can be temporary (too-fast): once the game starts, the error must not stay on screen.
       setJoinError(null);
       difficultyRef.current = payload.difficulty;

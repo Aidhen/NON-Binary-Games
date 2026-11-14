@@ -32,6 +32,18 @@ export const it: Translations = {
     tooFast: "Sono state avviate troppe partite in poco tempo. Aspetta un attimo e riprova.",
     backHome: "Torna alla home"
   },
+  takuzu: {
+    cleared: "Puzzle risolto!",
+    compliment: "Ogni riga e ogni colonna è in equilibrio.",
+    rules: "Come funziona",
+    ruleBalance: "Ogni riga e colonna ha tanti 0 quanti 1.",
+    rulePairs: "Mai più di due numeri uguali di fila.",
+    ruleUnique: "Nessuna riga uguale a un'altra, e lo stesso per le colonne.",
+    tapHint: "Tocca una cella per passare da vuota a 0, a 1 e di nuovo vuota.",
+    showErrors: "Mostra conflitti (rosso)",
+    cell: "Riga {row}, colonna {column}: {value}",
+    empty: "vuota"
+  },
   players: {
     title: "Giocatori in questa stanza",
     you: "tu",
@@ -85,6 +97,9 @@ export const it: Translations = {
   games: {
     sudoku: {
       title: "Sudoku"
+    },
+    takuzu: {
+      title: "Takuzu"
     },
     mystery: {
       title: "Scatola misteriosa"

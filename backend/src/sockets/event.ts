@@ -1,12 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema } from "@nbg/shared";
-import type { ClientToServerEvents, DifficultyLevel, GameId, ServerToClientEvents, SocketData } from "@nbg/shared";
+import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema } from "@nbg/shared";
+import type { ClientToServerEvents, DifficultyLevel, GameId, GameStartedPayload, ServerToClientEvents, SocketData, SudokuStartedPayload } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
 import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
-import type { RoomGame, RoomState, SudokuGame } from "../rooms/roomStore";
+import type { GridGame, RoomGame, RoomState, SudokuGame, TakuzuGame } from "../rooms/roomStore";
 import { assignProfile, colorIsFree, snapshotPlayers } from "../rooms/profiles";
 import { chosenGame, snapshotLobby } from "../rooms/lobby";
 
@@ -42,17 +42,45 @@ const createSudoku = (difficulty: DifficultyLevel): SudokuGame => {
   };
 };
 
-/** One entry per game: a new id in GAME_IDS does not compile until it says how its state is created. */
-const createGame: Record<GameId, () => RoomGame> = {
-  sudoku: () => createSudoku(FIRST_DIFFICULTY),
+const createTakuzu = (difficulty: DifficultyLevel): TakuzuGame => {
+  const board = generateTakuzu(difficulty);
+  return {
+    id: 'takuzu',
+    board,
+    difficulty,
+    currentGrid: board.initial.map(row => [...row]),
+    filledCells: countInitialFilledCells(board.initial),
+  };
 };
 
-const sudokuStarted = (game: SudokuGame) => ({
+/** One entry per game: a new id in GAME_IDS does not compile until it says how its state is created. */
+const createGame: Record<GameId, (difficulty: DifficultyLevel) => RoomGame> = {
+  sudoku: createSudoku,
+  takuzu: createTakuzu,
+};
+
+const sudokuStarted = (game: SudokuGame): SudokuStartedPayload => ({
+  game: 'sudoku',
   board: game.board,
   difficulty: game.difficulty,
   currentGrid: game.currentGrid,
   notesGrid: game.notesGrid,
 });
+
+/** The solution is not sent: see TakuzuStartedPayload. */
+const takuzuStarted = (game: TakuzuGame): GameStartedPayload => ({
+  game: 'takuzu',
+  size: game.board.size,
+  initial: game.board.initial,
+  currentGrid: game.currentGrid,
+  difficulty: game.difficulty,
+});
+
+/** One entry per game: what a player is told about the game the room has open. */
+const gameStarted = (game: RoomGame): GameStartedPayload => (game.id === 'sudoku' ? sudokuStarted(game) : takuzuStarted(game));
+
+/** The highest value a cell of the game can hold: a digit of the Sudoku, or one of the two symbols of the Takuzu. */
+const maxValueOf = (game: GridGame): number => (game.id === 'sudoku' ? game.board.size : TAKUZU_SYMBOLS.length);
 
 /** Tabs (sockets) one player can have open in the same room. */
 export const MAX_SOCKETS_PER_PLAYER = 3;
@@ -145,6 +173,14 @@ const getCurrentRoom = (socket: GameSocket) => {
   return { roomId, room, alias };
 };
 
+/** The same, for the events of a game played on a grid: they mean nothing in a room that is playing another kind of game, or none. */
+const getCurrentGridGame = (socket: GameSocket) => {
+  const current = getCurrentRoom(socket);
+  if (!current?.room.game) return undefined;
+
+  return { ...current, game: current.room.game };
+};
+
 /** The same, for the events of the Sudoku: they mean nothing in a room that is not playing one. */
 const getCurrentSudoku = (socket: GameSocket) => {
   const current = getCurrentRoom(socket);
@@ -175,10 +211,10 @@ export const setupSocketHandlers = (io: GameServer) => {
     const chosen = chosenGame(room);
     if (!chosen || !allowBoardGeneration()) return false;
 
-    room.game = createGame[chosen]();
+    room.game = createGame[chosen](FIRST_DIFFICULTY);
     room.votes.clear();
     io.to(channelOf(roomId)).emit("lobby-updated", snapshotLobby(room));
-    io.to(channelOf(roomId)).emit("game-started", sudokuStarted(room.game));
+    io.to(channelOf(roomId)).emit("game-started", gameStarted(room.game));
     return true;
   };
 
@@ -255,7 +291,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       else socket.emit("players-updated", { players: snapshotPlayers(room) });
 
       socket.emit("lobby-updated", snapshotLobby(room));
-      if (room.game) socket.emit("game-started", sudokuStarted(room.game));
+      if (room.game) socket.emit("game-started", gameStarted(room.game));
     }, allowEvent));
 
     socket.on("vote-game", safeHandler(voteGameArgsSchema, (game) => {
@@ -285,7 +321,7 @@ export const setupSocketHandlers = (io: GameServer) => {
     }, allowEvent));
 
     socket.on("cell-update", safeHandler(cellUpdateArgsSchema, ({ r, c, v }, acknowledge?) => {
-      const current = getCurrentSudoku(socket);
+      const current = getCurrentGridGame(socket);
       if (!current) {
         acknowledge?.({ ok: false });
         return;
@@ -294,7 +330,7 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       const size = game.board.initial.length;
 
-      if (r >= size || c >= size || v > size) {
+      if (r >= size || c >= size || v > maxValueOf(game)) {
         acknowledge?.({ ok: false });
         return;
       }
@@ -331,7 +367,7 @@ export const setupSocketHandlers = (io: GameServer) => {
     }, allowEvent));
 
     socket.on("select-cell", safeHandler(selectCellArgsSchema, ({ r, c }) => {
-      const current = getCurrentSudoku(socket);
+      const current = getCurrentGridGame(socket);
       if (!current) return;
       const { roomId, game, alias } = current;
 
@@ -352,18 +388,19 @@ export const setupSocketHandlers = (io: GameServer) => {
     });
 
     socket.on("restart-game", safeHandler(restartGameArgsSchema, (difficulty) => {
-      const current = getCurrentSudoku(socket);
+      // The same game again: choosing another one is done at the table, and the table is only for rooms that have not chosen.
+      const current = getCurrentGridGame(socket);
       if (!current) return;
-      const { roomId, room } = current;
+      const { roomId, room, game: playing } = current;
 
       // Dropped without an answer: an error screen here would replace the game of everyone who is playing.
       if (!allowRestart(budgetKey()) || !allowBoardGeneration()) return;
 
-      const game = createSudoku(difficulty);
+      const game = createGame[playing.id](difficulty);
       room.game = game;
       room.played = false;
 
-      io.to(channelOf(roomId)).emit("game-started", sudokuStarted(game));
+      io.to(channelOf(roomId)).emit("game-started", gameStarted(game));
     }, allowEvent));
 
     // Fire and forget: the sender already shows its own emote, so only the others are notified.

@@ -1,4 +1,4 @@
-import type { DifficultyLevel, GameId, NotesGrid, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid } from "@nbg/shared";
+import type { DifficultyLevel, GameId, NotesGrid, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid, TakuzuBoard, TakuzuGrid } from "@nbg/shared";
 
 /** How a player is shown to the others in one room: the animal of their name and their color. */
 export interface RoomProfile {
@@ -18,8 +18,20 @@ export interface SudokuGame {
   notesGrid: NotesGrid;
 }
 
+/** The state of a Takuzu that a room is playing. It has no notes: a cell holds a symbol or nothing. */
+export interface TakuzuGame {
+  id: 'takuzu';
+  board: TakuzuBoard;
+  difficulty: DifficultyLevel;
+  currentGrid: TakuzuGrid;
+  filledCells: number;
+}
+
+/** A game played on a square grid of cells: it is what `cell-update` and `select-cell` work on. */
+export type GridGame = SudokuGame | TakuzuGame;
+
 /** The game a room has open. A new game adds its own state here, told apart by `id`. */
-export type RoomGame = SudokuGame;
+export type RoomGame = GridGame;
 
 export interface RoomState {
   /** Null while the players are still choosing (see `votes`). Once chosen, the game of a room does not change. */

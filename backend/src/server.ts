@@ -14,13 +14,25 @@ export const parsePort = (value: string | undefined): number => {
 };
 
 /**
- * The origin the browser is allowed to connect from (CORS). In production there is no default: a missing
- * FRONTEND_URL would start a server that no browser can reach and hide the mistake, so the caller refuses to start.
+ * The origin the browser is allowed to connect from (CORS). The browser sends only the origin (no path, no
+ * trailing slash) and the comparison is an exact one, so whatever is configured is reduced to that: a URL
+ * copied with a final slash would otherwise match no browser and fail without a message.
+ *
+ * Nothing usable is a mistake that must not hide: the caller refuses to start. That includes a value that is
+ * not an http(s) URL and, in production, a missing one (there is no default there). Render sets RENDER=true on
+ * its services, so the check does not depend on NODE_ENV alone.
  */
 export const resolveAllowedOrigin = (env: NodeJS.ProcessEnv = process.env): string | undefined => {
   const value = env.FRONTEND_URL?.trim();
-  if (value) return value;
-  return env.NODE_ENV === "production" ? undefined : DEFAULT_FRONTEND_URL;
+  if (value) {
+    try {
+      const { protocol, origin } = new URL(value);
+      return protocol === "http:" || protocol === "https:" ? origin : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return env.NODE_ENV === "production" || env.RENDER === "true" ? undefined : DEFAULT_FRONTEND_URL;
 };
 
 /**

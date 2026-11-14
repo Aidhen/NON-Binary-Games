@@ -29,6 +29,28 @@ describe('resolveAllowedOrigin', () => {
   it.each([undefined, '', '   '])('has no origin in production when FRONTEND_URL is %j', (value) => {
     expect(resolveAllowedOrigin({ NODE_ENV: 'production', FRONTEND_URL: value })).toBeUndefined();
   });
+
+  it('counts a Render service as production even when NODE_ENV is not set', () => {
+    expect(resolveAllowedOrigin({ RENDER: 'true' })).toBeUndefined();
+    expect(resolveAllowedOrigin({ RENDER: 'true', FRONTEND_URL: 'https://games.example.com' })).toBe('https://games.example.com');
+  });
+
+  it.each([
+    ['https://games.example.com/', 'https://games.example.com'],
+    ['https://games.example.com/play/x?y=1#z', 'https://games.example.com'],
+    ['  http://localhost:3000/  ', 'http://localhost:3000'],
+    ['HTTPS://Games.Example.com', 'https://games.example.com'],
+  ])('reduces %j to the origin a browser sends, %j', (value, origin) => {
+    expect(resolveAllowedOrigin({ FRONTEND_URL: value })).toBe(origin);
+  });
+
+  it.each(['games.example.com', 'localhost:3000', 'not a url', 'ftp://games.example.com', 'javascript:alert(1)'])(
+    'refuses FRONTEND_URL %j, in development as well: it would match no browser',
+    (value) => {
+      expect(resolveAllowedOrigin({ FRONTEND_URL: value })).toBeUndefined();
+      expect(resolveAllowedOrigin({ FRONTEND_URL: value, NODE_ENV: 'production' })).toBeUndefined();
+    },
+  );
 });
 
 describe('createHttpServer', () => {

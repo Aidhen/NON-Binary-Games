@@ -6,7 +6,7 @@ import { logger } from "./src/logger";
 
 const allowedOrigin = resolveAllowedOrigin();
 if (!allowedOrigin) {
-  logger.error("FRONTEND_URL is not set: in production it is the only origin allowed to connect, so the server does not start.");
+  logger.error("FRONTEND_URL is missing or is not an http(s) URL: it is the only origin allowed to connect in production, so the server does not start.");
   process.exit(1);
 }
 const port = parsePort(process.env.PORT);

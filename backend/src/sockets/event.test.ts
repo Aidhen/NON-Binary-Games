@@ -1293,6 +1293,24 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     });
 
+    it('puts a link written in capitals in the same room as the one written in lowercase', async () => {
+      const lower = await connectTestClient();
+      const upper = await connectTestClient();
+      const id = crypto.randomUUID();
+
+      try {
+        await expect(joinOutcome(lower, id)).resolves.toBe('joined');
+        await expect(joinOutcome(upper, id.toUpperCase())).resolves.toBe('joined');
+
+        expect(rooms.size).toBe(1);
+        expect(rooms.get(id)!.players.size).toBe(2);
+        expect(getServerSocket(upper).data.roomId).toBe(id);
+      } finally {
+        lower.disconnect();
+        upper.disconnect();
+      }
+    });
+
     it('keeps at most a few tabs of a player in a room, closing the oldest one', async () => {
       const tabs: TestClientSocket[] = [];
       for (let i = 0; i < MAX_SOCKETS_PER_PLAYER; i++) tabs.push(await connectTestClient(playerId));

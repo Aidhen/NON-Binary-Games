@@ -2,6 +2,7 @@
 # that exists today is configured in the dashboard, and these are the same settings, so that they are written down.
 services:
   - type: web
+    # Must be the name of the service in the dashboard: with another name Render would create a second service.
     name: non-binary-games
     runtime: node
     plan: free
@@ -13,7 +14,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Origin of the frontend (CORS). In production the server does not start without it.
+      # Origin of the frontend (CORS), like https://games.example.com. The server does not start without it.
       - key: FRONTEND_URL
         sync: false
       # Render puts the address of the player in this header and a client cannot set it. See backend/.env.example.

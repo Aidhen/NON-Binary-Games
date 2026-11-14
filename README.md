@@ -33,6 +33,7 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 - [x] Shared notes and live cell selections.
 - [x] A name for each player, like Red Panda, and a color of your own to pick; the list of players shows who is who, and a tap on a player points them out on the board.
 - [x] Win detection and a "play again" screen.
+- [x] Five difficulty levels, from beginner to expert. Every puzzle has exactly one solution and can be solved by pure deduction: you never have to guess.
 - [x] Emotes between players.
 - [x] A friendly wait while the server wakes up, with two tiny mini games.
 - [x] English and Italian translations, several themes.

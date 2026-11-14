@@ -858,35 +858,18 @@ describe('SudokuContainer', () => {
       expect(screen.getByText('loader.wakingDetails')).toBeInTheDocument();
     });
 
-    it('goes straight to the board when the player did not touch the mini game', async () => {
+    it('goes straight to the board when the server wakes up', async () => {
       connectLater();
       render(<SudokuContainer roomId="sleepy-room" />);
       await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
 
       await serverWakesUp();
-
-      expect(screen.getByTestId('board-ui')).toBeInTheDocument();
-      expect(screen.queryByText('loader.ready')).not.toBeInTheDocument();
-    });
-
-    it('lets the player finish with the mini game and join when they choose', async () => {
-      connectLater();
-      render(<SudokuContainer roomId="sleepy-room" />);
-      await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
-
-      fireEvent.click(await screen.findByRole('button', { name: 'minigames.garden.water' }));
-      await serverWakesUp();
-
-      expect(screen.getByText('loader.ready')).toBeInTheDocument();
-      expect(screen.queryByTestId('board-ui')).not.toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole('button', { name: 'loader.join' }));
 
       expect(screen.getByTestId('board-ui')).toBeInTheDocument();
       expect(getBoardState().playerGrid).toEqual(currentGrid);
     });
 
-    it('joins the room as soon as the socket connects, while the player is still in the mini game', async () => {
+    it('joins the room as soon as the socket connects, after a slow start', async () => {
       connectLater();
       render(<SudokuContainer roomId="sleepy-room" />);
       await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });

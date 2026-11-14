@@ -20,7 +20,7 @@ Open a game, send the link to your partner or your friends, and you are in the s
 
 ### A gentle wait
 
-The game runs on a free hosting plan that goes to sleep when nobody is around, so the first visit can take about a minute. Instead of a blank page, it tells you what is happening and gives you something to do: water a little garden, or poke a blob that reacts to the emotes.
+The game runs on a free hosting plan that goes to sleep when nobody is around, so the first visit can take about a minute. Instead of a blank page, it tells you what is happening and why.
 
 ---
 
@@ -34,7 +34,7 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 - [x] A name for each player, like Red Panda, and a color of your own to pick; the list of players shows who is who, and a tap on a player points them out on the board.
 - [x] Win detection and a "play again" screen.
 - [x] Emotes between players.
-- [x] A friendly wait while the server wakes up, with two tiny mini games.
+- [x] A friendly wait while the server wakes up.
 - [x] English and Italian translations, several themes.
 - [x] Online deployment (Vercel and Render).
 
@@ -47,7 +47,7 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 - [ ] **Smoother reconnections:** coming back to a room after a connection drop should feel seamless.
 - [ ] **Keeping rooms in sync and safe:** consistent moves between players, limits against flooding.
 - [ ] **Keyboard play:** moving around the grid with the arrow keys, and better support for screen readers.
-- [ ] **More games:** the mini games already live in a small registry, so a new game is a component plus one entry.
+- [ ] **More games:** a registry of games, so that a new game is a component plus one entry.
 - [ ] **Rooms that survive restarts**, and a backend that can scale (Redis).
 - [ ] **Hosting details:** a health check, graceful shutdown and proper logs.
 

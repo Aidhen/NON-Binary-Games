@@ -16,6 +16,7 @@ import { useEmotes } from '@/lib/useEmotes';
 import { useHighlight } from '@/lib/useHighlight';
 import { usePlayers } from '@/lib/usePlayers';
 import { getCompletedNumbers } from '@/lib/completedNumbers';
+import { joinErrorMessages } from '@/lib/joinErrors';
 
 export interface GameSettings {
   highlightCrosshairs: boolean;
@@ -23,13 +24,6 @@ export interface GameSettings {
   showErrors: boolean;
   godMode: boolean;
 }
-
-/** One message per reason: a new JoinError does not compile until it has its own text. */
-const joinErrorMessages: Record<JoinError, string> = {
-  'room-full': 'sudoku.roomFull',
-  'server-full': 'sudoku.serverFull',
-  'too-fast': 'sudoku.tooFast',
-};
 
 export function SudokuContainer({ roomId }: { roomId: string }) {
   const [board, setBoard] = useState<SudokuBoard>();
@@ -111,7 +105,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     setPlayerGrid(newGrid);
     getSocket().emit("cell-update", { r, c, v: value }, (result) => {
       // The server did not apply the move: ask for the real state instead of keeping a cell nobody else sees.
-      if (!result.ok) getSocket().emit("join-room", roomId, difficultyRef.current);
+      if (!result.ok) getSocket().emit("join-room", roomId);
     });
   }, [selectedCell, playerGrid, board, canAcceptInput, isNotesMode, roomId]);
 
@@ -165,7 +159,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     const socket = getSocket();
 
     const joinGame = () => {
-      socket.emit('join-room', roomId, difficultyRef.current);
+      socket.emit('join-room', roomId);
     };
 
     const onConnect = () => {

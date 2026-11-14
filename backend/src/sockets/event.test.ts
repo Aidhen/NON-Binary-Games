@@ -4,12 +4,13 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
-import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, colorLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
+import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, colorLimit, voteLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
 import { applyConnectionLimits } from './connectionLimits';
 import { logger } from '../logger';
 import type { AddressOf } from './connectionLimits';
 import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM, PLAYER_ANIMALS, PLAYER_COLORS } from '@nbg/shared';
-import type { JoinError } from '@nbg/shared';
+import type { JoinError, LobbyState } from '@nbg/shared';
+import type { RoomState, SudokuGame } from '../rooms/roomStore';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
 
 // Read before any test changes them: a limit that is not finite protects nothing.
@@ -71,7 +72,32 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
   /**
-   * Joins a room and waits for the game-started event.
+   * A room that is playing a Sudoku, with the state of the game next to the state of the room. The game is read
+   * each time: a restart replaces it.
+   */
+  const playing = (room: RoomState) => {
+    const game = () => {
+      if (!room.game) throw new Error('The room has no game open');
+      return room.game;
+    };
+    return {
+      get players() { return room.players; },
+      get aliases() { return room.aliases; },
+      get profiles() { return room.profiles; },
+      get played() { return room.played; },
+      get board() { return game().board; },
+      get difficulty() { return game().difficulty; },
+      get currentGrid() { return game().currentGrid; },
+      set currentGrid(grid: SudokuGame['currentGrid']) { game().currentGrid = grid; },
+      get filledCells() { return game().filledCells; },
+      set filledCells(count: number) { game().filledCells = count; },
+      get notesGrid() { return game().notesGrid; },
+    };
+  };
+
+  /**
+   * Joins a room and waits for the Sudoku: a room that is still choosing gets the vote of this player, which
+   * opens the game when they are alone in it.
    */
   const joinRoom = async (
     socket: TestClientSocket = clientSocket,
@@ -79,14 +105,22 @@ describe('Socket Events Security & Bounds Checking', () => {
     difficulty: 'easy' | 'medium' | 'hard' = 'easy',
   ) => {
     const gameStarted = new Promise<void>((resolve) => { socket.once('game-started', () => resolve()); });
+    const lobby = new Promise<LobbyState>((resolve) => { socket.once('lobby-updated', resolve); });
 
-    socket.emit('join-room', roomId, difficulty);
+    socket.emit('join-room', roomId);
+    if ((await lobby).game === null) socket.emit('vote-game', 'sudoku');
     await gameStarted;
+
+    if (difficulty !== 'easy') {
+      const restarted = new Promise<void>((resolve) => { socket.once('game-started', () => resolve()); });
+      socket.emit('restart-game', difficulty);
+      await restarted;
+    }
 
     const room = rooms.get(roomId);
     if (!room) throw new Error(`Room "${roomId}" was not created`);
 
-    return room;
+    return playing(room);
   };
 
   /**
@@ -94,9 +128,29 @@ describe('Socket Events Security & Bounds Checking', () => {
    */
   const joinOutcome = (socket: TestClientSocket, roomId: string) =>
     new Promise<JoinError | 'joined'>((resolve) => {
-      socket.once('game-started', () => resolve('joined'));
+      socket.once('lobby-updated', () => resolve('joined'));
       socket.once('join-error', resolve);
-      socket.emit('join-room', roomId, 'easy');
+      socket.emit('join-room', roomId);
+    });
+
+  /**
+   * Joins a room and stops at the table: resolves with what the server says the room is doing.
+   */
+  const enterRoom = (socket: TestClientSocket, roomId: string) =>
+    new Promise<LobbyState>((resolve) => {
+      socket.once('lobby-updated', resolve);
+      socket.emit('join-room', roomId);
+    });
+
+  /** The next thing the server says about the choice of the game. */
+  const nextLobby = (socket: TestClientSocket) =>
+    new Promise<LobbyState>((resolve) => { socket.once('lobby-updated', resolve); });
+
+  /** Votes for the Sudoku and waits for it: for a player who is alone in a room that has no game yet. */
+  const openSudoku = (socket: TestClientSocket) =>
+    new Promise<void>((resolve) => {
+      socket.once('game-started', () => resolve());
+      socket.emit('vote-game', 'sudoku');
     });
 
   /**
@@ -169,6 +223,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     restartLimit.max = Number.POSITIVE_INFINITY;
     boardGenerationLimit.max = Number.POSITIVE_INFINITY;
     colorLimit.cooldownMs = 0;
+    voteLimit.cooldownMs = 0;
   });
 
   // -------------------------------------------------------
@@ -176,22 +231,36 @@ describe('Socket Events Security & Bounds Checking', () => {
   // -------------------------------------------------------
 
   describe('join-room', () => {
-    it('initializes room state on join', async () => {
+    it('creates a room with no game: the player is at the table, and no board was generated', async () => {
+      const started = vi.fn();
+      clientSocket.on('game-started', started);
+
+      const lobby = await enterRoom(clientSocket, testRoomId);
+      await flushSocketEvents();
+
+      const room = rooms.get(testRoomId)!;
+      expect(lobby).toEqual({ game: null, votes: [] });
+      expect(room.game).toBeNull();
+      expect(room.players.has(clientSocket.id!)).toBe(true);
+      expect(started).not.toHaveBeenCalled();
+    });
+
+    it('initializes the state of the game when the room opens it', async () => {
       const gameStarted = new Promise<GameStartedPayload>((resolve) => {
         clientSocket.once('game-started', resolve);
       });
 
-      clientSocket.emit('join-room', testRoomId, 'easy');
+      await enterRoom(clientSocket, testRoomId);
+      clientSocket.emit('vote-game', 'sudoku');
 
       const payload = await gameStarted;
-      const room = rooms.get(testRoomId);
+      const room = playing(rooms.get(testRoomId)!);
 
-      expect(room).toBeDefined();
       expect(payload.board).toBeDefined();
       expect(payload.currentGrid).toBeDefined();
       expect(payload.notesGrid).toEqual({});
-      expect(room!.currentGrid).toEqual(room!.board.initial);
-      expect(room!.players.has(clientSocket.id!)).toBe(true);
+      expect(payload.difficulty).toBe('easy');
+      expect(room.currentGrid).toEqual(room.board.initial);
     });
 
     it('allows a second player to join an existing room', async () => {
@@ -204,10 +273,10 @@ describe('Socket Events Security & Bounds Checking', () => {
           secondClient.once('game-started', resolve);
         });
 
-        secondClient.emit('join-room', testRoomId, 'hard');
+        secondClient.emit('join-room', testRoomId);
 
         const payload = await secondGameStarted;
-        const room = rooms.get(testRoomId)!;
+        const room = playing(rooms.get(testRoomId)!);
 
         expect(payload.board).toEqual(room.board);
         expect(room.difficulty).toBe('easy');
@@ -221,6 +290,261 @@ describe('Socket Events Security & Bounds Checking', () => {
   });
 
   // -------------------------------------------------------
+  // CHOOSING THE GAME
+  // -------------------------------------------------------
+
+  describe('choosing the game', () => {
+    const rawEmit = (socket: TestClientSocket, event: string, ...args: unknown[]) => {
+      (socket as unknown as { emit: (event: string, ...args: unknown[]) => void }).emit(event, ...args);
+    };
+
+    /** Joins the room and resolves with the alias the server gave this player. */
+    const enterAs = async (socket: TestClientSocket, roomId = testRoomId) => {
+      const alias = new Promise<string>((resolve) => { socket.once('joined-as', resolve); });
+      await enterRoom(socket, roomId);
+      return alias;
+    };
+
+    // The players a test adds to the room, gone when it ends.
+    const extras: TestClientSocket[] = [];
+    const connectExtra = async (playerId?: string) => {
+      const socket = await connectTestClient(playerId);
+      extras.push(socket);
+      return socket;
+    };
+
+    afterEach(() => {
+      extras.splice(0).forEach((socket) => socket.disconnect());
+    });
+
+    it('opens the game at once for a player who is alone, and the votes are over', async () => {
+      await enterRoom(clientSocket, testRoomId);
+      const lobby = nextLobby(clientSocket);
+
+      await openSudoku(clientSocket);
+
+      await expect(lobby).resolves.toEqual({ game: 'sudoku', votes: [] });
+      expect(rooms.get(testRoomId)!.game?.id).toBe('sudoku');
+      expect(rooms.get(testRoomId)!.votes.size).toBe(0);
+    });
+
+    it('waits for both players when there are two, and shows each vote to everybody by alias', async () => {
+      const second = await connectExtra('second-player-id');
+      const firstAlias = await enterAs(clientSocket);
+      await enterAs(second);
+      const started = vi.fn();
+      clientSocket.on('game-started', started);
+
+      const seenByFirst = nextLobby(clientSocket);
+      const seenBySecond = nextLobby(second);
+      clientSocket.emit('vote-game', 'sudoku');
+
+      const expected = { game: null, votes: [{ alias: firstAlias, game: 'sudoku' }] };
+      await expect(seenByFirst).resolves.toEqual(expected);
+      await expect(seenBySecond).resolves.toEqual(expected);
+      expect(started).not.toHaveBeenCalled();
+      expect(rooms.get(testRoomId)!.game).toBeNull();
+
+      const opened = new Promise<GameStartedPayload>((resolve) => { clientSocket.once('game-started', resolve); });
+      const openedForSecond = new Promise<GameStartedPayload>((resolve) => { second.once('game-started', resolve); });
+      second.emit('vote-game', 'sudoku');
+
+      expect((await opened).board).toEqual((await openedForSecond).board);
+      expect(rooms.get(testRoomId)!.game?.id).toBe('sudoku');
+    });
+
+    it('never tells the id of a player with their vote', async () => {
+      const second = await connectExtra('second-player-id');
+      await enterAs(clientSocket);
+      await enterAs(second);
+
+      const lobby = nextLobby(clientSocket);
+      second.emit('vote-game', 'sudoku');
+
+      expect(JSON.stringify(await lobby)).not.toContain('second-player-id');
+    });
+
+    it('lets a player take their vote back', async () => {
+      const second = await connectExtra();
+      await enterAs(clientSocket);
+      await enterAs(second);
+
+      let lobby = nextLobby(second);
+      clientSocket.emit('vote-game', 'sudoku');
+      expect((await lobby).votes).toHaveLength(1);
+
+      lobby = nextLobby(second);
+      clientSocket.emit('vote-game', null);
+
+      await expect(lobby).resolves.toEqual({ game: null, votes: [] });
+      expect(rooms.get(testRoomId)!.votes.size).toBe(0);
+    });
+
+    it('counts one vote per player, however many tabs they vote from', async () => {
+      const otherTab = await connectExtra('player-with-two-tabs');
+      const sameTab = await connectExtra('player-with-two-tabs');
+      await enterAs(clientSocket);
+      await enterAs(otherTab);
+      await enterAs(sameTab);
+
+      const lobby = nextLobby(clientSocket);
+      otherTab.emit('vote-game', 'sudoku');
+      sameTab.emit('vote-game', 'sudoku');
+      await flushSocketEvents(otherTab);
+      await flushSocketEvents(sameTab);
+
+      // Two players in the room, one vote: not more than half.
+      expect((await lobby).votes).toHaveLength(1);
+      expect(rooms.get(testRoomId)!.votes.size).toBe(1);
+      expect(rooms.get(testRoomId)!.game).toBeNull();
+    });
+
+    it('forgets the vote of a player who leaves, and tells the others', async () => {
+      const [second, third] = [await connectExtra(), await connectExtra()];
+      await enterAs(clientSocket);
+      await enterAs(second);
+      await enterAs(third);
+
+      const lobby = nextLobby(clientSocket);
+      second.emit('vote-game', 'sudoku');
+      await lobby;
+
+      const withoutVote = nextLobby(clientSocket);
+      second.disconnect();
+
+      await expect(withoutVote).resolves.toEqual({ game: null, votes: [] });
+      expect(rooms.get(testRoomId)!.votes.size).toBe(0);
+    });
+
+    it('opens the game when a player leaving makes the votes that are left a majority', async () => {
+      const second = await connectExtra();
+      await enterAs(clientSocket);
+      await enterAs(second);
+
+      const lobby = nextLobby(second);
+      clientSocket.emit('vote-game', 'sudoku');
+      await lobby;
+
+      const opened = new Promise<void>((resolve) => { clientSocket.once('game-started', () => resolve()); });
+      second.disconnect();
+
+      await opened;
+      expect(rooms.get(testRoomId)!.game?.id).toBe('sudoku');
+    });
+
+    it('puts a player who joins after the choice straight into the game', async () => {
+      const room = await joinRoom();
+      const late = await connectExtra();
+
+      {
+        const started = new Promise<GameStartedPayload>((resolve) => { late.once('game-started', resolve); });
+        const lobby = await enterRoom(late, testRoomId);
+
+        expect(lobby).toEqual({ game: 'sudoku', votes: [] });
+        expect((await started).board).toEqual(room.board);
+      }
+    });
+
+    it('ignores a vote once the game is open', async () => {
+      await joinRoom();
+      const lobby = vi.fn();
+      clientSocket.on('lobby-updated', lobby);
+
+      clientSocket.emit('vote-game', 'sudoku');
+      clientSocket.emit('vote-game', null);
+      await flushSocketEvents();
+
+      expect(lobby).not.toHaveBeenCalled();
+      expect(rooms.get(testRoomId)!.votes.size).toBe(0);
+    });
+
+    it('ignores a vote from a socket that is not in a room', async () => {
+      const lobby = vi.fn();
+      clientSocket.on('lobby-updated', lobby);
+
+      clientSocket.emit('vote-game', 'sudoku');
+      await flushSocketEvents();
+
+      expect(lobby).not.toHaveBeenCalled();
+      expect(rooms.size).toBe(0);
+    });
+
+    it('refuses a vote for a game that is not in the list', async () => {
+      await enterRoom(clientSocket, testRoomId);
+      const lobby = vi.fn();
+      clientSocket.on('lobby-updated', lobby);
+
+      for (const value of ['chess', 'SUDOKU', '', '__proto__', 0, {}, ['sudoku']]) rawEmit(clientSocket, 'vote-game', value);
+      await flushSocketEvents();
+
+      expect(lobby).not.toHaveBeenCalled();
+      expect(rooms.get(testRoomId)!.votes.size).toBe(0);
+      expect(rooms.get(testRoomId)!.game).toBeNull();
+    });
+
+    it('drops the votes a socket sends faster than the cooldown', async () => {
+      // A socket of its own: the cooldown is kept on the socket, and the shared one has voted in other tests.
+      const [voter, second] = [await connectExtra(), await connectExtra()];
+      await enterAs(voter);
+      await enterAs(second);
+      voteLimit.cooldownMs = 60_000;
+      const lobby = vi.fn();
+      second.on('lobby-updated', lobby);
+
+      voter.emit('vote-game', 'sudoku');
+      voter.emit('vote-game', null);
+      voter.emit('vote-game', 'sudoku');
+      await flushSocketEvents(voter);
+      await flushSocketEvents(second);
+
+      expect(lobby).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not tell the room again about a vote that did not change', async () => {
+      const second = await connectExtra();
+      await enterAs(clientSocket);
+      await enterAs(second);
+      const lobby = vi.fn();
+      second.on('lobby-updated', lobby);
+
+      clientSocket.emit('vote-game', null);
+      clientSocket.emit('vote-game', 'sudoku');
+      clientSocket.emit('vote-game', 'sudoku');
+      clientSocket.emit('vote-game', 'sudoku');
+      await flushSocketEvents();
+      await flushSocketEvents(second);
+
+      expect(lobby).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores the events of the Sudoku while the room is still at the table', async () => {
+      await enterRoom(clientSocket, testRoomId);
+      const received = vi.fn();
+      clientSocket.on('game-started', received);
+      clientSocket.on('note-toggled', received);
+
+      const result = await new Promise<{ ok: boolean }>((resolve) => { clientSocket.emit('cell-update', { r: 0, c: 0, v: 1 }, resolve); });
+      clientSocket.emit('toggle-note', { r: 0, c: 0, v: 1 });
+      clientSocket.emit('select-cell', { r: 0, c: 0 });
+      clientSocket.emit('restart-game', 'hard');
+      await flushSocketEvents();
+
+      expect(result).toEqual({ ok: false });
+      expect(received).not.toHaveBeenCalled();
+      expect(rooms.get(testRoomId)!.game).toBeNull();
+    });
+
+    it('deletes at once a room that was left before a game was chosen', async () => {
+      const visitor = await connectExtra();
+      await enterRoom(visitor, idOf('only-looking'));
+
+      visitor.disconnect();
+
+      await vi.waitFor(() => expect(rooms.has(idOf('only-looking'))).toBe(false));
+    });
+  });
+
+  // -------------------------------------------------------
   // TOGGLE NOTE
   // -------------------------------------------------------
 
@@ -228,14 +552,14 @@ describe('Socket Events Security & Bounds Checking', () => {
     beforeEach(async () => { await joinRoom(); });
 
     it('rejects negative coordinates', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       clientSocket.emit('toggle-note', { r: -1, c: 5, v: 3 });
       await flushSocketEvents();
       expect(room.notesGrid['-1-5']).toBeUndefined();
     });
 
     it('rejects coordinates greater than or equal to the board size', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const size = room.board.size;
       clientSocket.emit('toggle-note', { r: size, c: 0, v: 3 });
       await flushSocketEvents();
@@ -243,7 +567,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('rejects values less than 1 or greater than the board size', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const size = room.board.size;
       clientSocket.emit('toggle-note', { r: 0, c: 0, v: 0 });
       clientSocket.emit('toggle-note', { r: 0, c: 0, v: size + 1 });
@@ -252,7 +576,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('rejects non-integer coordinates and values', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       clientSocket.emit('toggle-note', { r: 1.5, c: 2, v: 3 } as any);
       clientSocket.emit('toggle-note', { r: 1, c: 2, v: '3' } as any);
       await flushSocketEvents();
@@ -261,7 +585,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('adds a valid note and removes it when toggled again', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
 
       const noteAdded = new Promise<NoteToggledPayload>((resolve) => {
         clientSocket.once('note-toggled', resolve);
@@ -293,7 +617,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     beforeEach(async () => { await joinRoom(); });
 
     it('ignores updates from a socket that has not joined any room', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const cell = findCell(room.board.initial, (value) => value === 0);
       const outsider = await connectTestClient();
 
@@ -308,7 +632,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('rejects invalid coordinates and values', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const size = room.board.initial.length;
       const originalGrid = room.currentGrid.map((row) => [...row]);
 
@@ -334,7 +658,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('prevents modifying initial cells', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const cell = findCell(room.board.initial, (value) => value !== 0);
       const originalValue = room.currentGrid[cell.r][cell.c];
 
@@ -345,7 +669,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('updates an empty cell and increments filledCells', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const cell = findCell(room.board.initial, (value) => value === 0);
       const originalFilledCells = room.filledCells;
       const value = room.board.solution[cell.r][cell.c];
@@ -358,7 +682,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('decrements filledCells when a cell is cleared', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const cell = findCell(room.board.initial, (value) => value === 0);
 
       room.currentGrid[cell.r][cell.c] = 4;
@@ -374,7 +698,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('does not alter filledCells when replacing a non-zero value', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const cell = findCell(room.board.initial, (value) => value === 0);
 
       room.currentGrid[cell.r][cell.c] = 4;
@@ -390,7 +714,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('ignores an update with the same current value', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const cell = findCell(room.board.initial, (value) => value === 0);
 
       room.currentGrid[cell.r][cell.c] = 4;
@@ -405,7 +729,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('forwards updates to other players in the room', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const observer = await connectTestClient();
 
       try {
@@ -427,7 +751,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('emits game-won when the grid is completed correctly', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const size = room.board.initial.length;
       const cell = findCell(room.board.initial, (value) => value === 0);
 
@@ -448,7 +772,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('does not emit game-won when the count is complete but the grid is incorrect', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const size = room.board.initial.length;
       const cell = findCell(room.board.initial, (value) => value === 0);
 
@@ -526,7 +850,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     beforeEach(async () => { await joinRoom(); });
 
     it('ignores restart from a socket that has not joined any room', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
       const originalBoard = room.board;
       const outsider = await connectTestClient();
 
@@ -542,7 +866,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('restarts the game and resets the initial state', async () => {
-      const room = rooms.get(testRoomId)!;
+      const room = playing(rooms.get(testRoomId)!);
 
       room.currentGrid = room.currentGrid.map((row) => row.map(() => 9));
       room.filledCells = 0;
@@ -867,6 +1191,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       await withServer({ restart: 2 }, async (connect) => {
         const player = await connect();
         await joinOutcome(player, idOf('restart-budget'));
+        await openSudoku(player);
         const restarted = vi.fn();
         player.on('game-started', restarted);
 
@@ -877,27 +1202,36 @@ describe('Socket Events Security & Bounds Checking', () => {
       });
     });
 
-    it('limits the boards generated for all the sockets together', async () => {
+    it('limits the boards generated for all the sockets together: a room over the limit stays at the table', async () => {
       await withServer({ boardGeneration: 2 }, async (connect) => {
         const [first, second, third] = [await connect(), await connect(), await connect()];
+        for (const [socket, name] of [[first, 'global-a'], [second, 'global-b'], [third, 'global-c']] as const) {
+          await expect(joinOutcome(socket, idOf(name))).resolves.toBe('joined');
+        }
 
-        await expect(joinOutcome(first, idOf('global-a'))).resolves.toBe('joined');
-        await expect(joinOutcome(second, idOf('global-b'))).resolves.toBe('joined');
-        await expect(joinOutcome(third, idOf('global-c'))).resolves.toBe('too-fast');
-        expect(rooms.has(idOf('global-c'))).toBe(false);
+        await openSudoku(first);
+        await openSudoku(second);
+
+        const lobby = nextLobby(third);
+        third.emit('vote-game', 'sudoku');
+
+        // The vote is kept, so that the next one can open the game.
+        await expect(lobby).resolves.toMatchObject({ game: null, votes: [{ game: 'sudoku' }] });
+        expect(rooms.get(idOf('global-c'))!.game).toBeNull();
       });
     });
 
-    it('does not spend the budget of the server on a room the socket may not create', async () => {
-      await withServer({ roomCreation: 1, boardGeneration: 2 }, async (connect) => {
-        const [first, second, third] = [await connect(), await connect(), await connect()];
+    it('does not spend the budget of the boards on a room that is only created', async () => {
+      await withServer({ boardGeneration: 1 }, async (connect) => {
+        const [first, second] = [await connect(), await connect()];
 
         await expect(joinOutcome(first, idOf('spent-a'))).resolves.toBe('joined');
-        await expect(joinOutcome(first, idOf('spent-b'))).resolves.toBe('too-fast');
-
-        // The refused attempt of the first socket did not use the second place of the server.
+        await expect(joinOutcome(first, idOf('spent-b'))).resolves.toBe('joined');
         await expect(joinOutcome(second, idOf('spent-c'))).resolves.toBe('joined');
-        await expect(joinOutcome(third, idOf('spent-d'))).resolves.toBe('too-fast');
+
+        // Three rooms and no board yet: the only place is still there for the first game that opens.
+        await openSudoku(second);
+        expect(rooms.get(idOf('spent-c'))!.game).not.toBeNull();
       });
     });
 
@@ -909,6 +1243,12 @@ describe('Socket Events Security & Bounds Checking', () => {
         await flushSocketEvents(player);
 
         await joinOutcome(player, idOf('outsider-restart'));
+        // In a room, but still at the table: there is no game to restart.
+        player.emit('restart-game', 'easy');
+        await flushSocketEvents(player);
+        expect(rooms.get(idOf('outsider-restart'))!.game).toBeNull();
+
+        await openSudoku(player);
         const restarted = vi.fn();
         player.on('game-started', restarted);
         player.emit('restart-game', 'easy');
@@ -1024,7 +1364,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       try {
         const gameStarted = new Promise<GameStartedPayload>((resolve) => { second.once('game-started', resolve); });
-        second.emit('join-room', idOf('grace-room'), 'hard');
+        second.emit('join-room', idOf('grace-room'));
         const payload = await gameStarted;
 
         expect(payload.board).toEqual(room.board);
@@ -1155,7 +1495,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       try {
         const gameStarted = new Promise<GameStartedPayload>((resolve) => { second.once('game-started', resolve); });
-        second.emit('join-room', testRoomId, 'easy');
+        second.emit('join-room', testRoomId);
 
         const payload = await gameStarted;
         expect(first.id).not.toBe(second.id);
@@ -1242,7 +1582,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         const note = await noted;
 
         const lateStarted = new Promise<GameStartedPayload>((resolve) => { late.once('game-started', resolve); });
-        late.emit('join-room', testRoomId, 'easy');
+        late.emit('join-room', testRoomId);
         const lateGame = await lateStarted;
 
         const closed = waitForServerDisconnect(client);
@@ -1426,7 +1766,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         const received = vi.fn();
         first.on('game-started', received);
 
-        second.emit('join-room', first.id!, 'easy');
+        second.emit('join-room', first.id!);
         second.emit('restart-game', 'easy');
         await flushSocketEvents(second);
         await flushSocketEvents(first);
@@ -1508,9 +1848,10 @@ describe('Socket Events Security & Bounds Checking', () => {
 
     it('keeps the room when the same socket joins it again', async () => {
       const room = await joinRoom();
+      const state = rooms.get(testRoomId);
       await joinRoom();
 
-      expect(rooms.get(testRoomId)).toBe(room);
+      expect(rooms.get(testRoomId)).toBe(state);
       expect(room.players.size).toBe(1);
     });
   });
@@ -1779,7 +2120,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const seenByObserver = collectLists(observer);
       const seenByPlayer = collectLists(player);
 
-      for (let i = 0; i < 5; i++) player.emit('join-room', testRoomId, 'easy');
+      for (let i = 0; i < 5; i++) player.emit('join-room', testRoomId);
       await flushSocketEvents(player);
       await flushSocketEvents(observer);
 
@@ -2049,23 +2390,24 @@ describe('Socket Events Security & Bounds Checking', () => {
 
     it('survives garbage on every event and keeps serving valid requests', async () => {
       const room = await joinRoom();
+      const state = rooms.get(testRoomId);
       const originalBoard = room.board;
       const originalGrid = room.currentGrid.map((row) => [...row]);
       const garbage: unknown[] = [null, 0, 1, 'text', true, [], {}, { r: 'a' }, { r: 0 }, { r: 0, c: 0, v: null }];
 
-      for (const event of ['cell-update', 'toggle-note', 'select-cell', 'restart-game', 'join-room', 'send-emote']) {
+      for (const event of ['cell-update', 'toggle-note', 'select-cell', 'restart-game', 'join-room', 'vote-game', 'send-emote']) {
         rawEmit(clientSocket, event);
         for (const value of garbage) rawEmit(clientSocket, event, value);
       }
 
-      rawEmit(clientSocket, 'join-room', 42, 'easy');
-      rawEmit(clientSocket, 'join-room', testRoomId);
-      rawEmit(clientSocket, 'join-room', testRoomId, 'easy', 'extra');
+      rawEmit(clientSocket, 'join-room', 42);
+      rawEmit(clientSocket, 'join-room', testRoomId, 'easy');
+      rawEmit(clientSocket, 'vote-game', 'sudoku', 'extra');
       rawEmit(clientSocket, 'cell-update', { r: 0, c: 0, v: 1 }, 'extra');
 
       await flushSocketEvents();
 
-      expect(rooms.get(testRoomId)).toBe(room);
+      expect(rooms.get(testRoomId)).toBe(state);
       expect(room.board).toBe(originalBoard);
       expect(room.currentGrid).toEqual(originalGrid);
       expect(room.notesGrid).toEqual({});
@@ -2079,10 +2421,10 @@ describe('Socket Events Security & Bounds Checking', () => {
       expect(room.currentGrid[cell.r][cell.c]).toBe(value);
     });
 
-    it('does not create a room for an unknown difficulty', async () => {
+    it('does not create a room when join-room carries more than the room id', async () => {
       const client = await connectTestClient();
       const received: string[] = [];
-      client.on('game-started', () => received.push('game-started'));
+      client.on('lobby-updated', () => received.push('lobby-updated'));
 
       try {
         rawEmit(client, 'join-room', idOf('room-bad-difficulty'), 'banana');

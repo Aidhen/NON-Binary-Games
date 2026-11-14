@@ -1,4 +1,4 @@
-import type { DifficultyLevel, NotesGrid, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid } from "@nbg/shared";
+import type { DifficultyLevel, GameId, NotesGrid, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid } from "@nbg/shared";
 
 /** How a player is shown to the others in one room: the animal of their name and their color. */
 export interface RoomProfile {
@@ -8,26 +8,38 @@ export interface RoomProfile {
   lastColorAt?: number;
 }
 
-export interface RoomState {
+/** The state of a Sudoku that a room is playing. */
+export interface SudokuGame {
+  id: 'sudoku';
   board: SudokuBoard;
   difficulty: DifficultyLevel;
   currentGrid: SudokuGrid;
-  /** Sockets of each player: the same player can have more than one open (two tabs). */
-  players: Map<string, Set<string>>;
   filledCells: number;
   notesGrid: NotesGrid;
+}
+
+/** The game a room has open. A new game adds its own state here, told apart by `id`. */
+export type RoomGame = SudokuGame;
+
+export interface RoomState {
+  /** Null while the players are still choosing (see `votes`). Once chosen, the game of a room does not change. */
+  game: RoomGame | null;
+  /** The game each player in the room wants (by player id). At most one per player, gone when they leave or the game opens. */
+  votes: Map<string, GameId>;
+  /** Sockets of each player: the same player can have more than one open (two tabs). */
+  players: Map<string, Set<string>>;
   /** The alias of each player (by player id) in this room: what the other players see instead of the id. */
   aliases: Map<string, string>;
   /** The animal and color of each player (by player id) in this room. Kept and pruned together with the aliases. */
   profiles: Map<string, RoomProfile>;
-  /** A cell or a note was changed since the board was generated. An empty room nobody played in is not worth keeping. */
+  /** A cell or a note was changed since the board was generated. An empty room nobody played in (or with no game yet) is not worth keeping. */
   played: boolean;
 }
 
 /** How long an empty room is kept, so that a dropped connection does not cost the game. */
 export const EMPTY_ROOM_TTL_MS = 10 * 60 * 1000;
 
-/** Rooms kept at the same time: a room costs memory and a generated board costs CPU. */
+/** Rooms kept at the same time: a room costs memory, and opening its game costs CPU. */
 export const MAX_ROOMS = 200;
 
 /**

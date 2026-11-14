@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   cellUpdateArgsSchema,
   difficultySchema,
+  gameIdSchema,
   joinRoomArgsSchema,
   MAX_ROOM_ID_LENGTH,
   restartGameArgsSchema,
@@ -9,8 +10,10 @@ import {
   selectCellArgsSchema,
   sendEmoteArgsSchema,
   toggleNoteArgsSchema,
+  voteGameArgsSchema,
 } from './schemas';
 import { EMOTES } from './emotes';
+import { GAME_IDS } from './games';
 
 const garbage: unknown[] = [undefined, null, 0, 1, NaN, 'text', true, [], {}, () => 1];
 
@@ -70,15 +73,33 @@ describe('roomIdSchema', () => {
 const ROOM = crypto.randomUUID();
 
 describe('joinRoomArgsSchema', () => {
-  it('accepts a valid room id and difficulty', () => {
-    expect(joinRoomArgsSchema.safeParse([ROOM, 'hard']).success).toBe(true);
+  it('accepts a valid room id', () => {
+    expect(joinRoomArgsSchema.safeParse([ROOM]).success).toBe(true);
   });
 
-  it('rejects an invalid difficulty, missing or extra arguments', () => {
-    expect(joinRoomArgsSchema.safeParse([ROOM, 'banana']).success).toBe(false);
-    expect(joinRoomArgsSchema.safeParse([ROOM]).success).toBe(false);
+  it('rejects missing or extra arguments', () => {
     expect(joinRoomArgsSchema.safeParse([]).success).toBe(false);
-    expect(joinRoomArgsSchema.safeParse([ROOM, 'easy', () => 1]).success).toBe(false);
+    expect(joinRoomArgsSchema.safeParse([ROOM, 'easy']).success).toBe(false);
+    expect(joinRoomArgsSchema.safeParse([ROOM, () => 1]).success).toBe(false);
+  });
+});
+
+describe('voteGameArgsSchema', () => {
+  it('accepts every game of the list, and null to take the vote back', () => {
+    for (const game of GAME_IDS) {
+      expect(gameIdSchema.safeParse(game).success).toBe(true);
+      expect(voteGameArgsSchema.safeParse([game]).success).toBe(true);
+    }
+    expect(voteGameArgsSchema.safeParse([null]).success).toBe(true);
+  });
+
+  it('rejects unknown games, missing or extra arguments', () => {
+    for (const value of ['chess', 'SUDOKU', '', 'constructor', '__proto__', 0, {}, ['sudoku'], undefined]) {
+      expect(voteGameArgsSchema.safeParse([value]).success).toBe(false);
+    }
+    expect(voteGameArgsSchema.safeParse([]).success).toBe(false);
+    expect(voteGameArgsSchema.safeParse(['sudoku', 'sudoku']).success).toBe(false);
+    expect(voteGameArgsSchema.safeParse(['sudoku', () => 1]).success).toBe(false);
   });
 });
 

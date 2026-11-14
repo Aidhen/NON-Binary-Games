@@ -19,7 +19,6 @@ export const en = {
     showErrors: "Show error clashes (red)",
     godMode: "God mode: mark wrong numbers (red)",
     notesMode: "Notes",
-    startNewGame: "Start new game",
     copied: "Copied",
     copyLink: "Copy link",
     room: "Room",
@@ -61,6 +60,18 @@ export const en = {
       turtle: { name: "Turtle", gender: "m" },
       octopus: { name: "Octopus", gender: "m" },
       dolphin: { name: "Dolphin", gender: "m" }
+    }
+  },
+  lobby: {
+    title: "Choose the game",
+    hint: "Everybody picks one. The game opens when more than half of the room wants it.",
+    votes: "{count} of {total}",
+    soon: "Soon",
+    unknownGame: "This room is playing a game this page does not know yet. Reload the page to get the latest version."
+  },
+  games: {
+    sudoku: {
+      title: "Sudoku"
     }
   },
   loader: {

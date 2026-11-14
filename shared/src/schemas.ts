@@ -2,6 +2,11 @@ import { z } from 'zod';
 import { DIFFICULTIES } from './games/sudoku/types';
 import { EMOTES } from './emotes';
 
+// In a browser the page has a Content-Security-Policy without 'unsafe-eval', and zod would report a violation
+// when it checks whether it may compile validators (the check calls Function). That compiled path is only a
+// speed-up: the browser validates a room id, while the server keeps it for the payloads of every connection.
+if (typeof window !== 'undefined') z.config({ jitless: true });
+
 /**
  * Runtime schemas for every payload a client can send to the server.
  *

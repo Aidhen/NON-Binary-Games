@@ -4,11 +4,11 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
-import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
+import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, colorLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
 import { applyConnectionLimits } from './connectionLimits';
 import { logger } from '../logger';
 import type { AddressOf } from './connectionLimits';
-import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM } from '@nbg/shared';
+import { EMOTE_COOLDOWN_MS, EMOTES, MAX_PLAYERS_PER_ROOM, PLAYER_ANIMALS, PLAYER_COLORS } from '@nbg/shared';
 import type { JoinError } from '@nbg/shared';
 import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
 
@@ -28,6 +28,7 @@ type CellUpdatedPayload = Parameters<ServerToClientEvents['cell-updated']>[0];
 type PlayerSelectedCellPayload = Parameters<ServerToClientEvents['player-selected-cell']>[0];
 type NoteToggledPayload = Parameters<ServerToClientEvents['note-toggled']>[0];
 type EmoteReceivedPayload = Parameters<ServerToClientEvents['emote-received']>[0];
+type PlayersUpdatedPayload = Parameters<ServerToClientEvents['players-updated']>[0];
 
 describe('Socket Events Security & Bounds Checking', () => {
   let io: Server<ClientToServerEvents, ServerToClientEvents>;
@@ -167,6 +168,7 @@ describe('Socket Events Security & Bounds Checking', () => {
     roomCreationLimit.max = Number.POSITIVE_INFINITY;
     restartLimit.max = Number.POSITIVE_INFINITY;
     boardGenerationLimit.max = Number.POSITIVE_INFINITY;
+    colorLimit.cooldownMs = 0;
   });
 
   // -------------------------------------------------------
@@ -1377,6 +1379,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         }
 
         expect(room.aliases.size).toBeLessThanOrEqual(MAX_ROOM_ALIASES);
+        expect(room.profiles.size).toBeLessThanOrEqual(MAX_ROOM_ALIASES);
       } finally {
         observer.disconnect();
       }
@@ -1515,6 +1518,322 @@ describe('Socket Events Security & Bounds Checking', () => {
   // -------------------------------------------------------
   // SEND EMOTE
   // -------------------------------------------------------
+
+  describe('player profiles', () => {
+    const rawEmit = (socket: TestClientSocket, event: string, ...args: unknown[]) => {
+      (socket as unknown as { emit: (event: string, ...args: unknown[]) => void }).emit(event, ...args);
+    };
+
+    /** Every list of players the socket receives, from the moment it is called. */
+    const collectLists = (socket: TestClientSocket) => {
+      const lists: PlayersUpdatedPayload['players'][] = [];
+      socket.on('players-updated', ({ players }) => lists.push(players));
+      return lists;
+    };
+
+    const waitForServerDisconnect = (socket: TestClientSocket) => {
+      const serverSocket = getServerSocket(socket);
+      return new Promise<void>((resolve) => { serverSocket.once('disconnect', () => resolve()); });
+    };
+
+    const profileOf = (client: TestClientSocket, roomId = testRoomId) => rooms.get(roomId)!.profiles.get(client.id!)!;
+
+    it('tells a player who they are in the room, and who is in it, before the game starts', async () => {
+      const client = await connectTestClient();
+      const joinedAs = vi.fn();
+      client.on('joined-as', joinedAs);
+      const lists = collectLists(client);
+
+      const room = await joinRoom(client);
+
+      const alias = room.aliases.get(client.id!);
+      expect(joinedAs).toHaveBeenCalledExactlyOnceWith(alias);
+      expect(lists).toEqual([[{ alias, ...profileOf(client) }]]);
+      expect(PLAYER_ANIMALS).toContain(profileOf(client).animal);
+      expect(PLAYER_COLORS).toContain(profileOf(client).color);
+    });
+
+    it('tells everybody in the room when somebody comes, with a different animal and color for each', async () => {
+      const first = await connectTestClient();
+      const second = await connectTestClient();
+      await joinRoom(first);
+      const seenByFirst = collectLists(first);
+      const seenBySecond = collectLists(second);
+
+      await joinRoom(second);
+      await flushSocketEvents(first);
+
+      expect(seenByFirst).toHaveLength(1);
+      expect(seenBySecond).toHaveLength(1);
+      expect(seenByFirst[0]).toEqual(seenBySecond[0]);
+      expect(seenByFirst[0].map(({ alias }) => alias)).toEqual([
+        rooms.get(testRoomId)!.aliases.get(first.id!),
+        rooms.get(testRoomId)!.aliases.get(second.id!),
+      ]);
+      expect(profileOf(first).animal).not.toBe(profileOf(second).animal);
+      expect(profileOf(first).color).not.toBe(profileOf(second).color);
+    });
+
+    it('does not tell the player who joined only to themselves: the others need the list too, and only they', async () => {
+      const inRoom = await connectTestClient();
+      const elsewhere = await connectTestClient();
+      const newcomer = await connectTestClient();
+      await joinRoom(inRoom);
+      await joinRoom(elsewhere, idOf('another-room'));
+      const seenElsewhere = collectLists(elsewhere);
+
+      await joinRoom(newcomer);
+      await flushSocketEvents(elsewhere);
+
+      expect(seenElsewhere).toEqual([]);
+    });
+
+    it('tells the others when a player leaves, and not before the last tab of that player closes', async () => {
+      const observer = await connectTestClient();
+      const tab = await connectTestClient('profile-leaver-abc123');
+      const otherTab = await connectTestClient('profile-leaver-abc123');
+      await joinRoom(observer);
+      await joinRoom(tab);
+      await joinRoom(otherTab);
+      // What the joins told the observer is still on its way: only what comes after counts here.
+      await flushSocketEvents(observer);
+      const lists = collectLists(observer);
+
+      const firstClosed = waitForServerDisconnect(tab);
+      tab.disconnect();
+      await firstClosed;
+      await flushSocketEvents(observer);
+      expect(lists).toEqual([]);
+
+      const lastClosed = waitForServerDisconnect(otherTab);
+      otherTab.disconnect();
+      await lastClosed;
+      await flushSocketEvents(observer);
+
+      expect(lists).toHaveLength(1);
+      expect(lists[0].map(({ alias }) => alias)).toEqual([rooms.get(testRoomId)!.aliases.get(observer.id!)]);
+    });
+
+    it('lets a player take a free color and tells everybody, the player included', async () => {
+      const first = await connectTestClient();
+      const second = await connectTestClient();
+      await joinRoom(first);
+      await joinRoom(second);
+      const free = PLAYER_COLORS.find((color) => color !== profileOf(first).color && color !== profileOf(second).color)!;
+      await flushSocketEvents(first);
+      await flushSocketEvents(second);
+      const seenByFirst = collectLists(first);
+      const seenBySecond = collectLists(second);
+
+      first.emit('set-color', free);
+      await flushSocketEvents(first);
+      await flushSocketEvents(second);
+
+      expect(profileOf(first).color).toBe(free);
+      expect(seenByFirst).toHaveLength(1);
+      expect(seenBySecond).toHaveLength(1);
+      expect(seenBySecond[0].find(({ alias }) => alias === rooms.get(testRoomId)!.aliases.get(first.id!))?.color).toBe(free);
+    });
+
+    it('refuses a color that another player in the room has, and corrects only the one who asked', async () => {
+      const first = await connectTestClient();
+      const second = await connectTestClient();
+      await joinRoom(first);
+      await joinRoom(second);
+      const before = profileOf(first).color;
+      await flushSocketEvents(first);
+      await flushSocketEvents(second);
+      const seenByFirst = collectLists(first);
+      const seenBySecond = collectLists(second);
+
+      first.emit('set-color', profileOf(second).color);
+      await flushSocketEvents(first);
+      await flushSocketEvents(second);
+
+      expect(profileOf(first).color).toBe(before);
+      expect(seenBySecond).toEqual([]);
+      expect(seenByFirst).toHaveLength(1);
+      expect(seenByFirst[0].find(({ alias }) => alias === rooms.get(testRoomId)!.aliases.get(first.id!))?.color).toBe(before);
+    });
+
+    it('lets a player take the color that a player who has left had', async () => {
+      const first = await connectTestClient();
+      const second = await connectTestClient();
+      await joinRoom(first);
+      await joinRoom(second);
+      const colorOfSecond = profileOf(second).color;
+      const closed = waitForServerDisconnect(second);
+      second.disconnect();
+      await closed;
+
+      first.emit('set-color', colorOfSecond);
+      await flushSocketEvents(first);
+
+      expect(profileOf(first).color).toBe(colorOfSecond);
+    });
+
+    it('says nothing when a player asks for the color they already have', async () => {
+      const client = await connectTestClient();
+      await joinRoom(client);
+      const lists = collectLists(client);
+
+      client.emit('set-color', profileOf(client).color);
+      await flushSocketEvents(client);
+
+      expect(lists).toEqual([]);
+    });
+
+    it.each(['gold', '', 'RED', '__proto__', 42, null, undefined, ['red']])('drops a color that is not on the list (%j)', async (invalid) => {
+      const client = await connectTestClient();
+      const observer = await connectTestClient();
+      await joinRoom(client);
+      await joinRoom(observer);
+      const before = { ...profileOf(client) };
+      const lists = collectLists(observer);
+
+      rawEmit(client, 'set-color', invalid);
+      rawEmit(client, 'set-color');
+      rawEmit(client, 'set-color', 'red', 'blue');
+      await flushSocketEvents(client);
+      await flushSocketEvents(observer);
+
+      expect(profileOf(client)).toEqual(before);
+      expect(lists).toEqual([]);
+    });
+
+    it('ignores a color from a socket that has not joined a room', async () => {
+      const outsider = await connectTestClient();
+      const lists = collectLists(outsider);
+
+      outsider.emit('set-color', 'red');
+      await flushSocketEvents(outsider);
+
+      expect(lists).toEqual([]);
+      expect(rooms.size).toBe(0);
+    });
+
+    it('limits how often a player can change color', async () => {
+      colorLimit.cooldownMs = 300;
+      let now = 1_000_000;
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+      const first = await connectTestClient();
+      const second = await connectTestClient();
+      await joinRoom(first);
+      await joinRoom(second);
+      const free = PLAYER_COLORS.filter((color) => color !== profileOf(first).color && color !== profileOf(second).color);
+      const lists = collectLists(second);
+
+      try {
+        first.emit('set-color', free[0]);
+        first.emit('set-color', free[1]);
+        await flushSocketEvents(first);
+        await flushSocketEvents(second);
+        expect(profileOf(first).color).toBe(free[0]);
+        expect(lists).toHaveLength(1);
+
+        now += 299;
+        first.emit('set-color', free[1]);
+        await flushSocketEvents(first);
+        expect(profileOf(first).color).toBe(free[0]);
+
+        now += 1;
+        first.emit('set-color', free[1]);
+        await flushSocketEvents(first);
+        expect(profileOf(first).color).toBe(free[1]);
+      } finally {
+        vi.restoreAllMocks();
+      }
+    });
+
+    it('is dropped like any other event when a socket sends too many', async () => {
+      eventLimit.max = 3;
+      const flooder = await connectTestClient();
+      eventLimit.max = Number.POSITIVE_INFINITY;
+      const observer = await connectTestClient();
+      await joinRoom(observer);
+      await joinRoom(flooder);
+      await flushSocketEvents(observer);
+      const lists = collectLists(observer);
+      const free = PLAYER_COLORS.filter((color) => color !== profileOf(flooder).color && color !== profileOf(observer).color);
+
+      // 3 allowed events per window: one was the join.
+      for (let i = 0; i < 10; i++) flooder.emit('set-color', free[i % free.length]);
+      await flushSocketEvents(flooder);
+      await flushSocketEvents(observer);
+
+      expect(lists.length).toBeLessThanOrEqual(2);
+    });
+
+    it('gives a player who comes back the same animal and color, if nobody took them', async () => {
+      const stayer = await connectTestClient();
+      const first = await connectTestClient('profile-returner-abc123');
+      await joinRoom(stayer);
+      await joinRoom(first);
+      const before = { ...rooms.get(testRoomId)!.profiles.get('profile-returner-abc123')! };
+      const closed = waitForServerDisconnect(first);
+      first.disconnect();
+      await closed;
+
+      const second = await connectTestClient('profile-returner-abc123');
+      try {
+        await joinRoom(second);
+
+        expect(rooms.get(testRoomId)!.profiles.get('profile-returner-abc123')).toEqual(before);
+      } finally {
+        stayer.disconnect();
+        second.disconnect();
+      }
+    });
+
+    it('gives every tab of a player the same profile', async () => {
+      const tab = await connectTestClient('profile-tabs-abc123');
+      const otherTab = await connectTestClient('profile-tabs-abc123');
+      const lists = collectLists(otherTab);
+
+      try {
+        await joinRoom(tab);
+        await joinRoom(otherTab);
+
+        expect(rooms.get(testRoomId)!.profiles.size).toBe(1);
+        expect(lists.at(-1)).toHaveLength(1);
+      } finally {
+        tab.disconnect();
+        otherTab.disconnect();
+      }
+    });
+
+    it('keeps the profile of a player through a restart of the game', async () => {
+      const client = await connectTestClient();
+      await joinRoom(client);
+      const before = { ...profileOf(client) };
+
+      client.emit('restart-game', 'easy');
+      await flushSocketEvents(client);
+
+      expect(profileOf(client)).toEqual(before);
+    });
+
+    it('does not carry the profile of a player into another room', async () => {
+      const client = await connectTestClient('profile-rooms-abc123');
+      const colors = new Set<string>();
+      const animals = new Set<string>();
+
+      try {
+        for (let i = 0; i < 12; i++) {
+          await joinRoom(client, idOf(`profile-room-${i}`));
+          const profile = rooms.get(idOf(`profile-room-${i}`))!.profiles.get('profile-rooms-abc123')!;
+          colors.add(profile.color);
+          animals.add(profile.animal);
+        }
+
+        // The same pick in 12 rooms would be a mistake in the draw: it is not tied to the player.
+        expect(colors.size).toBeGreaterThan(1);
+        expect(animals.size).toBeGreaterThan(1);
+      } finally {
+        client.disconnect();
+      }
+    });
+  });
 
   describe('send-emote', () => {
     const collectEmotes = (socket: TestClientSocket) => {

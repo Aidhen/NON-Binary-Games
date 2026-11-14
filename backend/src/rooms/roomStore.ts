@@ -1,4 +1,10 @@
-import type { DifficultyLevel, NotesGrid, SudokuBoard, SudokuGrid } from "@nbg/shared";
+import type { DifficultyLevel, NotesGrid, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid } from "@nbg/shared";
+
+/** How a player is shown to the others in one room: the animal of their name and their color. */
+export interface RoomProfile {
+  animal: PlayerAnimal;
+  color: PlayerColor;
+}
 
 export interface RoomState {
   board: SudokuBoard;
@@ -10,6 +16,8 @@ export interface RoomState {
   notesGrid: NotesGrid;
   /** The alias of each player (by player id) in this room: what the other players see instead of the id. */
   aliases: Map<string, string>;
+  /** The animal and color of each player (by player id) in this room. Kept and pruned together with the aliases. */
+  profiles: Map<string, RoomProfile>;
   /** A cell or a note was changed since the board was generated. An empty room nobody played in is not worth keeping. */
   played: boolean;
 }

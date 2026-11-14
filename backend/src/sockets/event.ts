@@ -1,12 +1,13 @@
 import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
 import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
 import type { RoomState } from "../rooms/roomStore";
+import { assignProfile, colorIsFree, snapshotPlayers } from "../rooms/profiles";
 
 export type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 export type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
@@ -18,6 +19,9 @@ export const rooms = new RoomStore();
  * and a client picks the room id: without a prefix it could name the private room of another socket.
  */
 const channelOf = (roomId: string) => `room:${roomId}`;
+
+/** A player changing color tells everybody in the room: this keeps it from becoming a flicker for the others. */
+export const colorLimit = { cooldownMs: 300 };
 
 /** Tabs (sockets) one player can have open in the same room. */
 export const MAX_SOCKETS_PER_PLAYER = 3;
@@ -36,7 +40,10 @@ const aliasOf = (room: RoomState, playerId: string): string => {
 
   if (room.aliases.size >= MAX_ROOM_ALIASES) {
     for (const knownId of room.aliases.keys()) {
-      if (!room.players.has(knownId)) room.aliases.delete(knownId);
+      if (!room.players.has(knownId)) {
+        room.aliases.delete(knownId);
+        room.profiles.delete(knownId);
+      }
     }
   }
 
@@ -81,6 +88,7 @@ const leaveCurrentRoom = (socket: GameSocket) => {
   if (!sockets?.size) {
     room.players.delete(playerId);
     if (alias) socket.to(channelOf(roomId)).emit("player-disconnected", alias);
+    socket.to(channelOf(roomId)).emit("players-updated", { players: snapshotPlayers(room) });
   }
 
   if (room.players.size === 0) {
@@ -158,6 +166,7 @@ export const setupSocketHandlers = (io: GameServer) => {
           filledCells: countInitialFilledCells(board.initial),
           notesGrid: {},
           aliases: new Map(),
+          profiles: new Map(),
           played: false,
         };
         rooms.set(roomId, room);
@@ -175,6 +184,11 @@ export const setupSocketHandlers = (io: GameServer) => {
       const sockets = room.players.get(socket.data.playerId) ?? new Set<string>();
       sockets.add(socket.id);
       room.players.set(socket.data.playerId, sockets);
+
+      // Before the game starts, so that the player knows who they are as soon as the board is there.
+      assignProfile(room, socket.data.playerId);
+      socket.emit("joined-as", socket.data.alias);
+      io.to(channelOf(roomId)).emit("players-updated", { players: snapshotPlayers(room) });
 
       socket.emit("game-started", {
         board: room.board,
@@ -288,6 +302,29 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       socket.data.lastEmoteAt = now;
       socket.to(channelOf(current.roomId)).emit("emote-received", { alias: current.alias, emote });
+    }, allowEvent));
+
+    socket.on("set-color", safeHandler(setColorArgsSchema, (color) => {
+      const current = getCurrentRoom(socket);
+      if (!current) return;
+      const { roomId, room } = current;
+
+      const now = Date.now();
+      const lastColorAt = socket.data.lastColorAt;
+      if (lastColorAt !== undefined && now - lastColorAt < colorLimit.cooldownMs) return;
+      socket.data.lastColorAt = now;
+
+      const profile = room.profiles.get(socket.data.playerId);
+      if (!profile || profile.color === color) return;
+
+      // Somebody else has it: the player who asked is shown the real state again, the others have nothing to learn.
+      if (!colorIsFree(room, socket.data.playerId, color)) {
+        socket.emit("players-updated", { players: snapshotPlayers(room) });
+        return;
+      }
+
+      profile.color = color;
+      io.to(channelOf(roomId)).emit("players-updated", { players: snapshotPlayers(room) });
     }, allowEvent));
 
     socket.on("toggle-note", safeHandler(toggleNoteArgsSchema, ({ r, c, v }) => {

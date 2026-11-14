@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { roomIdSchema } from '@nbg/shared';
 import Home from '@/app/page';
 
-const mockPush = vi.fn();
-const { warmUpServer } = vi.hoisted(() => ({ warmUpServer: vi.fn() }));
+const { warmUpServer, router } = vi.hoisted(() => ({ warmUpServer: vi.fn(), router: { replace: vi.fn(), push: vi.fn() } }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => router,
 }));
 
 vi.mock('@/lib/warmUp', () => ({ warmUpServer }));
@@ -17,7 +17,8 @@ vi.mock('@/lib/i18n/TranslationContext', () => ({
 
 describe('Home', () => {
   beforeEach(() => {
-    mockPush.mockClear();
+    router.replace.mockClear();
+    router.push.mockClear();
     warmUpServer.mockClear();
   });
 
@@ -26,21 +27,30 @@ describe('Home', () => {
     expect(warmUpServer).toHaveBeenCalledOnce();
   });
 
-  it('renders the title and subtitle', () => {
+  it('opens a new room right away, with an id the server accepts', () => {
     render(<Home />);
-    expect(screen.getByText('sudoku.title')).toBeDefined();
-    expect(screen.getByText('sudoku.subtitle')).toBeDefined();
+
+    expect(router.replace).toHaveBeenCalledOnce();
+    const [path] = router.replace.mock.calls[0] as [string];
+    expect(path).toMatch(/^\/play\//);
+    expect(roomIdSchema.safeParse(path.replace('/play/', '')).success).toBe(true);
   });
 
-  it('renders the start button', () => {
+  it('does not leave the home in the history: going back must not open another room', () => {
     render(<Home />);
-    expect(screen.getByText('sudoku.startNewGame')).toBeDefined();
+    expect(router.push).not.toHaveBeenCalled();
   });
 
-  it('navigates to a new room on button click', () => {
+  it('opens a different room each time', () => {
     render(<Home />);
-    fireEvent.click(screen.getByText('sudoku.startNewGame'));
-    expect(mockPush).toHaveBeenCalledOnce();
-    expect(mockPush.mock.calls[0][0]).toMatch(/^\/play\/[a-f0-9-]{36}$/);
+    render(<Home />);
+
+    const [first, second] = router.replace.mock.calls.map(([path]) => path as string);
+    expect(first).not.toBe(second);
+  });
+
+  it('shows that something is loading in the meantime', () => {
+    render(<Home />);
+    expect(screen.getByText('sudoku.loading')).toBeInTheDocument();
   });
 });

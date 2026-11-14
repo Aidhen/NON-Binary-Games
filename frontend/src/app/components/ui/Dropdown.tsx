@@ -47,11 +47,10 @@ export function Dropdown<T extends string>({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "p-2 rounded-md shadow-sm text-left flex items-center justify-between gap-3",
-          "bg-[var(--numpad-background)] text-[var(--numpad-text)] font-medium capitalize",
-          "border border-[var(--grid-border-inner)]",
-          "cursor-pointer outline-none transition-all duration-300",
-          "focus:ring-2 focus:ring-blue-500",
+          "px-3 py-2 rounded-[var(--radius-control)] text-left text-sm whitespace-nowrap flex items-center justify-between gap-2",
+          "bg-[var(--paper)] text-[var(--number-initial)] font-bold capitalize",
+          "shadow-[var(--shadow-paper-sm)]",
+          "cursor-pointer transition-colors duration-300",
           className
         )}
       >
@@ -67,7 +66,7 @@ export function Dropdown<T extends string>({
       {isOpen && (
         <div className={cn(
           "absolute top-full right-0 mt-1 w-full min-w-[120px] z-50",
-          "bg-[var(--cell-background)] border border-[var(--grid-border-outer)] rounded-md shadow-xl",
+          "bg-[var(--paper)] rounded-[var(--radius-control)] shadow-[var(--shadow-paper)]",
           "flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
         )}>
           {options.map((opt) => (
@@ -76,10 +75,10 @@ export function Dropdown<T extends string>({
               key={opt.value}
               onClick={() => handleSelect(opt.value)}
               className={cn(
-                "p-2 text-left text-sm font-medium transition-colors capitalize",
+                "cursor-pointer px-3 py-2 text-left text-sm font-bold transition-colors capitalize",
                 value === opt.value
-                  ? "bg-[var(--numpad-background)] text-[var(--numpad-text)]"
-                  : "text-[var(--subtitle-text)] hover:bg-[var(--cell-background-highlight)] hover:text-[var(--title-text)]"
+                  ? "bg-[var(--accent)] text-[var(--accent-ink)]"
+                  : "text-[var(--subtitle-text)] hover:bg-[var(--paper-well)] hover:text-[var(--title-text)]"
               )}
             >
               {opt.label}

@@ -1,17 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { generateSudoku } from '@nbg/shared';
 import { EMPTY_ROOM_TTL_MS, RoomStore } from './roomStore';
 import type { RoomState } from './roomStore';
 
 const createRoom = (): RoomState => {
-  const board = generateSudoku('easy');
   return {
-    board,
-    difficulty: 'easy',
-    currentGrid: board.initial.map((row) => [...row]),
+    game: null,
+    votes: new Map(),
     players: new Map(),
-    filledCells: 0,
-    notesGrid: {},
     aliases: new Map(),
     profiles: new Map(),
     played: true,

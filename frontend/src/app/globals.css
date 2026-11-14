@@ -26,11 +26,21 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-baloo), var(--font-geist-sans), ui-rounded, sans-serif;
+
+  /*
+   * Paper cut-out style: large radii and flat shadows that fall down and to the right, like paper lying on
+   * a table. The shapes are the same in every theme; a theme only gives them its colors (see --paper-*).
+   */
+  --radius-paper: 1.375rem;
+  --radius-control: 0.875rem;
+  --shadow-paper: 5px 6px 0 var(--paper-shadow);
+  --shadow-paper-sm: 3px 4px 0 var(--paper-shadow);
 }
 
 /* Theme: LIGHT (Default) */
 :root, [data-theme="light"] {
-  --bg: #ffffff;
+  --bg: #eef2f8;
   --title-text: #0f172a;
   --subtitle-text: #64748b;
   
@@ -65,6 +75,20 @@
   --player-purple-text: #7e22ce;
   --player-pink: #db2777;
   --player-pink-text: #be185d;
+  /* Paper: surfaces, the color of their flat shadow, the two cut-outs behind the page, the main action and the game boxes. */
+  --paper: #ffffff;
+  --paper-well: #f1f5f9;
+  --paper-shadow: rgba(15, 23, 42, 0.16);
+  --cutout-1: #dfe6ef;
+  --cutout-2: #bfdbfe;
+  --accent: #2563eb;
+  --accent-ink: #ffffff;
+  --box-lid: #2563eb;
+  --box-lid-ink: #ffffff;
+  --box-inside: #94a3b8;
+  --box-soon-1: #cbd5e1;
+  --box-soon-2: #bfdbfe;
+  --box-soon-ink: #0f172a;
 }
 
 /* Theme: DARK */
@@ -104,6 +128,19 @@
   --player-purple-text: #c084fc;
   --player-pink: #f472b6;
   --player-pink-text: #f472b6;
+  --paper: #1e293b;
+  --paper-well: #0f172a;
+  --paper-shadow: rgba(0, 0, 0, 0.55);
+  --cutout-1: #0f172a;
+  --cutout-2: #172554;
+  --accent: #60a5fa;
+  --accent-ink: #020617;
+  --box-lid: #60a5fa;
+  --box-lid-ink: #020617;
+  --box-inside: #0f172a;
+  --box-soon-1: #334155;
+  --box-soon-2: #1e3a8a;
+  --box-soon-ink: #f8fafc;
 }
 
 /* Theme: RETRO */
@@ -143,6 +180,19 @@
   --player-purple-text: #7e22ce;
   --player-pink: #be185d;
   --player-pink-text: #9d174d;
+  --paper: #fbf6e9;
+  --paper-well: #e9dec1;
+  --paper-shadow: rgba(74, 60, 49, 0.2);
+  --cutout-1: #e9dec1;
+  --cutout-2: #e7d395;
+  --accent: #92400e;
+  --accent-ink: #ffffff;
+  --box-lid: #92400e;
+  --box-lid-ink: #fbf6e9;
+  --box-inside: #b8ad9e;
+  --box-soon-1: #d1bfae;
+  --box-soon-2: #e7d395;
+  --box-soon-ink: #4a3c31;
 }
 
 /* Theme: OLED */
@@ -182,6 +232,19 @@
   --player-purple-text: #c084fc;
   --player-pink: #ec4899;
   --player-pink-text: #ec4899;
+  --paper: #0a0a0a;
+  --paper-well: #1a1a1a;
+  --paper-shadow: #2a2a2a;
+  --cutout-1: #0d0d0d;
+  --cutout-2: #161616;
+  --accent: #ffffff;
+  --accent-ink: #000000;
+  --box-lid: #ffffff;
+  --box-lid-ink: #000000;
+  --box-inside: #222222;
+  --box-soon-1: #222222;
+  --box-soon-2: #393939;
+  --box-soon-ink: #ffffff;
 }
 
 /* Theme: NON-BINARY */
@@ -222,20 +285,26 @@
   --player-purple-text: #d8b4fe;
   --player-pink: #f472b6;
   --player-pink-text: #f9a8d4;
+  --paper: #2c2c2c;
+  --paper-well: #383838;
+  --paper-shadow: rgba(0, 0, 0, 0.55);
+  --cutout-1: #5b3a7e;
+  --cutout-2: #2f2438;
+  --accent: #9553cc;
+  --accent-ink: #ffffff;
+  --box-lid: #fcf434;
+  --box-lid-ink: #1a1a1a;
+  --box-inside: #0d0d0d;
+  /* The accent is too close to the surfaces of this theme to be a focus ring: the yellow of the flag is not. */
+  --focus-ring: #fcf434;
+  --box-soon-1: #9553cc;
+  --box-soon-2: #ffffff;
+  --box-soon-ink: #1a1a1a;
 }
 
-/* Mini game animations (used with Tailwind's motion-safe: variant) */
+/* Animations (used with Tailwind's motion-safe: variant) */
 @theme {
-  --animate-drop: drop 0.7s ease-in forwards;
-  --animate-pop: pop 0.25s ease-out;
   --animate-float: float 2.5s ease-out forwards;
-  --animate-squish: squish 0.35s ease-out;
-
-  @keyframes drop {
-    0% { transform: translateY(-1.5rem); opacity: 0; }
-    30% { opacity: 1; }
-    100% { transform: translateY(2.5rem); opacity: 0; }
-  }
 
   @keyframes float {
     0% { transform: translateY(0) scale(0.5); opacity: 0; }
@@ -243,22 +312,45 @@
     70% { opacity: 1; }
     100% { transform: translateY(-50vh) scale(1); opacity: 0; }
   }
-
-  @keyframes squish {
-    0% { transform: scale(1, 1); }
-    30% { transform: scale(1.2, 0.75); }
-    60% { transform: scale(0.92, 1.1); }
-    100% { transform: scale(1, 1); }
-  }
-
-  @keyframes pop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.15); }
-    100% { transform: scale(1); }
-  }
 }
 
 body {
   background-color: var(--bg);
   transition: background-color 0.3s ease;
+}
+
+/* The two cut-outs lying behind every page. Decoration only: fixed, behind the content, never in the way of a click. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  transition: background-color 0.3s ease;
+}
+
+body::before {
+  top: -9rem;
+  right: -11rem;
+  width: min(34rem, 85vw);
+  aspect-ratio: 1;
+  border-radius: 46% 54% 60% 40%;
+  background-color: var(--cutout-1);
+}
+
+body::after {
+  bottom: -7rem;
+  left: -12rem;
+  width: min(38rem, 95vw);
+  aspect-ratio: 5 / 4;
+  border-radius: 58% 42% 40% 60%;
+  background-color: var(--cutout-2);
+}
+
+/* One focus ring for everything that can be focused. In the base layer, so that a component can still set its own. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--focus-ring, var(--accent));
+    outline-offset: 3px;
+  }
 }

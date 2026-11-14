@@ -16,6 +16,7 @@ import { useEmotes } from '@/lib/useEmotes';
 import { useHighlight } from '@/lib/useHighlight';
 import { usePlayers } from '@/lib/usePlayers';
 import { getCompletedNumbers } from '@/lib/completedNumbers';
+import { joinErrorMessages } from '@/lib/joinErrors';
 
 export interface GameSettings {
   highlightCrosshairs: boolean;
@@ -23,13 +24,6 @@ export interface GameSettings {
   showErrors: boolean;
   godMode: boolean;
 }
-
-/** One message per reason: a new JoinError does not compile until it has its own text. */
-const joinErrorMessages: Record<JoinError, string> = {
-  'room-full': 'sudoku.roomFull',
-  'server-full': 'sudoku.serverFull',
-  'too-fast': 'sudoku.tooFast',
-};
 
 export function SudokuContainer({ roomId }: { roomId: string }) {
   const [board, setBoard] = useState<SudokuBoard>();
@@ -43,8 +37,6 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
 
   const { t } = useTranslation();
   const { status, retry } = useConnectionStatus();
-  const [hasEntered, setHasEntered] = useState(false);
-  const enterGame = useCallback(() => setHasEntered(true), []);
   const { emotes, sendEmote, isCoolingDown } = useEmotes();
   // Before the effect that joins the room: the server answers the join with who is in it.
   const { self, players, profiles, setColor } = usePlayers(roomId);
@@ -113,7 +105,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     setPlayerGrid(newGrid);
     getSocket().emit("cell-update", { r, c, v: value }, (result) => {
       // The server did not apply the move: ask for the real state instead of keeping a cell nobody else sees.
-      if (!result.ok) getSocket().emit("join-room", roomId, difficultyRef.current);
+      if (!result.ok) getSocket().emit("join-room", roomId);
     });
   }, [selectedCell, playerGrid, board, canAcceptInput, isNotesMode, roomId]);
 
@@ -167,7 +159,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     const socket = getSocket();
 
     const joinGame = () => {
-      socket.emit('join-room', roomId, difficultyRef.current);
+      socket.emit('join-room', roomId);
     };
 
     const onConnect = () => {
@@ -276,8 +268,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     );
   }
 
-  if (!board || !playerGrid || !hasEntered) {
-    return <ServerLoader status={status} ready={!!board && !!playerGrid} onEnter={enterGame} onRetry={retry} />;
+  if (!board || !playerGrid) {
+    return <ServerLoader status={status} onRetry={retry} />;
   }
 
   return (
@@ -285,12 +277,13 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={setColor} onHighlight={highlight} />
 
       <div className="w-full flex justify-between items-center">
-        <div className="text-[var(--subtitle-text)] text-sm font-bold uppercase tracking-wider">
+        <div className="rounded-full bg-[var(--paper)] px-4 py-1.5 text-[var(--subtitle-text)] text-sm font-bold uppercase tracking-wider shadow-[var(--shadow-paper-sm)]">
           {t('sudoku.mode')}: {t(`sudoku.${difficulty}`)}
         </div>
         <button
           onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-          className="text-[var(--subtitle-text)] hover:text-[var(--title-text)] text-sm font-bold uppercase transition-colors"
+          aria-expanded={isSettingsOpen}
+          className="cursor-pointer rounded-full bg-[var(--paper)] px-4 py-1.5 text-[var(--subtitle-text)] hover:text-[var(--title-text)] text-sm font-bold uppercase shadow-[var(--shadow-paper-sm)] transition-colors"
         >
           {isSettingsOpen ? t('sudoku.closeSettings') : `${t('sudoku.settings')}`}
         </button>
@@ -308,15 +301,15 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       <div className="relative w-full">
         {isGameWon && (
           <div className={cn(
-            "absolute inset-0 z-20 rounded-lg",
+            "absolute inset-0 z-20 rounded-2xl",
             "flex flex-col items-center justify-center",
             "bg-black/60 backdrop-blur-sm transition-all duration-500"
           )}>
             <div className={cn(
-              "flex flex-col items-center p-8 rounded-xl shadow-2xl",
-              "bg-[var(--cell-background)] border-2 border-[var(--grid-border-outer)]"
+              "flex flex-col items-center p-8 text-center rounded-[var(--radius-paper)]",
+              "bg-[var(--paper)] shadow-[var(--shadow-paper)]"
             )}>
-              <h2 className="text-3xl font-black text-[var(--title-text)] mb-2">
+              <h2 className="font-display text-3xl font-extrabold text-[var(--title-text)] mb-2">
                 {t('sudoku.cleared')}
               </h2>
               <p className="text-[var(--subtitle-text)] mb-6 font-medium">
@@ -325,9 +318,9 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
               <button
                 onClick={() => getSocket().emit("restart-game", difficulty)}
                 className={cn(
-                  "px-6 py-3 rounded-lg font-bold transition-all duration-200",
-                  "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
-                  "hover:bg-[var(--numpad-hover)] active:bg-[var(--numpad-active)]"
+                  "cursor-pointer px-6 py-3 rounded-[var(--radius-control)] font-display text-lg font-extrabold",
+                  "bg-[var(--accent)] text-[var(--accent-ink)] shadow-[var(--shadow-paper-sm)]",
+                  "transition-transform duration-150 motion-reduce:transition-none active:translate-y-0.5 active:shadow-none"
                 )}
               >
                 {t('sudoku.playAgain')}
@@ -358,7 +351,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
           <button
             onClick={() => setIsNotesMode(!isNotesMode)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200",
+              "flex cursor-pointer items-center gap-2 px-5 py-2 rounded-full text-sm font-bold transition-all duration-200",
               isNotesMode
                 ? "bg-[var(--number-player)]/10 text-[var(--number-player)] border-2 border-[var(--number-player)]/50"
                 : "bg-[var(--numpad-background)] text-[var(--subtitle-text)] border-2 border-transparent hover:bg-[var(--numpad-hover)]"
@@ -376,12 +369,13 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
               onClick={() => handleInput(num, isNotesMode)}
               disabled={!selectedCell || isGameWon || completedNumbers.has(num)}
               className={cn(
-                "p-3 text-xl font-bold rounded-lg transition-all duration-200",
+                "cursor-pointer p-3 font-display text-2xl font-extrabold leading-none rounded-[var(--radius-control)]",
+                "shadow-[var(--shadow-paper-sm)] transition-all duration-150 motion-reduce:transition-none",
                 isNotesMode
                   ? "bg-[var(--cell-background)] text-[var(--number-player)] border border-[var(--number-player)]/30"
                   : "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
-                "hover:opacity-80 active:scale-95",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
+                "hover:opacity-80 active:translate-y-0.5 active:shadow-none",
+                "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               )}
             >
               {num}
@@ -391,8 +385,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
             onClick={handleClear}
             disabled={!selectedCell || isGameWon}
             className={cn(
-              "p-3 text-xl font-bold rounded-lg transition-all duration-200",
-              "bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95",
+              "cursor-pointer p-3 text-xl font-bold rounded-[var(--radius-control)] transition-all duration-150 motion-reduce:transition-none",
+              "bg-[var(--number-error)]/10 text-[var(--number-error)] hover:bg-[var(--number-error)]/20 active:translate-y-0.5",
               "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >

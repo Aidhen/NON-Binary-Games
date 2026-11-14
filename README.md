@@ -10,9 +10,11 @@ I had this idea while looking for ways to pass the time with my long-distance pa
 
 ## Play together
 
-Open a game, send the link to your partner or your friends, and you are in the same room. No accounts, no timers, no scores.
+Open the site and you are already in a room: send the link to your partner or your friends and they sit at the same table. No accounts, no timers, no scores.
 
-- **Sudoku, together.** Three difficulty levels, and the whole room can start a new game when you are ready for another.
+- **A table with boxes.** Every game is a box. Each of you picks one, and the box opens when more than half of the room wants it. Whoever arrives later joins the game that is open.
+
+- **Sudoku, together.** Five difficulty levels, every one solvable by deduction alone, and the whole room can start a new game when you are ready for another.
 - **Shared notes.** Each note is colored after the person who wrote it, so you can see who had which idea.
 - **Seeing each other.** You see where the other players are looking, in their own color.
 - **Emotes.** Ten quick reactions (💜 🌹 🔥 ...) float over the board, for when you want to say something without typing.
@@ -20,7 +22,7 @@ Open a game, send the link to your partner or your friends, and you are in the s
 
 ### A gentle wait
 
-The game runs on a free hosting plan that goes to sleep when nobody is around, so the first visit can take about a minute. Instead of a blank page, it tells you what is happening and gives you something to do: water a little garden, or poke a blob that reacts to the emotes.
+The game runs on a free hosting plan that goes to sleep when nobody is around, so the first visit can take about a minute. Instead of a blank page, it tells you what is happening and why.
 
 ---
 
@@ -30,12 +32,13 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 
 ### What is done
 - [x] Collaborative Sudoku with real-time rooms and shareable links (`/play/[roomId]`).
+- [x] A room that starts at the table, where the players vote for the game to open.
 - [x] Shared notes and live cell selections.
 - [x] A name for each player, like Red Panda, and a color of your own to pick; the list of players shows who is who, and a tap on a player points them out on the board.
 - [x] Win detection and a "play again" screen.
 - [x] Five difficulty levels, from beginner to expert. Every puzzle has exactly one solution and can be solved by pure deduction: you never have to guess.
 - [x] Emotes between players.
-- [x] A friendly wait while the server wakes up, with two tiny mini games.
+- [x] A friendly wait while the server wakes up.
 - [x] English and Italian translations, several themes.
 - [x] Online deployment (Vercel and Render).
 
@@ -48,7 +51,7 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 - [ ] **Smoother reconnections:** coming back to a room after a connection drop should feel seamless.
 - [ ] **Keeping rooms in sync and safe:** consistent moves between players, limits against flooding.
 - [ ] **Keyboard play:** moving around the grid with the arrow keys, and better support for screen readers.
-- [ ] **More games:** the mini games already live in a small registry, so a new game is a component plus one entry.
+- [ ] **More games:** the games live in a registry, so a new game is its engine, a cover and one entry.
 - [ ] **Rooms that survive restarts**, and a backend that can scale (Redis).
 - [ ] **Hosting details:** a health check, graceful shutdown and proper logs.
 

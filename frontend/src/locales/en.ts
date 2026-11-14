@@ -21,7 +21,6 @@ export const en = {
     showErrors: "Show error clashes (red)",
     godMode: "God mode: mark wrong numbers (red)",
     notesMode: "Notes",
-    startNewGame: "Start new game",
     copied: "Copied",
     copyLink: "Copy link",
     room: "Room",
@@ -65,39 +64,39 @@ export const en = {
       dolphin: { name: "Dolphin", gender: "m" }
     }
   },
+  lobby: {
+    yourRoom: "Your room",
+    invite: "Send the link to whoever you want at the table.",
+    title: "Pick a box",
+    hint: "Everybody picks one. A box opens when more than half of the room wants it.",
+    games: "Games",
+    open: "Open the box",
+    takeBack: "Take my vote back",
+    progress: "{count} of {total} want {game}",
+    votes: "{count} of {total} votes",
+    players: "{min}–{max} players",
+    playersExact: "{count} players",
+    connecting: "Setting the table…",
+    soon: "Soon",
+    unknownGame: "This room is playing a game this page does not know yet. Reload the page to get the latest version."
+  },
+  games: {
+    sudoku: {
+      title: "Sudoku"
+    },
+    mystery: {
+      title: "Mystery box"
+    }
+  },
   loader: {
     waking: "The server is waking up",
     wakingDetails: "To keep this game free and ad-free, it runs on a free hosting plan. The server goes to sleep after 15 minutes without visitors and takes about a minute to start again. Thanks for waiting!",
     failed: "We can't reach the server",
     failedDetails: "It is taking longer than usual. We keep trying in the background.",
-    retry: "Try again",
-    ready: "The server is ready!",
-    join: "Join the game"
+    retry: "Try again"
   },
   emotes: {
     title: "Reactions"
-  },
-  minigames: {
-    pick: "Pick a game",
-    garden: {
-      name: "Garden",
-      water: "Water",
-      plantSeed: "Plant a new seed",
-      flowers: "Flowers grown",
-      seed: "A tiny seed. Give it some water.",
-      sprout: "Something is sprouting!",
-      leaves: "Look at those leaves.",
-      bloom: "It bloomed! Take a moment to enjoy it."
-    },
-    blob: {
-      name: "Blob",
-      poke: "Poke the blob",
-      idle: "The blob is waiting. Poke it or send it a reaction!",
-      happy: "The blob is delighted!",
-      surprised: "Whoa!",
-      sad: "The blob is a bit sad.",
-      thinking: "The blob is thinking about it..."
-    }
   }
 };
 

@@ -23,7 +23,6 @@ export const it: Translations = {
     showErrors: "Mostra errori (rosso)",
     godMode: "Modalità god: segna i numeri sbagliati (rosso)",
     notesMode: "Note",
-    startNewGame: "Inizia una partita",
     copied: "Copiato",
     copyLink: "Copia link",
     room: "Stanza",
@@ -67,38 +66,38 @@ export const it: Translations = {
       dolphin: { name: "Delfino", gender: "m" }
     }
   },
+  lobby: {
+    yourRoom: "La tua stanza",
+    invite: "Manda il link a chi vuoi al tavolo.",
+    title: "Scegli una scatola",
+    hint: "Ognuno ne sceglie una. La scatola si apre quando la vuole più di metà della stanza.",
+    games: "Giochi",
+    open: "Apri la scatola",
+    takeBack: "Ritiro il mio voto",
+    progress: "{count} su {total} vogliono {game}",
+    votes: "{count} voti su {total}",
+    players: "{min}–{max} giocatori",
+    playersExact: "{count} giocatori",
+    connecting: "Apparecchio il tavolo…",
+    soon: "Presto",
+    unknownGame: "In questa stanza si gioca a un gioco che questa pagina non conosce ancora. Ricarica la pagina per avere l'ultima versione."
+  },
+  games: {
+    sudoku: {
+      title: "Sudoku"
+    },
+    mystery: {
+      title: "Scatola misteriosa"
+    }
+  },
   loader: {
     waking: "Il server si sta svegliando",
     wakingDetails: "Per tenere il gioco gratuito e senza pubblicità, gira su un hosting gratuito. Il server va a dormire dopo 15 minuti senza visitatori e ci mette circa un minuto a ripartire. Grazie per l'attesa!",
     failed: "Non riusciamo a raggiungere il server",
     failedDetails: "Ci sta mettendo più del solito. Continuiamo a riprovare in background.",
-    retry: "Riprova",
-    ready: "Il server è pronto!",
-    join: "Entra in partita"
+    retry: "Riprova"
   },
   emotes: {
     title: "Reazioni"
-  },
-  minigames: {
-    pick: "Scegli un gioco",
-    garden: {
-      name: "Giardino",
-      water: "Annaffia",
-      plantSeed: "Pianta un nuovo seme",
-      flowers: "Fiori coltivati",
-      seed: "Un piccolo seme. Dagli un po' d'acqua.",
-      sprout: "Sta spuntando qualcosa!",
-      leaves: "Guarda che foglie.",
-      bloom: "È sbocciato! Goditelo un momento."
-    },
-    blob: {
-      name: "Blob",
-      poke: "Pungola il blob",
-      idle: "Il blob aspetta. Pungolalo o mandagli una reazione!",
-      happy: "Il blob è felicissimo!",
-      surprised: "Wow!",
-      sad: "Il blob è un po' triste.",
-      thinking: "Il blob ci sta pensando..."
-    }
   }
 };

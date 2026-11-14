@@ -132,10 +132,10 @@ describe('applyConnectionLimits', () => {
     // A room id is always 36 characters; the player id is the longest the schema allows.
     const { client, result } = await attempt(url, { playerId: 'p'.repeat(MAX_PLAYER_ID_LENGTH) });
     expect(result).toBe('connected');
-    const started = new Promise<string>((resolve) => { client.once('game-started', () => resolve('started')); });
+    const started = new Promise<string>((resolve) => { client.once('lobby-updated', () => resolve('started')); });
     const closed = new Promise<string>((resolve) => { client.once('disconnect', () => resolve('closed')); });
 
-    client.emit('join-room', crypto.randomUUID(), 'hard');
+    client.emit('join-room', crypto.randomUUID());
 
     await expect(Promise.race([started, closed])).resolves.toBe('started');
   });

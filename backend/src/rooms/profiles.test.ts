@@ -4,12 +4,9 @@ import type { RoomState } from './roomStore';
 import { assignProfile, colorIsFree, snapshotPlayers } from './profiles';
 
 const createRoom = (): RoomState => ({
-  board: {} as RoomState['board'],
-  difficulty: 'easy',
-  currentGrid: [],
+  game: null,
+  votes: new Map(),
   players: new Map(),
-  filledCells: 0,
-  notesGrid: {},
   aliases: new Map(),
   profiles: new Map(),
   played: false,

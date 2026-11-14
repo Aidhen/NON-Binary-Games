@@ -75,8 +75,8 @@ describe('Dropdown', () => {
     fireEvent.click(getTrigger());
 
     expect(screen.getByRole('button', { name: 'English' })).toHaveClass(
-      'bg-[var(--numpad-background)]',
-      'text-[var(--numpad-text)]',
+      'bg-[var(--accent)]',
+      'text-[var(--accent-ink)]',
     );
     expect(screen.getByRole('button', { name: 'Italian' })).toHaveClass(
       'text-[var(--subtitle-text)]',

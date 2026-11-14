@@ -198,7 +198,7 @@ describe('SudokuContainer', () => {
 
     expect(screen.getByText('sudoku.loading')).toBeInTheDocument();
     expect(mocks.socket.connect).toHaveBeenCalledOnce();
-    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room', 'easy'] });
+    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room'] });
   });
 
   it('joins the room immediately when the socket is already connected', () => {
@@ -207,7 +207,7 @@ describe('SudokuContainer', () => {
     render(<SudokuContainer roomId="custom-room" />);
 
     expect(mocks.socket.connect).not.toHaveBeenCalled();
-    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room', 'easy'] });
+    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room'] });
   });
 
   it('renders the board when a game-started event is received', async () => {
@@ -257,7 +257,7 @@ describe('SudokuContainer', () => {
 
     const joins = mocks.emitted.filter(({ event }) => event === 'join-room');
     expect(joins).toHaveLength(joinsBefore + 1);
-    expect(joins.at(-1)!.args).toEqual(['room-7', 'easy']);
+    expect(joins.at(-1)!.args).toEqual(['room-7']);
   });
 
   it.each([
@@ -858,35 +858,18 @@ describe('SudokuContainer', () => {
       expect(screen.getByText('loader.wakingDetails')).toBeInTheDocument();
     });
 
-    it('goes straight to the board when the player did not touch the mini game', async () => {
+    it('goes straight to the board when the server wakes up', async () => {
       connectLater();
       render(<SudokuContainer roomId="sleepy-room" />);
       await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
 
       await serverWakesUp();
-
-      expect(screen.getByTestId('board-ui')).toBeInTheDocument();
-      expect(screen.queryByText('loader.ready')).not.toBeInTheDocument();
-    });
-
-    it('lets the player finish with the mini game and join when they choose', async () => {
-      connectLater();
-      render(<SudokuContainer roomId="sleepy-room" />);
-      await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
-
-      fireEvent.click(await screen.findByRole('button', { name: 'minigames.garden.water' }));
-      await serverWakesUp();
-
-      expect(screen.getByText('loader.ready')).toBeInTheDocument();
-      expect(screen.queryByTestId('board-ui')).not.toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole('button', { name: 'loader.join' }));
 
       expect(screen.getByTestId('board-ui')).toBeInTheDocument();
       expect(getBoardState().playerGrid).toEqual(currentGrid);
     });
 
-    it('joins the room as soon as the socket connects, while the player is still in the mini game', async () => {
+    it('joins the room as soon as the socket connects, after a slow start', async () => {
       connectLater();
       render(<SudokuContainer roomId="sleepy-room" />);
       await act(async () => { vi.advanceTimersByTime(WAKING_AFTER_MS); });
@@ -894,7 +877,7 @@ describe('SudokuContainer', () => {
 
       await serverWakesUp();
 
-      expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['sleepy-room', 'easy'] });
+      expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['sleepy-room'] });
     });
   });
 });

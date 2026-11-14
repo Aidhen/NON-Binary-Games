@@ -22,8 +22,8 @@ export function SettingsPanel({
 
   return (
     <div className={cn(
-      "w-full p-4 mb-2 flex flex-col gap-6 rounded-lg shadow-lg",
-      "bg-[var(--cell-background)] border-2 border-[var(--grid-border-inner)]"
+      "w-full p-5 mb-2 flex flex-col gap-6 rounded-[var(--radius-paper)]",
+      "bg-[var(--paper)] shadow-[var(--shadow-paper)]"
     )}>
       <div className="flex flex-col gap-2">
         <span className="text-[var(--title-text)] font-black text-sm uppercase tracking-wide">
@@ -41,7 +41,7 @@ export function SettingsPanel({
                 onClick={() => onDifficultyChange(level)}
                 className={cn(
                   index < 2 ? "col-span-3" : "col-span-2",
-                  "py-2 text-sm font-bold capitalize rounded-md transition-colors",
+                  "py-2 text-sm font-bold capitalize rounded-[var(--radius-control)] transition-colors",
                   isActive
                     ? "bg-[var(--number-player)] text-[var(--cell-background)]"
                     : "bg-[var(--numpad-background)] text-[var(--numpad-text)] hover:bg-[var(--numpad-hover)]"

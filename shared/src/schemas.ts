@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DIFFICULTIES } from './games/sudoku/types';
 import { EMOTES } from './emotes';
+import { GAME_IDS } from './games';
 import { PLAYER_COLORS } from './players';
 
 // In a browser the page has a Content-Security-Policy without 'unsafe-eval', and zod would report a violation
@@ -23,6 +24,8 @@ export const difficultySchema = z.enum(DIFFICULTIES);
 export const emoteSchema = z.enum(EMOTES);
 
 export const playerColorSchema = z.enum(PLAYER_COLORS);
+
+export const gameIdSchema = z.enum(GAME_IDS);
 
 /** The length of the UUID the app generates for a room (crypto.randomUUID()). */
 export const MAX_ROOM_ID_LENGTH = 36;
@@ -82,7 +85,9 @@ export type SelectCellPayload = z.infer<typeof selectCellPayloadSchema>;
  * Socket.IO passes the arguments positionally, so each event is validated
  * as a whole argument list (extra or missing arguments are rejected).
  */
-export const joinRoomArgsSchema = z.tuple([roomIdSchema, difficultySchema]);
+export const joinRoomArgsSchema = z.tuple([roomIdSchema]);
+/** `null` takes the vote back. */
+export const voteGameArgsSchema = z.tuple([gameIdSchema.nullable()]);
 /** Socket.IO appends the acknowledgement callback to the arguments when the client asks for one. */
 const acknowledgementSchema = z.custom<(result: CellUpdateResult) => void>((value) => typeof value === 'function');
 

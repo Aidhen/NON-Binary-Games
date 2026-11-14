@@ -1,53 +1,27 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import type { ConnectionStatus } from '@/lib/useConnectionStatus';
-import { MiniGameArea } from '../minigames/MiniGameArea';
 
 interface ServerLoaderProps {
   status: ConnectionStatus;
-  ready: boolean;
-  onEnter: () => void;
   onRetry: () => void;
 }
 
-export function ServerLoader({ status, ready, onEnter, onRetry }: ServerLoaderProps) {
+export function ServerLoader({ status, onRetry }: ServerLoaderProps) {
   const { t } = useTranslation();
-  const [hasPlayed, setHasPlayed] = useState(false);
-
-  useEffect(() => {
-    if (ready && !hasPlayed) onEnter();
-  }, [ready, hasPlayed, onEnter]);
 
   const isWaiting = status === 'waking' || status === 'failed';
-  const showMiniGame = isWaiting || hasPlayed;
 
   return (
     <div className={cn(
-      "w-full max-w-[500px] aspect-square mx-auto p-4",
+      "w-full max-w-[500px] aspect-square mx-auto p-6",
       "flex flex-col items-center justify-center gap-5 text-center",
-      "border-4 border-[var(--grid-border-outer)]"
+      "rounded-[var(--radius-paper)] bg-[var(--paper)] shadow-[var(--shadow-paper)]"
     )}>
-      {ready && hasPlayed && (
-        <div role="status" className="flex flex-col items-center gap-3">
-          <p className="text-lg font-bold text-[var(--title-text)]">{t('loader.ready')}</p>
-          <button
-            onClick={onEnter}
-            className={cn(
-              "px-6 py-3 rounded-lg font-bold transition-all duration-200",
-              "bg-[var(--cell-background-selected)] text-[var(--title-text)]",
-              "hover:opacity-80 active:scale-95"
-            )}
-          >
-            {t('loader.join')}
-          </button>
-        </div>
-      )}
-
-      {!ready && isWaiting && (
+      {isWaiting && (
         <div role="status" className="flex max-w-sm flex-col items-center gap-2">
-          <p className="text-lg font-bold text-[var(--title-text)]">
+          <p className="font-display text-xl font-extrabold text-[var(--title-text)]">
             {t(status === 'failed' ? 'loader.failed' : 'loader.waking')}
           </p>
           <p className="text-sm font-medium text-[var(--subtitle-text)]">
@@ -57,9 +31,9 @@ export function ServerLoader({ status, ready, onEnter, onRetry }: ServerLoaderPr
             <button
               onClick={onRetry}
               className={cn(
-                "mt-1 px-5 py-2 rounded-lg text-sm font-bold transition-all duration-200",
-                "bg-[var(--numpad-background)] text-[var(--numpad-text)]",
-                "hover:bg-[var(--numpad-hover)] active:bg-[var(--numpad-active)]"
+                "mt-1 cursor-pointer px-5 py-2 rounded-[var(--radius-control)] text-sm font-bold",
+                "bg-[var(--accent)] text-[var(--accent-ink)] shadow-[var(--shadow-paper-sm)]",
+                "transition-transform duration-150 motion-reduce:transition-none active:translate-y-0.5 active:shadow-none"
               )}
             >
               {t('loader.retry')}
@@ -68,13 +42,11 @@ export function ServerLoader({ status, ready, onEnter, onRetry }: ServerLoaderPr
         </div>
       )}
 
-      {!showMiniGame && (
+      {!isWaiting && (
         <span className="text-[var(--subtitle-text)] font-medium animate-pulse">
           {t('sudoku.loading')}
         </span>
       )}
-
-      {showMiniGame && <MiniGameArea onPlay={() => setHasPlayed(true)} />}
     </div>
   );
 }

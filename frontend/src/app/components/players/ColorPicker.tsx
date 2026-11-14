@@ -71,7 +71,7 @@ export function ColorPicker({ id, current, others, onPick, onClose }: Readonly<C
       tabIndex={-1}
       onKeyDown={onKeyDown}
       // On a surface of the cells, where the contrast of every color is checked in every theme.
-      className="flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[var(--grid-border-inner)] bg-[var(--cell-background)] p-3"
+      className="flex flex-wrap items-center justify-center gap-3 rounded-[var(--radius-paper)] border border-[var(--grid-border-inner)] bg-[var(--cell-background)] p-3 shadow-[var(--shadow-paper-sm)]"
     >
       {PLAYER_COLORS.map((color) => {
         const owner = takenBy(color);

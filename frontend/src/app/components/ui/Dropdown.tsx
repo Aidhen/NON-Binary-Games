@@ -48,7 +48,7 @@ export function Dropdown<T extends string>({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "px-3 py-2 rounded-[var(--radius-control)] text-left text-sm whitespace-nowrap flex items-center justify-between gap-2",
-          "bg-[var(--paper)] text-[var(--title-text)] font-bold capitalize",
+          "bg-[var(--paper)] text-[var(--number-initial)] font-bold capitalize",
           "shadow-[var(--shadow-paper-sm)]",
           "cursor-pointer transition-colors duration-300",
           className

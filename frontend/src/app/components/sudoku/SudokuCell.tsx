@@ -22,6 +22,8 @@ export function SudokuCell({ value, bgClass, textClass, isRightBorder, isBottomB
       className={cn(
         "relative flex items-center justify-center font-display text-2xl leading-none",
         "cursor-pointer select-none overflow-hidden",
+        // Inside the cell: the board clips what is drawn outside its edge.
+        "focus-visible:-outline-offset-4",
         {
           "border-r-2 border-r-[var(--grid-border-outer)]": isRightBorder,
           "border-r border-r-[var(--grid-border-inner)]": !isRightBorder,

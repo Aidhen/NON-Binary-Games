@@ -1,12 +1,13 @@
 import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, DifficultyLevel, GameId, GameStartedPayload, ServerToClientEvents, SocketData, SudokuStartedPayload } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
 import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
-import type { GridGame, RoomGame, RoomState, SudokuGame, TakuzuGame } from "../rooms/roomStore";
+import type { GridGame, RoomGame, RoomState, SudokuGame, TakuzuGame, ValueGridGame } from "../rooms/roomStore";
+import { createFlowerField, flowerFieldStarted, isRevealable, minesOf, revealCell, setExplosive, toggleFlag } from "../rooms/flowerField";
 import { assignProfile, colorIsFree, snapshotPlayers } from "../rooms/profiles";
 import { chosenGame, snapshotLobby } from "../rooms/lobby";
 
@@ -53,10 +54,11 @@ const createTakuzu = (difficulty: DifficultyLevel): TakuzuGame => {
   };
 };
 
-/** One entry per game: a new id in GAME_IDS does not compile until it says how its state is created. */
-const createGame: Record<GameId, (difficulty: DifficultyLevel) => RoomGame> = {
+/** One entry per game: a new id in GAME_IDS does not compile until it says how its state is created. `previous` is the game the room was playing. */
+const createGame: Record<GameId, (difficulty: DifficultyLevel, previous?: RoomGame) => RoomGame> = {
   sudoku: createSudoku,
   takuzu: createTakuzu,
+  'flower-field': createFlowerField,
 };
 
 const sudokuStarted = (game: SudokuGame): SudokuStartedPayload => ({
@@ -77,10 +79,19 @@ const takuzuStarted = (game: TakuzuGame): GameStartedPayload => ({
 });
 
 /** One entry per game: what a player is told about the game the room has open. */
-const gameStarted = (game: RoomGame): GameStartedPayload => (game.id === 'sudoku' ? sudokuStarted(game) : takuzuStarted(game));
+const gameStarted = (game: RoomGame): GameStartedPayload => {
+  switch (game.id) {
+    case 'sudoku': return sudokuStarted(game);
+    case 'takuzu': return takuzuStarted(game);
+    case 'flower-field': return flowerFieldStarted(game);
+  }
+};
 
 /** The highest value a cell of the game can hold: a digit of the Sudoku, or one of the two symbols of the Takuzu. */
-const maxValueOf = (game: GridGame): number => (game.id === 'sudoku' ? game.board.size : TAKUZU_SYMBOLS.length);
+const maxValueOf = (game: ValueGridGame): number => (game.id === 'sudoku' ? game.board.size : TAKUZU_SYMBOLS.length);
+
+/** Cells on each side of the grid. */
+const sizeOf = (game: GridGame): number => (game.id === 'flower-field' ? game.size : game.board.size);
 
 /** Tabs (sockets) one player can have open in the same room. */
 export const MAX_SOCKETS_PER_PLAYER = 3;
@@ -177,6 +188,22 @@ const getCurrentRoom = (socket: GameSocket) => {
 const getCurrentGridGame = (socket: GameSocket) => {
   const current = getCurrentRoom(socket);
   if (!current?.room.game) return undefined;
+
+  return { ...current, game: current.room.game };
+};
+
+/** The same, for the events of a game where the players write a value in a cell (the Sudoku and the Takuzu). */
+const getCurrentValueGame = (socket: GameSocket) => {
+  const current = getCurrentRoom(socket);
+  if (!current?.room.game || current.room.game.id === 'flower-field') return undefined;
+
+  return { ...current, game: current.room.game };
+};
+
+/** The same, for the events of the Flower Field. */
+const getCurrentFlowerField = (socket: GameSocket) => {
+  const current = getCurrentRoom(socket);
+  if (current?.room.game?.id !== 'flower-field') return undefined;
 
   return { ...current, game: current.room.game };
 };
@@ -321,7 +348,7 @@ export const setupSocketHandlers = (io: GameServer) => {
     }, allowEvent));
 
     socket.on("cell-update", safeHandler(cellUpdateArgsSchema, ({ r, c, v }, acknowledge?) => {
-      const current = getCurrentGridGame(socket);
+      const current = getCurrentValueGame(socket);
       if (!current) {
         acknowledge?.({ ok: false });
         return;
@@ -371,7 +398,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (!current) return;
       const { roomId, game, alias } = current;
 
-      const size = game.board.size;
+      const size = sizeOf(game);
       if ((r !== null && r >= size) || (c !== null && c >= size)) return;
 
       socket.to(channelOf(roomId)).emit("player-selected-cell", { alias, r, c });
@@ -396,11 +423,58 @@ export const setupSocketHandlers = (io: GameServer) => {
       // Dropped without an answer: an error screen here would replace the game of everyone who is playing.
       if (!allowRestart(budgetKey()) || !allowBoardGeneration()) return;
 
-      const game = createGame[playing.id](difficulty);
+      const game = createGame[playing.id](difficulty, playing);
       room.game = game;
       room.played = false;
 
       io.to(channelOf(roomId)).emit("game-started", gameStarted(game));
+    }, allowEvent));
+
+    socket.on("flower-field:reveal", safeHandler(flowerFieldCellArgsSchema, ({ r, c }) => {
+      const current = getCurrentFlowerField(socket);
+      if (!current) return;
+      const { roomId, room, game } = current;
+
+      if (r >= game.size || c >= game.size || !isRevealable(game, r, c)) return;
+      // The first cell lays out the mines, which costs what generating the board of another game costs.
+      if (!game.mines && !allowBoardGeneration()) return;
+
+      const result = revealCell(game, r, c);
+      if (!result) return;
+
+      room.played = true;
+      const channel = io.to(channelOf(roomId));
+      if (result.cells.length > 0) channel.emit("flower-field:updated", { cells: result.cells });
+      if (result.lost) channel.emit("flower-field:lost", { mines: minesOf(game), exploded: result.lost });
+      if (result.won) channel.emit("game-won");
+    }, allowEvent));
+
+    socket.on("flower-field:flag", safeHandler(flowerFieldCellArgsSchema, ({ r, c }) => {
+      const current = getCurrentFlowerField(socket);
+      if (!current) return;
+      const { roomId, room, game, alias } = current;
+
+      if (r >= game.size || c >= game.size) return;
+
+      const result = toggleFlag(game, r, c, alias);
+      if (!result) return;
+
+      room.played = true;
+      io.to(channelOf(roomId)).emit("flower-field:flagged", { r, c, alias: result.alias });
+    }, allowEvent));
+
+    socket.on("flower-field:set-mode", safeHandler(flowerFieldModeArgsSchema, ({ explosive }) => {
+      const current = getCurrentFlowerField(socket);
+      if (!current) return;
+      const { roomId, game } = current;
+
+      // Too late: the player who asked is shown the real option again, the others have nothing to learn.
+      if (!setExplosive(game, explosive)) {
+        socket.emit("flower-field:mode", { explosive: game.explosive });
+        return;
+      }
+
+      io.to(channelOf(roomId)).emit("flower-field:mode", { explosive });
     }, allowEvent));
 
     // Fire and forget: the sender already shows its own emote, so only the others are notified.

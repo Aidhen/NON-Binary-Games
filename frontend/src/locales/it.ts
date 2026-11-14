@@ -32,6 +32,26 @@ export const it: Translations = {
     tooFast: "Sono state avviate troppe partite in poco tempo. Aspetta un attimo e riprova.",
     backHome: "Torna alla home"
   },
+  flowerField: {
+    cleared: "Campo fiorito!",
+    compliment: "Ogni cella sicura è aperta, e nessuno ha dovuto tirare a caso.",
+    lost: "Una mina!",
+    lostHint: "Hai scelto di perdere quando si apre una mina. Riproviamo?",
+    rules: "Come funziona",
+    ruleNumbers: "Un numero dice quante mine toccano quella cella, anche in diagonale.",
+    ruleSafe: "Apri tutte le celle che non sono mine. La prima è sempre sicura e non devi mai tirare a caso.",
+    ruleFlags: "Metti una bandierina dove sai che c'è una mina: attiva la modalità bandierine e tocca.",
+    ruleMineMarks: "Se apri una mina viene solo segnata per tutti e la partita continua.",
+    ruleMineLoses: "Se apri una mina la partita è persa per tutti.",
+    flagMode: "Bandierine",
+    explosive: "Perdi quando si apre una mina",
+    explosiveLocked: "Si può cambiare prima di aprire la prima cella, o con una nuova partita.",
+    cell: "Riga {row}, colonna {column}: {state}",
+    closed: "chiusa",
+    flagged: "bandierina",
+    mine: "mina",
+    empty: "nessuna mina intorno"
+  },
   takuzu: {
     cleared: "Puzzle risolto!",
     compliment: "Ogni riga e ogni colonna è in equilibrio.",
@@ -100,6 +120,9 @@ export const it: Translations = {
     },
     takuzu: {
       title: "Takuzu"
+    },
+    flowerField: {
+      title: "Campo fiorito"
     },
     mystery: {
       title: "Scatola misteriosa"

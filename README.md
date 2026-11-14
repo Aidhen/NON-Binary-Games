@@ -16,6 +16,7 @@ Open the site and you are already in a room: send the link to your partner or yo
 
 - **Sudoku, together.** Five difficulty levels, every one solvable by deduction alone, and the whole room can start a new game when you are ready for another.
 - **Takuzu, together.** Fill the grid with 0s and 1s: no more than two equal numbers side by side, as many 0s as 1s in every row and column, and no two rows or columns alike. Tap a cell to go from empty to 0, to 1 and back. Same five levels, from 6×6 to 12×12, and every puzzle can be solved without guessing.
+- **Flower Field, together.** Open every cell that is not a mine, and use the numbers (how many mines touch a cell) to work out where the mines are. Put flags where you know, in your own color. The first cell is always safe and the field never needs a guess. Opening a mine only marks it for everybody, unless you choose in the settings to lose the game when it happens.
 - **Shared notes.** Each note is colored after the person who wrote it, so you can see who had which idea.
 - **Seeing each other.** You see where the other players are looking, in their own color.
 - **Emotes.** Ten quick reactions (💜 🌹 🔥 ...) float over the board, for when you want to say something without typing.
@@ -34,6 +35,7 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 ### What is done
 - [x] Collaborative Sudoku with real-time rooms and shareable links (`/play/[roomId]`).
 - [x] A second game: Takuzu, with the same levels, the same players and the same reactions.
+- [x] A third game: Flower Field, with shared flags and an option to lose when a mine is opened.
 - [x] A room that starts at the table, where the players vote for the game to open.
 - [x] Shared notes and live cell selections.
 - [x] A name for each player, like Red Panda, and a color of your own to pick; the list of players shows who is who, and a tap on a player points them out on the board.

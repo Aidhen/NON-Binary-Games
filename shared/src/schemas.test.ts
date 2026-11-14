@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   cellUpdateArgsSchema,
   difficultySchema,
+  flowerFieldCellArgsSchema,
+  flowerFieldModeArgsSchema,
   gameIdSchema,
   joinRoomArgsSchema,
   MAX_ROOM_ID_LENGTH,
@@ -186,5 +188,37 @@ describe('sendEmoteArgsSchema', () => {
     }
     expect(sendEmoteArgsSchema.safeParse([]).success).toBe(false);
     expect(sendEmoteArgsSchema.safeParse([EMOTES[0], 'extra']).success).toBe(false);
+  });
+});
+
+describe('flowerFieldCellArgsSchema', () => {
+  it('accepts a cell, and only a cell', () => {
+    expect(flowerFieldCellArgsSchema.safeParse([{ r: 0, c: 13 }]).success).toBe(true);
+    expect(flowerFieldCellArgsSchema.safeParse([{ r: 0, c: 13 }, () => undefined]).success).toBe(false);
+    expect(flowerFieldCellArgsSchema.safeParse([]).success).toBe(false);
+  });
+
+  it('rejects garbage, negative and fractional coordinates, and a missing one', () => {
+    for (const value of garbage) expect(flowerFieldCellArgsSchema.safeParse([value]).success).toBe(false);
+    expect(flowerFieldCellArgsSchema.safeParse([{ r: -1, c: 0 }]).success).toBe(false);
+    expect(flowerFieldCellArgsSchema.safeParse([{ r: 0.5, c: 0 }]).success).toBe(false);
+    expect(flowerFieldCellArgsSchema.safeParse([{ r: '1', c: 0 }]).success).toBe(false);
+    expect(flowerFieldCellArgsSchema.safeParse([{ r: 1 }]).success).toBe(false);
+  });
+});
+
+describe('flowerFieldModeArgsSchema', () => {
+  it('accepts a yes or a no', () => {
+    expect(flowerFieldModeArgsSchema.safeParse([{ explosive: true }]).success).toBe(true);
+    expect(flowerFieldModeArgsSchema.safeParse([{ explosive: false }]).success).toBe(true);
+  });
+
+  it.each([0, 1, 'true', null, undefined])('rejects %j as the answer', (value) => {
+    expect(flowerFieldModeArgsSchema.safeParse([{ explosive: value }]).success).toBe(false);
+  });
+
+  it('rejects garbage and a missing payload', () => {
+    for (const value of garbage) expect(flowerFieldModeArgsSchema.safeParse([value]).success).toBe(false);
+    expect(flowerFieldModeArgsSchema.safeParse([]).success).toBe(false);
   });
 });

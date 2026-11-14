@@ -51,8 +51,8 @@ describe('ThemeSelector', () => {
     fireEvent.click(screen.getByRole('button', { name: /dark/ }));
 
     expect(screen.getByRole('button', { name: 'dark' })).toHaveClass(
-      'bg-[var(--numpad-background)]',
-      'text-[var(--numpad-text)]',
+      'bg-[var(--accent)]',
+      'text-[var(--accent-ink)]',
     );
     expect(screen.getByRole('button', { name: 'light' })).toHaveClass(
       'text-[var(--subtitle-text)]',

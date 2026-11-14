@@ -20,7 +20,7 @@ export function SudokuCell({ value, bgClass, textClass, isRightBorder, isBottomB
       onClick={onClick}
       aria-label={value !== 0 ? `Cell value ${value}` : 'Empty cell'}
       className={cn(
-        "relative flex items-center justify-center text-2xl",
+        "relative flex items-center justify-center font-display text-2xl leading-none",
         "cursor-pointer select-none overflow-hidden",
         {
           "border-r-2 border-r-[var(--grid-border-outer)]": isRightBorder,

@@ -126,8 +126,8 @@ export function SudokuBoardUI({
     <div className="relative w-full aspect-square">
       <div
         className={cn(
-          "w-full h-full grid shadow-xl transition-colors duration-300",
-          "border-4 border-[var(--grid-border-outer)]"
+          "w-full h-full grid overflow-hidden rounded-2xl transition-colors duration-300",
+          "border-4 border-[var(--grid-border-outer)] shadow-[var(--shadow-paper)]"
         )}
         style={{ gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))` }}
       >

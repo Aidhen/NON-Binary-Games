@@ -30,6 +30,26 @@ export const en = {
     tooFast: "Too many games were started in a short time. Wait a moment and try again.",
     backHome: "Back to the home page"
   },
+  flowerField: {
+    cleared: "Field cleared!",
+    compliment: "Every safe cell is open, and nobody had to guess.",
+    lost: "A mine!",
+    lostHint: "You chose to lose when a mine is opened. Try again?",
+    rules: "How it works",
+    ruleNumbers: "A number says how many mines touch that cell, the ones across the corners too.",
+    ruleSafe: "Open every cell that is not a mine. The first one is always safe, and you never have to guess.",
+    ruleFlags: "Put a flag where you know there is a mine: switch the flag mode on, then tap.",
+    ruleMineMarks: "If you open a mine, it is only marked for everybody and the game goes on.",
+    ruleMineLoses: "If you open a mine, the game is lost for everybody.",
+    flagMode: "Flags",
+    explosive: "Lose when a mine is opened",
+    explosiveLocked: "It can change before the first cell is opened, or with a new game.",
+    cell: "Row {row}, column {column}: {state}",
+    closed: "closed",
+    flagged: "flag",
+    mine: "mine",
+    empty: "no mines around"
+  },
   takuzu: {
     cleared: "Puzzle cleared!",
     compliment: "Every row and column is in balance.",
@@ -98,6 +118,9 @@ export const en = {
     },
     takuzu: {
       title: "Takuzu"
+    },
+    flowerField: {
+      title: "Flower Field"
     },
     mystery: {
       title: "Mystery box"

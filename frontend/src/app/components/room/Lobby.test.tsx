@@ -9,10 +9,6 @@ vi.mock('@/lib/i18n/TranslationContext', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-vi.mock('@/lib/useEmotes', () => ({
-  useEmotes: () => ({ emotes: [], sendEmote: vi.fn(), isCoolingDown: false }),
-}));
-
 const Cover = ({ index }: { index: number }) => <span data-testid="cover" data-index={index} />;
 const available = (id: string): GameEntry => ({ id: id as GameId, status: 'available', titleKey: `games.${id}.title`, Cover, minPlayers: 1, maxPlayers: 5, Game: () => null });
 const soon = (id: string): GameEntry => ({ id, status: 'soon', titleKey: `games.${id}.title`, Cover, minPlayers: 2, maxPlayers: 2 });
@@ -121,8 +117,6 @@ describe('Lobby', () => {
     expect(box('sudoku')).toBeDisabled();
     expect(screen.getByText('lobby.connecting')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'lobby.yourRoom' })).toBeInTheDocument();
-    // An emote sent now would reach nobody.
-    for (const emote of within(screen.getByRole('group', { name: 'emotes.title' })).getAllByRole('button')) expect(emote).toBeDisabled();
   });
 
   it('explains a slow server on the table itself and offers to try again when it gave up', () => {
@@ -141,10 +135,10 @@ describe('Lobby', () => {
     expect(screen.queryByText('loader.waking')).not.toBeInTheDocument();
   });
 
-  it('shows who is in the room and the emotes', () => {
+  it('shows who is in the room, and keeps the emotes for the game', () => {
     renderLobby();
 
     expect(screen.getByRole('list', { name: 'players.title' })).toBeInTheDocument();
-    for (const emote of within(screen.getByRole('group', { name: 'emotes.title' })).getAllByRole('button')) expect(emote).toBeEnabled();
+    expect(screen.queryByRole('group', { name: 'emotes.title' })).not.toBeInTheDocument();
   });
 });

@@ -44,7 +44,7 @@ export function Lobby({ roomId, games, players, self, votes, status, onRetry, on
 
   return (
     <div className="mx-auto grid w-full max-w-md grid-cols-1 gap-8 lg:max-w-4xl lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start lg:gap-10">
-      <RoomCard roomId={roomId} players={players} self={self} ready={ready} onPickColor={onPickColor} />
+      <RoomCard roomId={roomId} players={players} self={self} onPickColor={onPickColor} />
 
       <section aria-labelledby="lobby-title" className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-col gap-1">

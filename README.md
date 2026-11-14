@@ -30,7 +30,8 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 
 ### What is done
 - [x] Collaborative Sudoku with real-time rooms and shareable links (`/play/[roomId]`).
-- [x] Shared notes, live cell selections and player colors.
+- [x] Shared notes and live cell selections.
+- [x] A name for each player, like Red Panda, and a color of your own to pick; the list of players shows who is who, and a tap on a player points them out on the board.
 - [x] Win detection and a "play again" screen.
 - [x] Emotes between players.
 - [x] A friendly wait while the server wakes up, with two tiny mini games.

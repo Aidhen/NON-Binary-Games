@@ -13,6 +13,7 @@ const createRoom = (): RoomState => {
     filledCells: 0,
     notesGrid: {},
     aliases: new Map(),
+    profiles: new Map(),
     played: true,
   };
 };

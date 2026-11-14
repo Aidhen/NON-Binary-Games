@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { isValid } from '@nbg/shared';
-import type { SudokuBoard } from '@nbg/shared';
+import type { PlayerProfile, SudokuBoard } from '@nbg/shared';
 import type { GameSettings } from './SudokuContainer';
 import { SudokuBoardUI } from './SudokuBoardUI';
 
@@ -37,13 +37,11 @@ const defaultSettings: GameSettings = {
   godMode: false,
 };
 
-const textColors = [
-  'text-blue-500',
-  'text-green-500',
-  'text-purple-500',
-  'text-pink-500',
-  'text-orange-500',
-];
+/** The players of the tests, as the list of the room gives them: each has the color of their profile. */
+const profiles: Record<string, PlayerProfile> = {
+  'player-2': { alias: 'player-2', animal: 'panda', color: 'red' },
+  'player-3': { alias: 'player-3', animal: 'fox', color: 'blue' },
+};
 
 type Props = ComponentProps<typeof SudokuBoardUI>;
 
@@ -55,6 +53,7 @@ const createProps = (overrides: Partial<Props> = {}) => ({
   isGameWon: false,
   onCellClick: vi.fn(),
   isErrorPlacement: vi.fn(() => false),
+  profiles,
   ...overrides,
 });
 
@@ -275,7 +274,7 @@ describe('SudokuBoardUI', () => {
     });
   });
 
-  it('renders other players selections using consistent multiplayer styling', () => {
+  it('draws the cursor of every other player in the color of their profile', () => {
     renderBoard({
       othersSelections: {
         'player-2': [0, 1],
@@ -283,15 +282,40 @@ describe('SudokuBoardUI', () => {
       },
     });
 
-    const firstCell = getCell(0, 1);
-    const secondCell = getCell(1, 0);
-    const ringColors = ['ring-blue-500', 'ring-green-500', 'ring-purple-500', 'ring-pink-500', 'ring-orange-500'];
-
-    expect(firstCell).toHaveClass('ring-4', 'ring-inset', 'z-10');
-    expect(secondCell).toHaveClass('ring-4', 'ring-inset', 'z-10');
-    expect(ringColors.some((color) => firstCell.classList.contains(color))).toBe(true);
-    expect(ringColors.some((color) => secondCell.classList.contains(color))).toBe(true);
+    expect(getCell(0, 1)).toHaveClass('ring-4', 'ring-inset', 'z-10', 'ring-[var(--player-red)]');
+    expect(getCell(1, 0)).toHaveClass('ring-4', 'ring-inset', 'z-10', 'ring-[var(--player-blue)]');
+    expect(getCell(0, 1)).not.toHaveClass('ring-[var(--player-blue)]');
   });
+
+  it('draws a player with a color it does not know in the color of the theme, instead of failing', () => {
+    renderBoard({
+      othersSelections: { 'player-2': [0, 1] },
+      profiles: { 'player-2': { ...profiles['player-2'], color: 'gold' as PlayerProfile['color'] } },
+    });
+
+    expect(getCell(0, 1)).toHaveClass('ring-4', 'ring-[var(--number-player)]');
+  });
+
+  it('follows a player who takes another color', () => {
+    const props = createProps({ othersSelections: { 'player-2': [0, 1] } });
+    const { rerender } = render(<SudokuBoardUI {...props} />);
+    expect(getCell(0, 1)).toHaveClass('ring-[var(--player-red)]');
+
+    rerender(<SudokuBoardUI {...props} profiles={{ 'player-2': { ...profiles['player-2'], color: 'pink' } }} />);
+
+    expect(getCell(0, 1)).toHaveClass('ring-[var(--player-pink)]');
+    expect(getCell(0, 1)).not.toHaveClass('ring-[var(--player-red)]');
+  });
+
+  it.each(['someone-who-left-before-i-came', '__proto__', 'constructor', 'toString'])(
+    'draws a player who is not in the list (%s) in the color of the theme, and does not break',
+    (alias) => {
+      renderBoard({ othersSelections: { [alias]: [0, 1] }, notesGrid: { '0-2': { 2: alias } } });
+
+      expect(getCell(0, 1)).toHaveClass('ring-4', 'ring-[var(--number-player)]');
+      expect(getCell(0, 2).querySelector('div[style]')!.children[1]).toHaveClass('text-[var(--number-player)]');
+    },
+  );
 
   it('renders notes with player-specific colors in empty cells', () => {
     renderBoard({
@@ -311,10 +335,10 @@ describe('SudokuBoardUI', () => {
     expect(noteCells).toHaveLength(4);
     expect(noteCells[0]).toHaveClass('text-transparent');
     expect(noteCells[1]).toHaveTextContent('2');
-    expect(textColors.some((color) => noteCells[1].classList.contains(color))).toBe(true);
+    expect(noteCells[1]).toHaveClass('text-[var(--player-red-text)]');
     expect(noteCells[2]).toHaveClass('text-transparent');
     expect(noteCells[3]).toHaveTextContent('4');
-    expect(textColors.some((color) => noteCells[3].classList.contains(color))).toBe(true);
+    expect(noteCells[3]).toHaveClass('text-[var(--player-blue-text)]');
   });
 
   describe('selection outline', () => {
@@ -341,7 +365,7 @@ describe('SudokuBoardUI', () => {
   });
 
   describe('cells occupied by other players', () => {
-    const tints = ['bg-blue-500/10', 'bg-green-500/10', 'bg-purple-500/10', 'bg-pink-500/10', 'bg-orange-500/10'];
+    const tints = ['bg-[var(--player-red)]/10', 'bg-[var(--player-blue)]/10', 'bg-[var(--number-player)]/10'];
     const hasTint = (cell: HTMLElement) => tints.some((tint) => cell.classList.contains(tint));
 
     it('keeps my selected background when another player is on the same cell', () => {
@@ -442,23 +466,46 @@ describe('SudokuBoardUI', () => {
     expect(getCell(0, 1).querySelector('div[style]')).toBeNull();
   });
 
-  it('uses a deterministic color for the same player across multiple selections', () => {
-    renderBoard({
-      othersSelections: {
-        'same-player': [0, 1],
-        'same-player-copy': [1, 0],
-      },
+  it('gives the cursor and the notes of a player the same color', () => {
+    renderBoard({ othersSelections: { 'player-3': [1, 0] }, notesGrid: { '0-2': { 3: 'player-3' } } });
+
+    expect(getCell(1, 0)).toHaveClass('ring-[var(--player-blue)]');
+    expect(getCell(0, 2).querySelector('div[style]')!.children[2]).toHaveClass('text-[var(--player-blue-text)]');
+  });
+
+  describe('the player who is being pointed out', () => {
+    const notes = { '0-2': { 2: 'player-2', 3: 'player-3' } };
+    const noteOf = (value: number) => getCell(0, 2).querySelector('div[style]')!.children[value - 1];
+
+    it('has a thicker pulsing cursor than the others', () => {
+      renderBoard({ highlightedAlias: 'player-2', othersSelections: { 'player-2': [0, 1], 'player-3': [1, 0] } });
+
+      expect(getCell(0, 1)).toHaveClass('ring-8', 'motion-safe:animate-pulse', 'ring-[var(--player-red)]');
+      expect(getCell(0, 1)).not.toHaveClass('ring-4');
+      expect(getCell(1, 0)).toHaveClass('ring-4');
+      expect(getCell(1, 0)).not.toHaveClass('ring-8', 'motion-safe:animate-pulse');
     });
 
-    const firstCell = getCell(0, 1);
-    const secondCell = getCell(1, 0);
-    const ringColors = ['ring-blue-500', 'ring-green-500', 'ring-purple-500', 'ring-pink-500', 'ring-orange-500'];
+    it('has bolder pulsing notes than the others', () => {
+      renderBoard({ highlightedAlias: 'player-2', notesGrid: notes });
 
-    const firstColor = ringColors.find((color) => firstCell.classList.contains(color));
-    const secondColor = ringColors.find((color) => secondCell.classList.contains(color));
+      expect(noteOf(2)).toHaveClass('font-black', 'motion-safe:animate-pulse', 'text-[var(--player-red-text)]');
+      expect(noteOf(3)).not.toHaveClass('font-black', 'motion-safe:animate-pulse');
+    });
 
-    expect(firstColor).toBeDefined();
-    expect(secondColor).toBeDefined();
-    expect(firstColor).not.toBe(secondColor);
+    it('changes nothing when nobody is pointed out', () => {
+      renderBoard({ highlightedAlias: null, othersSelections: { 'player-2': [0, 1] }, notesGrid: notes });
+
+      expect(getCell(0, 1)).toHaveClass('ring-4');
+      expect(getCell(0, 1)).not.toHaveClass('ring-8', 'motion-safe:animate-pulse');
+      expect(noteOf(2)).not.toHaveClass('font-black');
+    });
+
+    it('changes nothing for the others when the player who is pointed out has no cursor on the board', () => {
+      renderBoard({ highlightedAlias: 'player-3', othersSelections: { 'player-2': [1, 1] } });
+
+      expect(getCell(1, 1)).toHaveClass('ring-4');
+      expect(getCell(1, 1)).not.toHaveClass('ring-8');
+    });
   });
 });

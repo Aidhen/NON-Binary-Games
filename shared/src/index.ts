@@ -1,10 +1,12 @@
 import type { SudokuBoard, Difficulty } from './games/sudoku/types';
 import type { Emote } from './emotes';
+import type { PlayerColor, PlayerProfile } from './players';
 import type { CellUpdatePayload, CellUpdateResult, ToggleNotePayload, SelectCellPayload } from './schemas';
 
 export * from './games/sudoku/index';
 export * from './schemas';
 export * from './emotes';
+export * from './players';
 
 export type DifficultyLevel = Difficulty;
 
@@ -26,6 +28,10 @@ export interface ServerToClientEvents {
   "game-won": () => void;
   "note-toggled": (data: { r: number; c: number; v: number; alias: string | null }) => void;
   "emote-received": (data: { alias: string; emote: Emote }) => void;
+  /** Sent to the player who has just joined: the alias that is theirs in the list of players. */
+  "joined-as": (alias: string) => void;
+  /** The players in the room, in the order they came, each time somebody comes, leaves or changes color. */
+  "players-updated": (data: { players: PlayerProfile[] }) => void;
 }
 
 /**
@@ -40,6 +46,7 @@ export interface ClientToServerEvents {
   "restart-game": (difficulty: DifficultyLevel) => void;
   "toggle-note": (data: ToggleNotePayload) => void;
   "send-emote": (emote: Emote) => void;
+  "set-color": (color: PlayerColor) => void;
 }
 
 /** Per-socket state kept by the server (`socket.data`). */

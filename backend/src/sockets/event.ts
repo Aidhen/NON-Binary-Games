@@ -145,6 +145,9 @@ export const setupSocketHandlers = (io: GameServer) => {
         return;
       }
 
+      // Made before the player leaves their room or joins this one: if it ever fails, they stay where they were.
+      const preparedBoard = existingRoom ? undefined : generateSudoku(difficulty);
+
       if (socket.data.roomId !== roomId) {
         leaveCurrentRoom(socket);
       }
@@ -156,7 +159,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       rooms.cancelExpiry(roomId);
 
       if (!room) {
-        const board = generateSudoku(difficulty);
+        const board = preparedBoard ?? generateSudoku(difficulty);
 
         room = {
           board,

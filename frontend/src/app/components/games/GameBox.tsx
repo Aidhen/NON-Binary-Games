@@ -64,7 +64,7 @@ export function GameBox({ game, index, selected, voters, playerCount, enabled, o
       aria-pressed={selected}
       disabled={!enabled}
       onClick={onSelect}
-      className="flex w-36 cursor-pointer flex-col items-center gap-3 rounded-[var(--radius-paper)] pt-4 text-center disabled:cursor-not-allowed"
+      className="flex w-36 cursor-pointer flex-col items-center gap-3 rounded-[var(--radius-paper)] pt-4 text-center disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className={BOX}>
         <span aria-hidden="true" className="absolute inset-1.5 rounded-[var(--radius-paper)] bg-[var(--box-inside)] shadow-[var(--shadow-paper-sm)]" />

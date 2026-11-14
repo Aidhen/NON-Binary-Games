@@ -121,6 +121,8 @@ describe('Lobby', () => {
     expect(box('sudoku')).toBeDisabled();
     expect(screen.getByText('lobby.connecting')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'lobby.yourRoom' })).toBeInTheDocument();
+    // An emote sent now would reach nobody.
+    for (const emote of within(screen.getByRole('group', { name: 'emotes.title' })).getAllByRole('button')) expect(emote).toBeDisabled();
   });
 
   it('explains a slow server on the table itself and offers to try again when it gave up', () => {
@@ -143,6 +145,6 @@ describe('Lobby', () => {
     renderLobby();
 
     expect(screen.getByRole('list', { name: 'players.title' })).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'emotes.title' })).toBeInTheDocument();
+    for (const emote of within(screen.getByRole('group', { name: 'emotes.title' })).getAllByRole('button')) expect(emote).toBeEnabled();
   });
 });

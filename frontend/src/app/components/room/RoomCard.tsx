@@ -15,6 +15,8 @@ interface RoomCardProps {
   players: PlayerProfile[];
   /** Who the player is in that list (their alias), once the server has said so. */
   self: string | null;
+  /** False until the room has answered: an emote sent before that would reach nobody. */
+  ready: boolean;
   onPickColor: (color: PlayerColor) => void;
 }
 
@@ -22,7 +24,7 @@ interface RoomCardProps {
  * The room, at the center of the table: its label (the emoji are only a way to recognize it, the link is
  * what lets people in), the button that copies the link, who is here and the emotes.
  */
-export function RoomCard({ roomId, players, self, onPickColor }: Readonly<RoomCardProps>) {
+export function RoomCard({ roomId, players, self, ready, onPickColor }: Readonly<RoomCardProps>) {
   const { t } = useTranslation();
   const { emotes, sendEmote, isCoolingDown } = useEmotes();
   const { highlighted, highlight } = useHighlight();
@@ -45,7 +47,7 @@ export function RoomCard({ roomId, players, self, onPickColor }: Readonly<RoomCa
 
       <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={onPickColor} onHighlight={highlight} />
 
-      <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
+      <EmoteBar onSend={sendEmote} disabled={!ready || isCoolingDown} />
       <EmoteOverlay emotes={emotes} />
     </section>
   );

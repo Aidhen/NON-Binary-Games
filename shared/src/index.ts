@@ -1,11 +1,13 @@
 import type { SudokuBoard, Difficulty } from './games/sudoku/types';
 import type { Emote } from './emotes';
+import type { GameId } from './games';
 import type { PlayerColor, PlayerProfile } from './players';
 import type { CellUpdatePayload, CellUpdateResult, ToggleNotePayload, SelectCellPayload } from './schemas';
 
 export * from './games/sudoku/index';
 export * from './schemas';
 export * from './emotes';
+export * from './games';
 export * from './players';
 
 export type DifficultyLevel = Difficulty;
@@ -19,7 +21,25 @@ export type JoinError = 'room-full' | 'server-full' | 'too-fast';
 /** Who wrote each note, by alias (see `SocketData.alias`): the identity of a player never leaves the server. */
 export type NotesGrid = Record<string, Record<number, string>>;
 
+/** The vote of one player, by alias (see `SocketData.alias`). */
+export interface LobbyVote {
+  alias: string;
+  game: GameId;
+}
+
+/**
+ * What a room is doing. `game` is null while the players are still at the table choosing, and `votes` says who
+ * wants what. Once a game is open it stays the game of the room, and there are no votes left to tell.
+ */
+export interface LobbyState {
+  game: GameId | null;
+  votes: LobbyVote[];
+}
+
 export interface ServerToClientEvents {
+  /** Sent to a player who joins, and to everybody each time a vote changes, a voter leaves or the game opens. */
+  "lobby-updated": (data: LobbyState) => void;
+  /** The Sudoku of the room: sent when it opens or restarts, and to whoever joins a room that is playing it. */
   "game-started": (payload: { board: SudokuBoard; currentGrid: number[][]; notesGrid: NotesGrid; difficulty: DifficultyLevel }) => void;
   "cell-updated": (data: { r: number; c: number; v: number }) => void;
   "player-selected-cell": (payload: { alias: string, r: number | null, c: number | null }) => void;
@@ -40,7 +60,9 @@ export interface ServerToClientEvents {
  * room the sender has actually joined.
  */
 export interface ClientToServerEvents {
-  "join-room": (roomId: string, difficulty: DifficultyLevel) => void;
+  "join-room": (roomId: string) => void;
+  /** The game this player wants the room to open, or `null` to take the vote back. Ignored once a game is open. */
+  "vote-game": (game: GameId | null) => void;
   "cell-update": (data: CellUpdatePayload, acknowledge?: (result: CellUpdateResult) => void) => void;
   "select-cell": (payload: SelectCellPayload) => void;
   "restart-game": (difficulty: DifficultyLevel) => void;
@@ -63,4 +85,6 @@ export interface SocketData {
   address?: string;
   /** Timestamp (ms) of the last emote accepted from this socket, for the cooldown. */
   lastEmoteAt?: number;
+  /** Timestamp (ms) of the last vote accepted from this socket, for the cooldown. */
+  lastVoteAt?: number;
 }

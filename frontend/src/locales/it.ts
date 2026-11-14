@@ -21,7 +21,6 @@ export const it: Translations = {
     showErrors: "Mostra errori (rosso)",
     godMode: "Modalità god: segna i numeri sbagliati (rosso)",
     notesMode: "Note",
-    startNewGame: "Inizia una partita",
     copied: "Copiato",
     copyLink: "Copia link",
     room: "Stanza",
@@ -63,6 +62,18 @@ export const it: Translations = {
       turtle: { name: "Tartaruga", gender: "f" },
       octopus: { name: "Polpo", gender: "m" },
       dolphin: { name: "Delfino", gender: "m" }
+    }
+  },
+  lobby: {
+    title: "Scegli il gioco",
+    hint: "Ognuno ne sceglie uno. Il gioco si apre quando lo vuole più di metà della stanza.",
+    votes: "{count} su {total}",
+    soon: "Presto",
+    unknownGame: "In questa stanza si gioca a un gioco che questa pagina non conosce ancora. Ricarica la pagina per avere l'ultima versione."
+  },
+  games: {
+    sudoku: {
+      title: "Sudoku"
     }
   },
   loader: {

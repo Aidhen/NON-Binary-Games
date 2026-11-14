@@ -198,7 +198,7 @@ describe('SudokuContainer', () => {
 
     expect(screen.getByText('sudoku.loading')).toBeInTheDocument();
     expect(mocks.socket.connect).toHaveBeenCalledOnce();
-    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room', 'easy'] });
+    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room'] });
   });
 
   it('joins the room immediately when the socket is already connected', () => {
@@ -207,7 +207,7 @@ describe('SudokuContainer', () => {
     render(<SudokuContainer roomId="custom-room" />);
 
     expect(mocks.socket.connect).not.toHaveBeenCalled();
-    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room', 'easy'] });
+    expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['custom-room'] });
   });
 
   it('renders the board when a game-started event is received', async () => {
@@ -257,7 +257,7 @@ describe('SudokuContainer', () => {
 
     const joins = mocks.emitted.filter(({ event }) => event === 'join-room');
     expect(joins).toHaveLength(joinsBefore + 1);
-    expect(joins.at(-1)!.args).toEqual(['room-7', 'easy']);
+    expect(joins.at(-1)!.args).toEqual(['room-7']);
   });
 
   it.each([
@@ -877,7 +877,7 @@ describe('SudokuContainer', () => {
 
       await serverWakesUp();
 
-      expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['sleepy-room', 'easy'] });
+      expect(mocks.emitted).toContainEqual({ event: 'join-room', args: ['sleepy-room'] });
     });
   });
 });

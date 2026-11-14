@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { roomIdSchema } from '@nbg/shared';
-import { SudokuContainer } from '@/app/components/sudoku/SudokuContainer';
+import { RoomContainer } from '@/app/components/room/RoomContainer';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getRoomEmoji } from '@/lib/roomEmoji';
 
@@ -55,7 +55,7 @@ export default function PlayRoomPage() {
         </div>
       </header>
 
-      <SudokuContainer roomId={roomId} />
+      <RoomContainer roomId={roomId} />
     </div>
   );
 }

@@ -84,12 +84,23 @@ describe('SettingsPanel', () => {
     }
   });
 
-  it('puts the five levels on two rows: three on the first, two wider on the second', () => {
+  it('puts the five levels on two rows, the two longest names (beginner is the longest in Italian) in the wider cells', () => {
     renderPanel();
 
     const spans = DIFFICULTIES.map((level) => /col-span-(\d)/.exec(screen.getByRole('button', { name: `sudoku.${level}` }).className)?.[1]);
 
-    expect(spans).toEqual(['2', '2', '2', '3', '3']);
+    expect(spans).toEqual(['3', '3', '2', '2', '2']);
+  });
+
+  it('tells assistive technology which level is the current one, and only that one', () => {
+    for (const current of DIFFICULTIES) {
+      const { unmount } = renderPanel({ currentDifficulty: current });
+
+      for (const level of DIFFICULTIES) {
+        expect(screen.getByRole('button', { name: `sudoku.${level}` })).toHaveAttribute('aria-pressed', String(level === current));
+      }
+      unmount();
+    }
   });
 
   it.each(DIFFICULTIES)(

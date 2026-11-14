@@ -29,16 +29,18 @@ export function SettingsPanel({
         <span className="text-[var(--title-text)] font-black text-sm uppercase tracking-wide">
           {t('sudoku.newGame')}
         </span>
-        {/* Five levels on two rows: the first three take 2 of 6 columns, the last two 3 (the Italian names are long on a phone). */}
+        {/* Five levels on two rows: the first two take 3 of 6 columns, the other three 2. "Principiante" is the longest name and
+            needs the wider cell: measured, it does not fit in a third of the panel at 320 px. */}
         <div className="grid grid-cols-6 gap-2">
           {DIFFICULTIES.map((level, index) => {
             const isActive = currentDifficulty === level;
             return (
               <button
                 key={level}
+                aria-pressed={isActive}
                 onClick={() => onDifficultyChange(level)}
                 className={cn(
-                  index < 3 ? "col-span-2" : "col-span-3",
+                  index < 2 ? "col-span-3" : "col-span-2",
                   "py-2 text-sm font-bold capitalize rounded-md transition-colors",
                   isActive
                     ? "bg-[var(--number-player)] text-[var(--cell-background)]"

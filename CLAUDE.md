@@ -75,6 +75,14 @@ In a cloud session where the Docker daemon is not available, run the same npm co
 - A PR that resolves an issue says so in its Summary with `Fixes #N`, so the issue closes on merge. One PR per issue when possible.
 - No attribution lines: no `Co-Authored-By` trailer, no session link, no "generated with" footer in commits or PRs.
 
+## Versions
+
+Before 1.0 the version is `0.MINOR.PATCH-alpha`. A PR that adds a feature for the players raises MINOR; one that fixes something they can see raises PATCH. Chores, docs, tests and CI do not change it.
+
+- **The bump is part of the PR that earns it:** the same number in `shared/package.json`, `backend/package.json` and `frontend/package.json`, the three matching entries in `package-lock.json`, and "Current Status" in the README. A PR with more than one feature raises MINOR once.
+- **Tag and release come after the merge,** on the merge commit: `vX.Y.Z-alpha`. The owner decides when (see Git); a tag is made by Claude only when asked. The release notes list the PRs since the previous tag, one line each, as the GitHub "What's Changed" does.
+- **Say it in the report:** when a PR does not bump the version although it adds a feature, the report says why.
+
 ## Issues
 
 GitHub Issues are the backlog. Nothing that needs doing lives only in a chat or in an agent file.

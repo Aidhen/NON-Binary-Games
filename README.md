@@ -28,9 +28,9 @@ The game runs on a free hosting plan that goes to sleep when nobody is around, s
 
 ---
 
-## Current Status: v0.2.0-alpha
+## Current Status: v0.3.0-alpha
 
-The game is playable online. You can create a room, share the link, solve a Sudoku together, share notes and react with emotes. From here the focus is on polishing the game, making rooms smooth and reliable, and adding more games.
+The games are playable online. You can create a room, share the link, pick a game at the table (Sudoku, Takuzu or Flower Field), play it together, share notes in the Sudoku and react with emotes. From here the focus is on polishing the games, making rooms smooth and reliable, and adding more games.
 
 ### What is done
 - [x] Collaborative Sudoku with real-time rooms and shareable links (`/play/[roomId]`).
@@ -55,7 +55,7 @@ The game is playable online. You can create a room, share the link, solve a Sudo
 - [ ] **Smoother reconnections:** coming back to a room after a connection drop should feel seamless.
 - [ ] **Keeping rooms in sync and safe:** consistent moves between players, limits against flooding.
 - [ ] **Keyboard play:** moving around the grid with the arrow keys, and better support for screen readers.
-- [ ] **More games:** the games live in a registry, so a new game is its engine, a cover and one entry.
+- [ ] **More games:** the games live in a registry, so a new game is its engine, a cover and one entry. Three are in so far.
 - [ ] **Rooms that survive restarts**, and a backend that can scale (Redis).
 - [ ] **Hosting details:** a health check, graceful shutdown and proper logs.
 

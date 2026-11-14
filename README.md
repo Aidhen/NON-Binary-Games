@@ -106,6 +106,8 @@ docker compose run --rm node-cli npm run lint --workspace=frontend
 | `NEXT_PUBLIC_SOCKET_URL` | frontend | `http://localhost:4000` | URL of the Socket.IO backend |
 | `PORT` | backend | `4000` | Port the backend listens on (Render sets it) |
 | `FRONTEND_URL` | backend | `http://localhost:3000` | Origin allowed by CORS |
+| `CLIENT_IP_HEADER` | backend | not set | Header where the hosting platform puts the address of the player; needed for the limits per address. On Render use `cf-connecting-ip` |
+| `LIMIT_BY_PEER_ADDRESS` | backend | not set | `true` to limit by the address of the connection itself: only for local development or a server with no proxy, never behind one |
 
 ---
 

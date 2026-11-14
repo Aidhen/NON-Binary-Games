@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import { setupSocketHandlers } from "./src/sockets/event";
+import { addressResolverFromEnv, applyConnectionLimits, MAX_MESSAGE_BYTES } from "./src/sockets/connectionLimits";
 import { createHttpServer, parsePort, shutdown } from "./src/server";
 import { logger } from "./src/logger";
 
@@ -13,9 +14,13 @@ const io = new Server(httpServer, {
     origin: allowedOrigin,
     methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  maxHttpBufferSize: MAX_MESSAGE_BYTES
 });
 
+const addressOf = addressResolverFromEnv();
+if (!addressOf) logger.warn("Limits on connections are off, they need to know the address of each player: set CLIENT_IP_HEADER (or LIMIT_BY_PEER_ADDRESS=true when there is no proxy).");
+applyConnectionLimits(io, addressOf);
 setupSocketHandlers(io);
 
 io.on("connection", (socket) => {

@@ -21,6 +21,13 @@ export interface GameSettings {
   godMode: boolean;
 }
 
+/** One message per reason: a new JoinError does not compile until it has its own text. */
+const joinErrorMessages: Record<JoinError, string> = {
+  'room-full': 'sudoku.roomFull',
+  'server-full': 'sudoku.serverFull',
+  'too-fast': 'sudoku.tooFast',
+};
+
 export function SudokuContainer({ roomId }: { roomId: string }) {
   const [board, setBoard] = useState<SudokuBoard>();
   const [playerGrid, setPlayerGrid] = useState<number[][]>();
@@ -167,6 +174,8 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     socket.on("join-error", onJoinError);
 
     socket.on("game-started", (payload) => {
+      // A refusal can be temporary (too-fast): once the game starts, the error must not stay on screen.
+      setJoinError(null);
       difficultyRef.current = payload.difficulty;
       setDifficulty(payload.difficulty);
       setBoard(payload.board);
@@ -192,22 +201,22 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       });
     });
 
-    socket.on("player-selected-cell", ({ playerId, r, c }) => {
+    socket.on("player-selected-cell", ({ alias, r, c }) => {
       setOthersSelections((prev) => {
         const next = { ...prev };
         if (r === null || c === null) {
-          delete next[playerId];
+          delete next[alias];
         } else {
-          next[playerId] = [r, c];
+          next[alias] = [r, c];
         }
         return next;
       });
     });
 
-    socket.on("player-disconnected", (playerId) => {
+    socket.on("player-disconnected", (alias) => {
       setOthersSelections((prev) => {
         const next = { ...prev };
-        delete next[playerId];
+        delete next[alias];
         return next;
       });
     });
@@ -217,20 +226,20 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
       setSelectedCell(null);
     });
 
-    socket.on("note-toggled", ({ r, c, v, playerId }) => {
+    socket.on("note-toggled", ({ r, c, v, alias }) => {
       setNotesGrid((prev) => {
         const next = { ...prev };
         const key = `${r}-${c}`;
 
         if (!next[key]) next[key] = {};
 
-        if (playerId === null) {
+        if (alias === null) {
           delete next[key][v];
           if (Object.keys(next[key]).length === 0) {
             delete next[key];
           }
         } else {
-          next[key][v] = playerId;
+          next[key][v] = alias;
         }
         return next;
       });
@@ -252,7 +261,7 @@ export function SudokuContainer({ roomId }: { roomId: string }) {
     return (
       <div role="alert" className="flex flex-col items-center gap-4 text-center">
         <p className="text-lg font-bold text-[var(--title-text)]">
-          {t(joinError === 'room-full' ? 'sudoku.roomFull' : 'sudoku.serverFull')}
+          {t(joinErrorMessages[joinError])}
         </p>
         <Link href="/" className="font-bold text-[var(--subtitle-text)] underline hover:text-[var(--title-text)]">
           {t('sudoku.backHome')}

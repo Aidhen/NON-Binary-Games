@@ -27,6 +27,7 @@ export const it: Translations = {
     room: "Stanza",
     roomFull: "Questa stanza è piena.",
     serverFull: "Ci sono troppe partite in corso al momento. Riprova tra qualche minuto.",
+    tooFast: "Sono state avviate troppe partite in poco tempo. Aspetta un attimo e riprova.",
     backHome: "Torna alla home"
   },
   loader: {

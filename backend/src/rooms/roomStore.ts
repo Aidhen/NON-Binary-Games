@@ -8,6 +8,10 @@ export interface RoomState {
   players: Map<string, Set<string>>;
   filledCells: number;
   notesGrid: NotesGrid;
+  /** The alias of each player (by player id) in this room: what the other players see instead of the id. */
+  aliases: Map<string, string>;
+  /** A cell or a note was changed since the board was generated. An empty room nobody played in is not worth keeping. */
+  played: boolean;
 }
 
 /** How long an empty room is kept, so that a dropped connection does not cost the game. */
@@ -21,7 +25,8 @@ export const MAX_ROOMS = 200;
  * Map in memory) can change without touching the socket handlers.
  *
  * A room whose last player left is not deleted right away: it expires after
- * `emptyRoomTtlMs` unless someone comes back first.
+ * `emptyRoomTtlMs` unless someone comes back first. A room nobody played in has
+ * nothing to lose, so it goes away immediately.
  */
 export class RoomStore {
   private readonly rooms = new Map<string, RoomState>();
@@ -65,11 +70,11 @@ export class RoomStore {
     this.rooms.clear();
   }
 
-  /** Called when a room has no players left. With a TTL of 0 the room goes away immediately. */
+  /** Called when a room has no players left. With a TTL of 0, or if nobody played in it, the room goes away immediately. */
   expireWhenEmpty(roomId: string): void {
     this.cancelExpiry(roomId);
 
-    if (this.emptyRoomTtlMs <= 0) {
+    if (this.emptyRoomTtlMs <= 0 || this.rooms.get(roomId)?.played === false) {
       this.rooms.delete(roomId);
       return;
     }

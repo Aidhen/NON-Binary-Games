@@ -1,17 +1,62 @@
+import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
 import { cellUpdateArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, MAX_PLAYERS_PER_ROOM, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, toggleNoteArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
-import { createRateLimiter } from "./rateLimiter";
+import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
+import type { RoomState } from "../rooms/roomStore";
 
-type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
-type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
+export type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
+export type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 
 export const rooms = new RoomStore();
 
+/**
+ * The name of a room inside Socket.IO. Every socket is already in a Socket.IO room named after its own id,
+ * and a client picks the room id: without a prefix it could name the private room of another socket.
+ */
+const channelOf = (roomId: string) => `room:${roomId}`;
+
+/** Tabs (sockets) one player can have open in the same room. */
+export const MAX_SOCKETS_PER_PLAYER = 3;
+
+/** Aliases kept per room: players that left are forgotten first, so a room never holds more than this. */
+export const MAX_ROOM_ALIASES = 20;
+
+/**
+ * The name a player has inside one room. The id of the player is what lets them back in after a
+ * dropped connection, so it must stay with the server: the other players only get this alias,
+ * which is random and different in every room.
+ */
+const aliasOf = (room: RoomState, playerId: string): string => {
+  const existing = room.aliases.get(playerId);
+  if (existing) return existing;
+
+  if (room.aliases.size >= MAX_ROOM_ALIASES) {
+    for (const knownId of room.aliases.keys()) {
+      if (!room.players.has(knownId)) room.aliases.delete(knownId);
+    }
+  }
+
+  const taken = new Set(room.aliases.values());
+  let alias: string;
+  do alias = randomBytes(6).toString("hex"); while (taken.has(alias));
+  room.aliases.set(playerId, alias);
+  return alias;
+};
+
 /** Per socket, all events together: far above what a player can do, low enough to stop a flood. */
 export const eventLimit = { max: 40, windowMs: 1000 };
+
+/** Per address (per socket where the address is not known): rooms that can be created. A room costs memory and a board costs CPU, so they cannot be opened in bulk, and opening a new connection does not start over. Joining a room that exists is free. */
+export const roomCreationLimit = { max: 5, windowMs: 10 * 60 * 1000 };
+
+/** Per address (per socket where the address is not known): restarts of the game, each one generates a board. A few per session is what a player does. */
+export const restartLimit = { max: 6, windowMs: 60 * 1000 };
+
+/** All sockets together: boards generated per second. Generating one blocks the event loop for every room, so this is the safety net behind the limits above. */
+export const boardGenerationLimit = { max: 2, windowMs: 1000 };
 
 /**
  * Removes the socket from the room it is currently in (if any).
@@ -21,19 +66,20 @@ const leaveCurrentRoom = (socket: GameSocket) => {
   const roomId = socket.data.roomId;
   if (!roomId) return;
 
+  const { playerId, alias } = socket.data;
   socket.data.roomId = undefined;
-  void socket.leave(roomId);
+  socket.data.alias = undefined;
+  void socket.leave(channelOf(roomId));
 
   const room = rooms.get(roomId);
   if (!room) return;
 
-  const { playerId } = socket.data;
   const sockets = room.players.get(playerId);
   sockets?.delete(socket.id);
 
   if (!sockets?.size) {
     room.players.delete(playerId);
-    socket.to(roomId).emit("player-disconnected", playerId);
+    if (alias) socket.to(channelOf(roomId)).emit("player-disconnected", alias);
   }
 
   if (room.players.size === 0) {
@@ -50,9 +96,10 @@ const getCurrentRoom = (socket: GameSocket) => {
   if (!roomId) return undefined;
 
   const room = rooms.get(roomId);
-  if (!room) return undefined;
+  const alias = socket.data.alias;
+  if (!room || !alias) return undefined;
 
-  return { roomId, room };
+  return { roomId, room, alias };
 };
 
 /** The id the browser sent in the handshake, or the socket id for clients that sent none (or garbage). */
@@ -62,9 +109,14 @@ const resolvePlayerId = (socket: GameSocket): string => {
 };
 
 export const setupSocketHandlers = (io: GameServer) => {
+  const allowBoardGeneration = createRateLimiter(boardGenerationLimit.max, boardGenerationLimit.windowMs);
+  const allowRoomCreation = createKeyedRateLimiter(roomCreationLimit.max, roomCreationLimit.windowMs);
+  const allowRestart = createKeyedRateLimiter(restartLimit.max, restartLimit.windowMs);
+
   io.on("connection", (socket: GameSocket) => {
     socket.data.playerId = resolvePlayerId(socket);
     const allowEvent = createRateLimiter(eventLimit.max, eventLimit.windowMs);
+    const budgetKey = () => socket.data.address ?? socket.id;
 
     socket.on("join-room", safeHandler(joinRoomArgsSchema, (roomId, difficulty) => {
       const existingRoom = rooms.get(roomId);
@@ -72,6 +124,11 @@ export const setupSocketHandlers = (io: GameServer) => {
       // Checked before leaving the current room, so a refused player stays where they are.
       if (!existingRoom && rooms.isFull()) {
         socket.emit("join-error", "server-full");
+        return;
+      }
+      // Creating a room generates a board: both the budget of this address and the one of the server must allow it.
+      if (!existingRoom && !(allowRoomCreation(budgetKey()) && allowBoardGeneration())) {
+        socket.emit("join-error", "too-fast");
         return;
       }
       if (existingRoom && !existingRoom.players.has(socket.data.playerId) && existingRoom.players.size >= MAX_PLAYERS_PER_ROOM) {
@@ -83,7 +140,7 @@ export const setupSocketHandlers = (io: GameServer) => {
         leaveCurrentRoom(socket);
       }
 
-      void socket.join(roomId);
+      void socket.join(channelOf(roomId));
       socket.data.roomId = roomId;
 
       let room = rooms.get(roomId);
@@ -99,10 +156,21 @@ export const setupSocketHandlers = (io: GameServer) => {
           players: new Map(),
           filledCells: countInitialFilledCells(board.initial),
           notesGrid: {},
+          aliases: new Map(),
+          played: false,
         };
         rooms.set(roomId, room);
       }
 
+      // After a dropped connection the old socket stays until the ping timeout. When a player is over the
+      // limit the oldest tab goes, so that a bad network does not lock them out of their own room.
+      const ownSockets = room.players.get(socket.data.playerId);
+      if (ownSockets && !ownSockets.has(socket.id) && ownSockets.size >= MAX_SOCKETS_PER_PLAYER) {
+        const oldest = ownSockets.values().next().value;
+        if (oldest) io.sockets.sockets.get(oldest)?.disconnect(true);
+      }
+
+      socket.data.alias = aliasOf(room, socket.data.playerId);
       const sockets = room.players.get(socket.data.playerId) ?? new Set<string>();
       sockets.add(socket.id);
       room.players.set(socket.data.playerId, sockets);
@@ -149,13 +217,14 @@ export const setupSocketHandlers = (io: GameServer) => {
       }
 
       room.currentGrid[r][c] = v;
-      socket.to(roomId).emit("cell-updated", { r, c, v });
+      room.played = true;
+      socket.to(channelOf(roomId)).emit("cell-updated", { r, c, v });
       acknowledge?.({ ok: true });
 
       const totalCells = size * size;
       if (room.filledCells === totalCells) {
         if (checkWinCondition(room.currentGrid, room.board.solution)) {
-          io.to(roomId).emit("game-won");
+          io.to(channelOf(roomId)).emit("game-won");
         }
       }
     }, allowEvent));
@@ -163,12 +232,12 @@ export const setupSocketHandlers = (io: GameServer) => {
     socket.on("select-cell", safeHandler(selectCellArgsSchema, ({ r, c }) => {
       const current = getCurrentRoom(socket);
       if (!current) return;
-      const { roomId, room } = current;
+      const { roomId, room, alias } = current;
 
       const size = room.board.size;
       if ((r !== null && r >= size) || (c !== null && c >= size)) return;
 
-      socket.to(roomId).emit("player-selected-cell", { playerId: socket.data.playerId, r, c });
+      socket.to(channelOf(roomId)).emit("player-selected-cell", { alias, r, c });
     }, allowEvent));
 
     socket.on("disconnect", () => {
@@ -180,15 +249,19 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (!current) return;
       const { roomId, room } = current;
 
+      // Dropped without an answer: an error screen here would replace the game of everyone who is playing.
+      if (!allowRestart(budgetKey()) || !allowBoardGeneration()) return;
+
       const board = generateSudoku(difficulty);
 
       room.board = board;
+      room.played = false;
       room.difficulty = difficulty;
       room.currentGrid = board.initial.map(row => [...row]);
       room.filledCells = countInitialFilledCells(board.initial);
       room.notesGrid = {};
 
-      io.to(roomId).emit("game-started", {
+      io.to(channelOf(roomId)).emit("game-started", {
         board: room.board,
         difficulty: room.difficulty,
         currentGrid: room.currentGrid,
@@ -207,24 +280,26 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (lastEmoteAt !== undefined && now - lastEmoteAt < EMOTE_COOLDOWN_MS) return;
 
       socket.data.lastEmoteAt = now;
-      socket.to(current.roomId).emit("emote-received", { playerId: socket.data.playerId, emote });
+      socket.to(channelOf(current.roomId)).emit("emote-received", { alias: current.alias, emote });
     }, allowEvent));
 
     socket.on("toggle-note", safeHandler(toggleNoteArgsSchema, ({ r, c, v }) => {
       const current = getCurrentRoom(socket);
       if (!current) return;
-      const { roomId, room } = current;
+      const { roomId, room, alias } = current;
 
       const size = room.board.size;
 
       if (r >= size || c >= size || v > size) return;
+
+      room.played = true;
 
       const cellKey = `${r}-${c}`;
       if (!room.notesGrid[cellKey]) {
         room.notesGrid[cellKey] = {};
       }
 
-      let assignedPlayerId: string | null = null;
+      let assignedAlias: string | null = null;
 
       if (room.notesGrid[cellKey][v]) {
         delete room.notesGrid[cellKey][v];
@@ -233,11 +308,11 @@ export const setupSocketHandlers = (io: GameServer) => {
           delete room.notesGrid[cellKey];
         }
       } else {
-        room.notesGrid[cellKey][v] = socket.data.playerId;
-        assignedPlayerId = socket.data.playerId;
+        room.notesGrid[cellKey][v] = alias;
+        assignedAlias = alias;
       }
 
-      io.to(roomId).emit("note-toggled", { r, c, v, playerId: assignedPlayerId });
+      io.to(channelOf(roomId)).emit("note-toggled", { r, c, v, alias: assignedAlias });
     }, allowEvent));
   });
 };

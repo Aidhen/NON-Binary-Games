@@ -72,6 +72,17 @@ export const selectCellPayloadSchema = z
   })
   .refine(({ r, c }) => (r === null) === (c === null));
 
+/** A cell of the Flower Field. Upper bounds depend on the size of the field, so they are checked by the server. */
+export const flowerFieldCellPayloadSchema = z.object({
+  r: coordinateSchema,
+  c: coordinateSchema,
+});
+
+/** `explosive`: opening a mine loses the game for the whole room, instead of only marking the cell. */
+export const flowerFieldModePayloadSchema = z.object({
+  explosive: z.boolean(),
+});
+
 export type CellUpdatePayload = z.infer<typeof cellUpdatePayloadSchema>;
 /** `ok: false` means the server did not apply the move, so the client must resynchronize. */
 export interface CellUpdateResult {
@@ -79,6 +90,8 @@ export interface CellUpdateResult {
 }
 export type ToggleNotePayload = z.infer<typeof toggleNotePayloadSchema>;
 export type SelectCellPayload = z.infer<typeof selectCellPayloadSchema>;
+export type FlowerFieldCellPayload = z.infer<typeof flowerFieldCellPayloadSchema>;
+export type FlowerFieldModePayload = z.infer<typeof flowerFieldModePayloadSchema>;
 
 /**
  * Argument lists of the client-to-server events, as tuples.
@@ -94,6 +107,8 @@ const acknowledgementSchema = z.custom<(result: CellUpdateResult) => void>((valu
 export const cellUpdateArgsSchema = z.tuple([cellUpdatePayloadSchema, acknowledgementSchema.optional()]);
 export const toggleNoteArgsSchema = z.tuple([toggleNotePayloadSchema]);
 export const selectCellArgsSchema = z.tuple([selectCellPayloadSchema]);
+export const flowerFieldCellArgsSchema = z.tuple([flowerFieldCellPayloadSchema]);
+export const flowerFieldModeArgsSchema = z.tuple([flowerFieldModePayloadSchema]);
 export const restartGameArgsSchema = z.tuple([difficultySchema]);
 export const sendEmoteArgsSchema = z.tuple([emoteSchema]);
 export const setColorArgsSchema = z.tuple([playerColorSchema]);

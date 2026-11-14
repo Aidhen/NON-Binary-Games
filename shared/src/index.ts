@@ -1,9 +1,10 @@
 import type { SudokuBoard, Difficulty } from './games/sudoku/types';
 import type { TakuzuGrid } from './games/takuzu/types';
+import type { FlowerCellChange, FlowerGrid, FlowerStatus } from './games/flower-field/types';
 import type { Emote } from './emotes';
 import type { GameId } from './games';
 import type { PlayerColor, PlayerProfile } from './players';
-import type { CellUpdatePayload, CellUpdateResult, ToggleNotePayload, SelectCellPayload } from './schemas';
+import type { CellUpdatePayload, CellUpdateResult, FlowerFieldCellPayload, FlowerFieldModePayload, ToggleNotePayload, SelectCellPayload } from './schemas';
 
 export * from './games/sudoku/index';
 export * from './games/takuzu/index';
@@ -62,10 +63,29 @@ export interface TakuzuStartedPayload {
 }
 
 /**
+ * The Flower Field of a room, as the players can see it. Where the mines are stays on the server until the game
+ * is lost: `mines` is empty before that.
+ */
+export interface FlowerFieldStartedPayload {
+  game: 'flower-field';
+  size: number;
+  mineCount: number;
+  difficulty: DifficultyLevel;
+  /** Opening a mine loses the game for the room. Off, the mine is only marked. */
+  explosive: boolean;
+  /** What each cell shows: closed, marked as a mine, or the number of mines around it (see FLOWER_HIDDEN and FLOWER_MARKED). */
+  grid: FlowerGrid;
+  /** Who put the flag on each cell, by alias, under the key `r-c`. */
+  flags: Record<string, string>;
+  status: FlowerStatus;
+  mines: [number, number][];
+}
+
+/**
  * What the players are told when a game opens or restarts, and the one who joins a room that is playing it.
  * `game` says which one it is: the page of a game ignores the start of any other.
  */
-export type GameStartedPayload = SudokuStartedPayload | TakuzuStartedPayload;
+export type GameStartedPayload = SudokuStartedPayload | TakuzuStartedPayload | FlowerFieldStartedPayload;
 
 export interface ServerToClientEvents {
   /** Sent to a player who joins, and to everybody each time a vote changes, a voter leaves or the game opens. */
@@ -78,6 +98,14 @@ export interface ServerToClientEvents {
   "join-error": (reason: JoinError) => void;
   "game-won": () => void;
   "note-toggled": (data: { r: number; c: number; v: number; alias: string | null }) => void;
+  /** Cells of the Flower Field that opened or were marked, to everybody in the room, the player who asked included. */
+  "flower-field:updated": (data: { cells: FlowerCellChange[] }) => void;
+  /** A flag put on a cell, or `alias: null` when it was taken off. */
+  "flower-field:flagged": (data: { r: number; c: number; alias: string | null }) => void;
+  /** A mine was opened with the option on: where all the mines are, and the one that was opened. */
+  "flower-field:lost": (data: { mines: [number, number][]; exploded: [number, number] }) => void;
+  /** The option to lose when a mine is opened, as the room has it now. */
+  "flower-field:mode": (data: { explosive: boolean }) => void;
   "emote-received": (data: { alias: string; emote: Emote }) => void;
   /** Sent to the player who has just joined: the alias that is theirs in the list of players. */
   "joined-as": (alias: string) => void;
@@ -98,6 +126,10 @@ export interface ClientToServerEvents {
   "select-cell": (payload: SelectCellPayload) => void;
   "restart-game": (difficulty: DifficultyLevel) => void;
   "toggle-note": (data: ToggleNotePayload) => void;
+  "flower-field:reveal": (payload: FlowerFieldCellPayload) => void;
+  "flower-field:flag": (payload: FlowerFieldCellPayload) => void;
+  /** Only until the first cell is open: after that the option changes with a new game. */
+  "flower-field:set-mode": (payload: FlowerFieldModePayload) => void;
   "send-emote": (emote: Emote) => void;
   "set-color": (color: PlayerColor) => void;
 }

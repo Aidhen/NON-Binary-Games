@@ -11,7 +11,7 @@ import type { AddressOf } from './connectionLimits';
 import { DIFFICULTIES, EMOTE_COOLDOWN_MS, EMOTES, getCluesCount, MAX_PLAYERS_PER_ROOM, PLAYER_ANIMALS, PLAYER_COLORS, solveWithSingles } from '@nbg/shared';
 import type { DifficultyLevel, JoinError, LobbyState } from '@nbg/shared';
 import type { RoomState, SudokuGame } from '../rooms/roomStore';
-import type { ClientToServerEvents, ServerToClientEvents } from '@nbg/shared';
+import type { ClientToServerEvents, ServerToClientEvents, SudokuStartedPayload } from '@nbg/shared';
 
 // Read before any test changes them: a limit that is not finite protects nothing.
 const defaultLimits = { roomCreation: roomCreationLimit.max, restart: restartLimit.max, boardGeneration: boardGenerationLimit.max };
@@ -22,9 +22,11 @@ const idOf = (name: string): string => {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${'89ab'[Number.parseInt(hex[16], 16) % 4]}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 };
 
-type TestClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
+// These tests play the Sudoku, so the start of a game is the start of a Sudoku. The Takuzu has its own tests.
+type SudokuEvents = Omit<ServerToClientEvents, 'game-started'> & { 'game-started': (payload: SudokuStartedPayload) => void };
+type TestClientSocket = ClientSocket<SudokuEvents, ClientToServerEvents>;
 type TestServerSocket = ServerSocket<ClientToServerEvents, ServerToClientEvents>;
-type GameStartedPayload = Extract<Parameters<ServerToClientEvents['game-started']>[0], { game: 'sudoku' }>;
+type GameStartedPayload = SudokuStartedPayload;
 type CellUpdatedPayload = Parameters<ServerToClientEvents['cell-updated']>[0];
 type PlayerSelectedCellPayload = Parameters<ServerToClientEvents['player-selected-cell']>[0];
 type NoteToggledPayload = Parameters<ServerToClientEvents['note-toggled']>[0];
@@ -77,7 +79,7 @@ describe('Socket Events Security & Bounds Checking', () => {
    */
   const playing = (room: RoomState) => {
     const game = () => {
-      if (!room.game) throw new Error('The room has no game open');
+      if (room.game?.id !== 'sudoku') throw new Error('The room is not playing a Sudoku');
       return room.game;
     };
     return {

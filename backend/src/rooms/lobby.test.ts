@@ -13,7 +13,7 @@ const createRoom = (...playerIds: string[]): RoomState => ({
   played: false,
 });
 
-// The list has one game today: the count must not depend on that.
+// The count must not depend on how many games the list has.
 const other = 'another-game' as GameId;
 
 describe('chosenGame', () => {

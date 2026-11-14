@@ -1,4 +1,5 @@
 import type { SudokuBoard, Difficulty } from './games/sudoku/types';
+import type { TakuzuGrid } from './games/takuzu/types';
 import type { Emote } from './emotes';
 import type { GameId } from './games';
 import type { PlayerColor, PlayerProfile } from './players';
@@ -47,10 +48,23 @@ export interface SudokuStartedPayload {
 }
 
 /**
+ * The Takuzu of a room. The solution stays on the server: the page can show a broken rule without it, and the
+ * server is the one who says the puzzle is solved.
+ */
+export interface TakuzuStartedPayload {
+  game: 'takuzu';
+  size: number;
+  /** The cells the puzzle gave, which nobody can change. */
+  initial: TakuzuGrid;
+  currentGrid: TakuzuGrid;
+  difficulty: DifficultyLevel;
+}
+
+/**
  * What the players are told when a game opens or restarts, and the one who joins a room that is playing it.
  * `game` says which one it is: the page of a game ignores the start of any other.
  */
-export type GameStartedPayload = SudokuStartedPayload;
+export type GameStartedPayload = SudokuStartedPayload | TakuzuStartedPayload;
 
 export interface ServerToClientEvents {
   /** Sent to a player who joins, and to everybody each time a vote changes, a voter leaves or the game opens. */

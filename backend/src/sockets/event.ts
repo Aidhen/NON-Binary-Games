@@ -271,6 +271,13 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (lastVoteAt !== undefined && now - lastVoteAt < voteLimit.cooldownMs) return;
       socket.data.lastVoteAt = now;
 
+      // The same vote again tells the others nothing new. It still gets a chance to open the game: that is the
+      // way out for a room that had its votes but found the server too busy to generate a board.
+      if ((room.votes.get(socket.data.playerId) ?? null) === game) {
+        openChosenGame(roomId, room);
+        return;
+      }
+
       if (game === null) room.votes.delete(socket.data.playerId);
       else room.votes.set(socket.data.playerId, game);
 

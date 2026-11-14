@@ -387,14 +387,15 @@ describe('Socket Events Security & Bounds Checking', () => {
       await enterAs(otherTab);
       await enterAs(sameTab);
 
-      let lobby = nextLobby(clientSocket);
+      const lobby = nextLobby(clientSocket);
       otherTab.emit('vote-game', 'sudoku');
-      await lobby;
-      lobby = nextLobby(clientSocket);
       sameTab.emit('vote-game', 'sudoku');
+      await flushSocketEvents(otherTab);
+      await flushSocketEvents(sameTab);
 
       // Two players in the room, one vote: not more than half.
       expect((await lobby).votes).toHaveLength(1);
+      expect(rooms.get(testRoomId)!.votes.size).toBe(1);
       expect(rooms.get(testRoomId)!.game).toBeNull();
     });
 
@@ -494,6 +495,23 @@ describe('Socket Events Security & Bounds Checking', () => {
       voter.emit('vote-game', null);
       voter.emit('vote-game', 'sudoku');
       await flushSocketEvents(voter);
+      await flushSocketEvents(second);
+
+      expect(lobby).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not tell the room again about a vote that did not change', async () => {
+      const second = await connectExtra();
+      await enterAs(clientSocket);
+      await enterAs(second);
+      const lobby = vi.fn();
+      second.on('lobby-updated', lobby);
+
+      clientSocket.emit('vote-game', null);
+      clientSocket.emit('vote-game', 'sudoku');
+      clientSocket.emit('vote-game', 'sudoku');
+      clientSocket.emit('vote-game', 'sudoku');
+      await flushSocketEvents();
       await flushSocketEvents(second);
 
       expect(lobby).toHaveBeenCalledTimes(1);

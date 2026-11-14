@@ -7,6 +7,7 @@ import type { CellUpdatePayload, CellUpdateResult, ToggleNotePayload, SelectCell
 
 export * from './games/sudoku/index';
 export * from './games/takuzu/index';
+export * from './games/flower-field/index';
 export * from './schemas';
 export * from './emotes';
 export * from './games';

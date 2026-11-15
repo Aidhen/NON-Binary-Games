@@ -52,6 +52,24 @@ export const it: Translations = {
     mine: "mina",
     empty: "nessuna mina intorno"
   },
+  wordSearch: {
+    cleared: "Tutte le parole sono state trovate!",
+    compliment: "Ogni parola era nascosta da qualche parte, e le avete trovate insieme.",
+    rules: "Come funziona",
+    ruleFind: "Trova nella griglia le parole dell'elenco. Corrono in linea retta, in una qualsiasi delle otto direzioni, anche al contrario.",
+    ruleDrag: "Trascina dalla prima all'ultima lettera, oppure tocca la prima lettera e poi l'ultima. Tocca di nuovo la prima per annullare.",
+    ruleKeyboard: "Con la tastiera: frecce per spostarti, Invio o Spazio per segnare la prima e l'ultima lettera, Esc per annullare.",
+    words: "Parole da trovare",
+    counter: "{found}/{total}",
+    counterLabel: "{found} parole trovate su {total}",
+    wordFound: "trovata",
+    language: "Lingua delle parole",
+    languageHint: "È la lingua delle parole del puzzle, non quella della pagina. Cambiarla avvia un nuovo puzzle per tutti.",
+    cell: "{letter}, riga {row}, colonna {column}",
+    cellStart: "{letter}, riga {row}, colonna {column}, prima lettera selezionata",
+    cellFound: "{letter}, riga {row}, colonna {column}, parte di una parola trovata",
+    grid: "Griglia del crucipuzzle"
+  },
   takuzu: {
     cleared: "Puzzle risolto!",
     compliment: "Ogni riga e ogni colonna è in equilibrio.",
@@ -123,6 +141,9 @@ export const it: Translations = {
     },
     flowerField: {
       title: "Campo fiorito"
+    },
+    wordSearch: {
+      title: "Crucipuzzle"
     },
     mystery: {
       title: "Scatola misteriosa"

@@ -1,4 +1,4 @@
-import type { DifficultyLevel, GameId, NotesGrid, FlowerGrid, FlowerMines, FlowerStatus, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid, TakuzuBoard, TakuzuGrid } from "@nbg/shared";
+import type { DifficultyLevel, GameId, NotesGrid, WordLanguage, WordSearchPuzzle, FlowerGrid, FlowerMines, FlowerStatus, PlayerAnimal, PlayerColor, SudokuBoard, SudokuGrid, TakuzuBoard, TakuzuGrid } from "@nbg/shared";
 
 /** How a player is shown to the others in one room: the animal of their name and their color. */
 export interface RoomProfile {
@@ -45,11 +45,23 @@ export interface FlowerFieldGame {
   status: FlowerStatus;
 }
 
+/** The state of a Word Search that a room is playing. The puzzle, with where each word lies, never leaves the server. */
+export interface WordSearchGame {
+  id: 'word-search';
+  difficulty: DifficultyLevel;
+  /** The language of the words. It stays from one game of the room to the next. */
+  language: WordLanguage;
+  puzzle: WordSearchPuzzle;
+  /** The words found, by word: who found each one (by alias) and the two ends of it. */
+  found: Map<string, { alias: string; from: { r: number; c: number }; to: { r: number; c: number } }>;
+  status: 'playing' | 'won';
+}
+
 /** A game where the players write a value in a cell: it is what `cell-update` works on. */
 export type ValueGridGame = SudokuGame | TakuzuGame;
 
 /** A game played on a square grid of cells: it is what `select-cell` and `restart-game` work on. */
-export type GridGame = ValueGridGame | FlowerFieldGame;
+export type GridGame = ValueGridGame | FlowerFieldGame | WordSearchGame;
 
 /** The game a room has open. A new game adds its own state here, told apart by `id`. */
 export type RoomGame = GridGame;

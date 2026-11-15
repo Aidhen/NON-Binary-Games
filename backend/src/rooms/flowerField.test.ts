@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FLOWER_HIDDEN, FLOWER_MARKED } from '@nbg/shared';
-import type { GridGame } from './roomStore';
+import type { RoomGame } from './roomStore';
 import { createFlowerField, flowerFieldStarted, isRevealable, minesOf, revealCell, setExplosive, toggleFlag } from './flowerField';
 
 /** An 8x8 field (the beginner level, with its 8 mines) where the mines are in these cells: no luck involved. */
@@ -28,7 +28,7 @@ describe('createFlowerField', () => {
     before.explosive = true;
 
     expect(createFlowerField('hard', before).explosive).toBe(true);
-    expect(createFlowerField('hard', { id: 'sudoku' } as GridGame).explosive).toBe(false);
+    expect(createFlowerField('hard', { id: 'sudoku' } as RoomGame).explosive).toBe(false);
   });
 
   it('makes a bigger field for a higher level', () => {

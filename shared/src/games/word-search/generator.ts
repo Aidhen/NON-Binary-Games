@@ -1,8 +1,6 @@
 import type { Difficulty } from '../sudoku/types';
 import type { WordLanguage, WordPlacement, WordSearchPuzzle } from './types';
-import { WORD_LANGUAGES } from './types';
 import { WORDS } from './words/index';
-import { BLOCKLIST } from './blocklist';
 
 /** A step from one letter to the next: `[dr, dc]`. */
 export type WordDirection = readonly [dr: number, dc: number];
@@ -47,9 +45,6 @@ const MAX_SETTLE_ROUNDS = 30;
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-/** Checked against every language, not only the one of the puzzle: a player of any of them can read the grid. */
-const FORBIDDEN: readonly string[] = WORD_LANGUAGES.flatMap(language => BLOCKLIST[language]);
-
 type Cell = readonly [r: number, c: number];
 
 export function getWordSearchLevel(difficulty: Difficulty): WordSearchLevel {
@@ -63,9 +58,10 @@ export function getWordSearchLevel(difficulty: Difficulty): WordSearchLevel {
  * Builds a puzzle: picks the words at random, lays them in the grid, fills the rest with random letters and then
  * makes sure that the filler spells no forbidden word and that every word is in the grid exactly once, in any of
  * the 8 directions even where the level does not use them (a player may select a word from either end).
+ * `forbidden` is what the filler must never spell: the server keeps that list, so that it does not travel to the page with the rest of this package.
  * It throws when it could not finish in time (a number of tries, or a few milliseconds).
  */
-export function generateWordSearch(difficulty: Difficulty, language: WordLanguage): WordSearchPuzzle {
+export function generateWordSearch(difficulty: Difficulty, language: WordLanguage, forbidden: readonly string[]): WordSearchPuzzle {
   const { size, wordCount, directions, backwards } = getWordSearchLevel(difficulty);
   if (!Object.hasOwn(WORDS, language)) throw new Error(`Unknown language: ${String(language)}`);
 
@@ -77,7 +73,7 @@ export function generateWordSearch(difficulty: Difficulty, language: WordLanguag
     // The first try is always made: the time only decides whether to go on.
     if (attempt > 0 && Date.now() > deadline) break;
     const picked = pickWords(pool, wordCount);
-    const puzzle = picked && buildPuzzle(size, picked, steps);
+    const puzzle = picked && buildPuzzle(size, picked, steps, forbidden);
     if (puzzle) return puzzle;
   }
 
@@ -127,7 +123,7 @@ export function findWordOccurrences(grid: string[][], word: string): Cell[][] {
   return scanLines(lines, texts, word);
 }
 
-function buildPuzzle(size: number, picked: string[], steps: readonly WordDirection[]): WordSearchPuzzle | null {
+function buildPuzzle(size: number, picked: string[], steps: readonly WordDirection[], forbidden: readonly string[]): WordSearchPuzzle | null {
   const grid = Array.from({ length: size }, () => new Array<string>(size).fill(''));
   const fixed = Array.from({ length: size }, () => new Array<boolean>(size).fill(false));
   const placements: WordPlacement[] = [];
@@ -143,7 +139,7 @@ function buildPuzzle(size: number, picked: string[], steps: readonly WordDirecti
     for (let c = 0; c < size; c++) if (!fixed[r][c]) grid[r][c] = randomLetter();
   }
 
-  return settleFiller(grid, fixed, placements, FORBIDDEN) ? { size, grid, placements } : null;
+  return settleFiller(grid, fixed, placements, forbidden) ? { size, grid, placements } : null;
 }
 
 /** Tries random places; letters of other words may be shared, but never changed. */

@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCKLIST } from './blocklist';
-import { WORD_LANGUAGES } from './types';
-import { WORDS } from './words/index';
+import { WORDS, WORD_LANGUAGES } from "@nbg/shared";
+import { BLOCKLIST, FORBIDDEN } from './wordSearchBlocklist';
 
 const reversed = (word: string) => [...word].reverse().join('');
 
 describe('blocklist', () => {
+  it('gives the generator the words of every language', () => {
+    expect([...FORBIDDEN].sort()).toEqual(WORD_LANGUAGES.flatMap(language => BLOCKLIST[language]).sort());
+  });
+
   it('has an entry for every language', () => {
     expect(Object.keys(BLOCKLIST).sort()).toEqual([...WORD_LANGUAGES].sort());
   });

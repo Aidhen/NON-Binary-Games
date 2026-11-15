@@ -1,6 +1,6 @@
 /**
  * Words for the English puzzles: 4 to 10 letters, A to Z only, friendly and neutral. Before adding one, check that
- * it does not hide a blocklisted word inside it (blocklist.test.ts does), and that it is not a plural or a part of
+ * it does not hide a blocklisted word inside it (`wordSearchBlocklist.test.ts` in the backend does), and that it is not a plural or a part of
  * another word that is already here (the generator never puts those two in the same puzzle, but it is a poorer list).
  */
 export const EN_WORDS: readonly string[] = [

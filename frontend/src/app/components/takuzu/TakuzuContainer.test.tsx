@@ -160,6 +160,14 @@ describe('TakuzuContainer', () => {
     expect(screen.getByText('takuzu.ruleBalance')).toBeInTheDocument();
   });
 
+  it('puts the emotes right under the grid, above the rules: they are used while playing', async () => {
+    await renderGame();
+
+    const first = screen.getByRole('group', { name: 'emotes.title' });
+    const second = screen.getByText('takuzu.rules');
+    expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('ignores the start of another game', async () => {
     render(<TakuzuContainer roomId="room-1" />);
 

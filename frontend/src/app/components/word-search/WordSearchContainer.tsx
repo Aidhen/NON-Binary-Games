@@ -139,6 +139,8 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
       )}
 
       <div className="w-full flex flex-col gap-3 mt-2">
+        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
+
         <div className="rounded-[var(--radius-paper)] bg-[var(--paper)] p-4 text-sm text-[var(--subtitle-text)] shadow-[var(--shadow-paper-sm)]">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-black uppercase tracking-wide text-[var(--title-text)]">{t('wordSearch.words')}</h2>
@@ -183,8 +185,6 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
             <li>{t('wordSearch.ruleKeyboard')}</li>
           </ul>
         </div>
-
-        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
       </div>
 
       <EmoteOverlay emotes={emotes} />

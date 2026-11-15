@@ -29,6 +29,8 @@ interface FlowerFieldBoardUIProps {
 const MINE = '✸';
 const FLAG = '⚑';
 
+const isAt = (cell: [number, number] | null, r: number, c: number): boolean => cell?.[0] === r && cell?.[1] === c;
+
 /** The mine that lost the game comes first, then the cell the player is on, then whether the cell shows what it holds. */
 const backgroundClass = (isExploded: boolean, isSelected: boolean, isShown: boolean): string => {
   if (isExploded) return 'bg-[var(--number-error)]/30';
@@ -58,6 +60,21 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
 
   const revealedMines = useMemo(() => new Set(mines.map(([r, c]) => `${r}-${c}`)), [mines]);
 
+  /** Who put the flag that shows on a cell, or null: a cell that shows what it holds has no flag on it. */
+  const flaggerOf = (key: string, isShown: boolean): string | null => (!isShown && Object.hasOwn(flags, key) ? flags[key] : null);
+
+  const flagClass = (flagger: string | null) =>
+    flagger !== null && cn(styleOf(flagger).text, flagger === highlightedAlias && 'font-black motion-safe:animate-pulse');
+
+  /** The ring around the cell another player is on. The cell this player is on keeps its own background under it. */
+  const ringClass = (occupant: string | undefined, isSelected: boolean): string => {
+    if (!occupant) return '';
+    const style = styleOf(occupant);
+    return cn('ring-inset z-10', occupant === highlightedAlias ? 'ring-8 motion-safe:animate-pulse' : 'ring-4', style.ring, isSelected ? '' : style.tint);
+  };
+
+  const sizeClass = size > 10 ? "text-base sm:text-xl" : "text-xl sm:text-2xl";
+
   const stateOf = (r: number, c: number, value: number): string => {
     if (value === FLOWER_MARKED || revealedMines.has(`${r}-${c}`)) return t('flowerField.mine');
     if (value === FLOWER_HIDDEN) return Object.hasOwn(flags, `${r}-${c}`) ? t('flowerField.flagged') : t('flowerField.closed');
@@ -77,16 +94,9 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
           const key = `${r}-${c}`;
           const isOpen = value >= 0;
           const isMine = value === FLOWER_MARKED || revealedMines.has(key);
-          const isExploded = exploded?.[0] === r && exploded?.[1] === c;
-          const isSelected = selectedCell?.[0] === r && selectedCell?.[1] === c;
-          const flagger = !isOpen && !isMine && Object.hasOwn(flags, key) ? flags[key] : null;
-          const occupant = occupants.get(key);
-
-          let ringClass = '';
-          if (occupant) {
-            const style = styleOf(occupant);
-            ringClass = cn('ring-inset z-10', occupant === highlightedAlias ? 'ring-8 motion-safe:animate-pulse' : 'ring-4', style.ring, isSelected ? '' : style.tint);
-          }
+          const isShown = isOpen || isMine;
+          const isSelected = isAt(selectedCell, r, c);
+          const flagger = flaggerOf(key, isShown);
 
           return (
             <button
@@ -96,16 +106,16 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
               onClick={() => !isOver && onCellClick(r, c)}
               className={cn(
                 "relative flex items-center justify-center font-display leading-none",
-                size > 10 ? "text-base sm:text-xl" : "text-xl sm:text-2xl",
+                sizeClass,
                 "cursor-pointer select-none overflow-hidden focus-visible:-outline-offset-4",
                 c < size - 1 && "border-r border-r-[var(--grid-border-inner)]",
                 r < size - 1 && "border-b border-b-[var(--grid-border-inner)]",
-                backgroundClass(isExploded, isSelected, isOpen || isMine),
+                backgroundClass(isAt(exploded, r, c), isSelected, isShown),
                 isOpen && 'text-[var(--number-initial)] font-bold',
                 isMine && 'text-[var(--number-error)]',
-                flagger !== null && cn(styleOf(flagger).text, flagger === highlightedAlias && 'font-black motion-safe:animate-pulse'),
+                flagClass(flagger),
                 isSelected && 'outline-2 -outline-offset-2 outline-[var(--number-player)]/70',
-                ringClass
+                ringClass(occupants.get(key), isSelected)
               )}
             >
               {contentOf(value, isMine, flagger !== null)}

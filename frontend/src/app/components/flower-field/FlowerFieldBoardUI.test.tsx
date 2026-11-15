@@ -83,6 +83,90 @@ describe('FlowerFieldBoardUI', () => {
     expect(screen.getByRole('button', { name: 'R3 C1: mine' }).className).not.toContain('--number-error)]/30');
   });
 
+  it('tells apart the cell the player is on, the cells that show what they hold and the closed ones, by their background', () => {
+    render(<FlowerFieldBoardUI {...baseProps} selectedCell={[2, 1]} />);
+
+    const selected = screen.getByRole('button', { name: 'R3 C2: closed' });
+    const open = screen.getByRole('button', { name: 'R1 C2: 2' });
+    const marked = screen.getByRole('button', { name: 'R2 C1: mine' });
+    const closed = screen.getByRole('button', { name: 'R1 C1: closed' });
+
+    expect(selected.className).toContain('bg-[var(--cell-background-selected)]');
+    expect(selected.className).toContain('outline-2');
+    expect(open.className.split(' ')).toContain('bg-[var(--cell-background-initial)]');
+    expect(open.className).toContain('text-[var(--number-initial)] font-bold');
+    expect(marked.className.split(' ')).toContain('bg-[var(--cell-background-initial)]');
+    expect(marked.className).toContain('text-[var(--number-error)]');
+    expect(closed.className.split(' ')).toContain('bg-[var(--cell-background)]');
+    expect(closed.className).toContain('hover:bg-[var(--cell-background-initial)]');
+    expect(closed.className).not.toContain('outline-2');
+  });
+
+  it('keeps the mine that was opened red also when the player is on it', () => {
+    render(<FlowerFieldBoardUI {...baseProps} isOver mines={[[2, 2]]} exploded={[2, 2]} selectedCell={[2, 2]} />);
+
+    const cell = screen.getByRole('button', { name: 'R3 C3: mine' });
+    expect(cell.className).toContain('--number-error)]/30');
+    expect(cell.className).not.toContain('bg-[var(--cell-background-selected)]');
+  });
+
+  it('shows a mine and not the flag that was on it', () => {
+    render(<FlowerFieldBoardUI {...baseProps} isOver mines={[[2, 0]]} flags={{ '2-0': 'friend', '1-0': 'friend' }} profiles={profiles} />);
+
+    expect(screen.getByRole('button', { name: 'R3 C1: mine' })).toHaveTextContent('✸');
+    expect(screen.getByRole('button', { name: 'R3 C1: mine' }).className).not.toContain('--player-teal-text');
+    expect(screen.getByRole('button', { name: 'R2 C1: mine' })).toHaveTextContent('✸');
+  });
+
+  it('writes smaller symbols on a field of more than ten cells a side', () => {
+    const big = Array.from({ length: 12 }, () => new Array<number>(12).fill(-1));
+    const { unmount } = render(<FlowerFieldBoardUI {...baseProps} size={12} grid={big} />);
+    expect(screen.getByRole('button', { name: 'R1 C1: closed' }).className).toContain('text-base sm:text-xl');
+    unmount();
+
+    render(<FlowerFieldBoardUI {...baseProps} />);
+    expect(screen.getByRole('button', { name: 'R1 C1: closed' }).className).toContain('text-xl sm:text-2xl');
+  });
+
+  it('draws a line between the cells, and none on the last column and the last row', () => {
+    render(<FlowerFieldBoardUI {...baseProps} />);
+
+    expect(screen.getByRole('button', { name: 'R1 C1: closed' }).className).toContain('border-r border-r-[var(--grid-border-inner)] border-b');
+    expect(screen.getByRole('button', { name: 'R3 C3: closed' }).className).not.toContain('border-');
+  });
+
+  it('makes the flags and the cursor of the player being pointed out stand out, and only theirs', () => {
+    const two: Record<string, PlayerProfile> = { ...profiles, other: { alias: 'other', animal: 'owl', color: 'teal' } };
+    render(
+      <FlowerFieldBoardUI
+        {...baseProps}
+        flags={{ '0-0': 'friend', '1-1': 'other' }}
+        othersSelections={{ friend: [2, 0], other: [2, 2] }}
+        profiles={two}
+        highlightedAlias="friend"
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'R1 C1: flag' }).className).toContain('font-black motion-safe:animate-pulse');
+    expect(screen.getByRole('button', { name: 'R2 C2: flag' }).className).not.toContain('font-black');
+    expect(screen.getByRole('button', { name: 'R3 C1: closed' }).className).toContain('ring-8 motion-safe:animate-pulse');
+    expect(screen.getByRole('button', { name: 'R3 C3: closed' }).className).toContain('ring-4');
+    expect(screen.getByRole('button', { name: 'R3 C3: closed' }).className).not.toContain('ring-8');
+    expect(screen.getByRole('button', { name: 'R3 C2: closed' }).className).not.toContain('ring-');
+  });
+
+  it('keeps the background of the selected cell when another player is on it too', () => {
+    const { rerender } = render(<FlowerFieldBoardUI {...baseProps} othersSelections={{ friend: [2, 1] }} profiles={profiles} />);
+    const tinted = screen.getByRole('button', { name: 'R3 C2: closed' }).className;
+
+    rerender(<FlowerFieldBoardUI {...baseProps} selectedCell={[2, 1]} othersSelections={{ friend: [2, 1] }} profiles={profiles} />);
+    const selected = screen.getByRole('button', { name: 'R3 C2: closed' }).className;
+
+    expect(selected).toContain('bg-[var(--cell-background-selected)]');
+    expect(selected).toContain('ring-4');
+    expect(tinted).not.toContain('bg-[var(--cell-background-selected)]');
+  });
+
   it('rings the cell of another player, with their color or the one of the theme', () => {
     render(<FlowerFieldBoardUI {...baseProps} othersSelections={{ friend: [0, 0], stranger: [2, 2] }} profiles={profiles} />);
 

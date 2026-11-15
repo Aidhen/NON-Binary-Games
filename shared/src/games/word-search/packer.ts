@@ -78,7 +78,7 @@ export interface PackTable extends GridLines {
 export function buildPackTable(language: WordLanguage, size: number, steps: readonly WordDirection[], forbidden: readonly string[]): PackTable {
   const both = forbidden.flatMap(word => [word, reverse(word)]);
   // An empty list would be an empty pattern, which matches everything.
-  const pattern = both.length > 0 ? new RegExp(both.map(word => word.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')).join('|')) : /(?!)/;
+  const pattern = both.length > 0 ? new RegExp(both.map(word => word.replace(/[\\^$.*+?()[\]{}|]/g, String.raw`\$&`)).join('|')) : /(?!)/;
 
   const clean = WORDS[language].filter(word => !pattern.test(word));
   const pool = clean.filter(word => word.length <= Math.min(size, MAX_WORD_LENGTH));
@@ -269,7 +269,7 @@ function addWords(attempt: Attempt, top: Candidate[], span: Omit<Candidate, 'sco
 
     got++;
     const score = fresh * GREED + Math.random() * NOISE;
-    if (top.length < TOP_K || score > top[top.length - 1].score) {
+    if (top.length < TOP_K || score > (top.at(-1)?.score ?? -Infinity)) {
       top.push({ ...span, score, index });
       top.sort((a, b) => b.score - a.score);
       if (top.length > TOP_K) top.pop();

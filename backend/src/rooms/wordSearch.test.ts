@@ -13,7 +13,7 @@ const PLACEMENTS: WordPlacement[] = [
 const handMade = (): WordSearchGame => {
   const grid = Array.from({ length: 5 }, () => new Array<string>(5).fill('X'));
   for (const { word, r, c, dr, dc } of PLACEMENTS) [...word].forEach((letter, i) => { grid[r + dr * i][c + dc * i] = letter; });
-  const puzzle: WordSearchPuzzle = { size: 5, grid, placements: PLACEMENTS.map(placement => ({ ...placement })) };
+  const puzzle: WordSearchPuzzle = { size: 5, grid, placements: PLACEMENTS.map(placement => ({ ...placement })), hidden: { word: 'HIDE', cells: [[2, 0], [2, 1], [2, 2], [2, 3]] } };
   return { id: 'word-search', difficulty: 'beginner', language: 'en', puzzle, found: new Map(), status: 'playing' };
 };
 
@@ -22,7 +22,8 @@ describe('createWordSearch', () => {
     const game = createWordSearch('beginner');
 
     expect(game).toMatchObject({ id: 'word-search', difficulty: 'beginner', language: 'en', status: 'playing' });
-    expect(game.puzzle.size).toBe(8);
+    expect(game.puzzle.size).toBe(6);
+    expect(game.puzzle.hidden.cells).toHaveLength(game.puzzle.hidden.word.length);
     expect(game.found.size).toBe(0);
   });
 
@@ -41,9 +42,16 @@ describe('wordSearchStarted', () => {
 
     const payload = wordSearchStarted(game);
 
-    expect(payload).toMatchObject({ game: 'word-search', size: 5, difficulty: 'beginner', language: 'en', words: ['ANT', 'CAT', 'DOG'], found: [] });
+    expect(payload).toMatchObject({ game: 'word-search', size: 5, difficulty: 'beginner', language: 'en', words: ['ANT', 'CAT', 'DOG'], hiddenLength: 4, found: [] });
     expect(payload.grid).toEqual(game.puzzle.grid);
     expect(JSON.stringify(payload)).not.toMatch(/placements|"dr"|"dc"/);
+  });
+
+  it('tells only how long the hidden word is, never the word or the cells that spell it', () => {
+    const payload = wordSearchStarted(handMade());
+
+    expect(JSON.stringify(payload)).not.toMatch(/hidden"|HIDE|"cells"/);
+    expect(Object.keys(payload)).toContain('hiddenLength');
   });
 
   it('tells where the words found lie, with who found them', () => {

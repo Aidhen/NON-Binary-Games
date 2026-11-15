@@ -21,7 +21,9 @@ const handMade = (): WordSearchPuzzle => {
   ];
   const grid = Array.from({ length: 5 }, () => new Array<string>(5).fill('X'));
   for (const { word, r, c, dr, dc } of placements) [...word].forEach((letter, i) => { grid[r + dr * i][c + dc * i] = letter; });
-  return { size: 5, grid, placements };
+  // Not what the grid spells (the filler here is X): the test only needs a hidden word to be sure it never travels.
+  const hidden = { word: 'HIDE', cells: [[2, 0], [2, 1], [2, 2], [2, 3]] as [number, number][] };
+  return { size: 5, grid, placements, hidden };
 };
 
 vi.mock('@nbg/shared', async (importOriginal) => {
@@ -128,7 +130,7 @@ describe('a room that plays the Word Search', () => {
 
     const payload = await openWordSearch(player, roomId);
 
-    expect(payload).toMatchObject({ size: 5, difficulty: 'easy', language: 'en', words: ['ANT', 'CAT', 'DOG'], found: [] });
+    expect(payload).toMatchObject({ size: 5, difficulty: 'easy', language: 'en', words: ['ANT', 'CAT', 'DOG'], hiddenLength: 4, found: [] });
     expect(payload.grid).toEqual(handMade().grid);
     expect(generateWordSearch).toHaveBeenCalledWith('easy', 'en', FORBIDDEN);
     expect(rooms.get(roomId)?.game?.id).toBe('word-search');
@@ -142,7 +144,17 @@ describe('a room that plays the Word Search', () => {
 
     const serialized = JSON.stringify(payload);
     expect(serialized).not.toMatch(/placements|"dr"|"dc"/);
-    expect(Object.keys(payload).sort()).toEqual(['difficulty', 'found', 'game', 'grid', 'language', 'size', 'words']);
+    expect(Object.keys(payload).sort()).toEqual(['difficulty', 'found', 'game', 'grid', 'hiddenLength', 'language', 'size', 'words']);
+  });
+
+  it('tells how long the hidden word is and never the word, nor the cells that spell it', async () => {
+    const roomId = randomUUID();
+    const player = await connect();
+
+    const payload = await openWordSearch(player, roomId);
+
+    expect(payload.hiddenLength).toBe(4);
+    expect(JSON.stringify(payload)).not.toMatch(/hidden"|HIDE|"cells"/);
   });
 
   describe('word-search:select', () => {
@@ -279,7 +291,8 @@ describe('a room that plays the Word Search', () => {
       expect(payload.found).toEqual([{ word: 'DOG', alias, from: DOG[0], to: DOG[1] }]);
       expect(payload.words).toEqual(['ANT', 'CAT', 'DOG']);
       expect(payload.grid).toEqual(handMade().grid);
-      expect(JSON.stringify(payload)).not.toMatch(/placements|"dr"|"dc"/);
+      expect(JSON.stringify(payload)).not.toMatch(/placements|"dr"|"dc"|hidden"|HIDE|"cells"/);
+      expect(payload.hiddenLength).toBe(4);
     });
   });
 

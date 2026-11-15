@@ -1,8 +1,10 @@
 import { Server } from "socket.io";
+import { warmUpWordSearch } from "@nbg/shared";
 import { setupSocketHandlers } from "./src/sockets/event";
 import { addressResolverFromEnv, applyConnectionLimits, MAX_MESSAGE_BYTES } from "./src/sockets/connectionLimits";
 import { createHttpServer, installCrashLogging, parsePort, resolveAllowedOrigin, shutdown } from "./src/server";
 import { logger } from "./src/logger";
+import { FORBIDDEN } from "./src/rooms/wordSearchBlocklist";
 
 const allowedOrigin = resolveAllowedOrigin();
 if (!allowedOrigin) {
@@ -12,6 +14,9 @@ if (!allowedOrigin) {
 const port = parsePort(process.env.PORT);
 
 installCrashLogging();
+
+// The first puzzle would otherwise wait for the tables (about 60 ms on the thread of every room).
+warmUpWordSearch(FORBIDDEN);
 
 const httpServer = createHttpServer();
 

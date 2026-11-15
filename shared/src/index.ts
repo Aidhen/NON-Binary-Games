@@ -94,6 +94,8 @@ export interface WordSearchFound {
 /**
  * The Word Search of a room. The words to look for come in alphabetical order, so that the list says nothing about
  * where they lie. Where each word lies stays on the server until somebody finds it.
+ * `hiddenLength` is how many letters the hidden word has: the cells no word covers spell it. The word itself never
+ * travels, the page works it out from the words found.
  */
 export interface WordSearchStartedPayload {
   game: 'word-search';
@@ -102,6 +104,7 @@ export interface WordSearchStartedPayload {
   language: WordLanguage;
   grid: WordSearchGrid;
   words: string[];
+  hiddenLength: number;
   found: WordSearchFound[];
 }
 

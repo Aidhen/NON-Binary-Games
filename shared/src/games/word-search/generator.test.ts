@@ -1,47 +1,102 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DIFFICULTIES } from '../sudoku/types';
-import { findWordOccurrences, generateWordSearch, getWordSearchLevel, settleFiller } from './generator';
-import type { WordDirection } from './generator';
+import { generateWordSearch, getWordSearchLevel, warmUpWordSearch } from './generator';
 import { WORD_LANGUAGES } from './types';
-import type { WordPlacement } from './types';
+import type { WordDirection, WordLanguage, WordSearchPuzzle } from './types';
 import { WORDS } from './words/index';
 
 const ALL_DIRECTIONS: WordDirection[] = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]];
-// Pairs of letters that are in no word of the lists but turn up all the time in random filler, so a generator that ignores the list gets caught at once. The real list lives in the backend.
+// Pairs of letters that are in no word of the lists, so a generator that ignores the list gets caught at once only if it makes letters up. The real list lives in the backend.
 const FORBIDDEN = ['QX', 'JZ', 'VK', 'ZQ', 'XJ', 'WQ'];
+const RUNS = 100;
 
-// Written apart from the generator on purpose: from every cell, in every direction, the cells that spell the word. A word that reads the same both ways is found twice there, hence the set of spans.
+/** Small seeded generator (mulberry32), so that a failure can be played again. */
+const seeded = (seed: number) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+const reversed = (word: string) => [...word].reverse().join('');
+
+// Written apart from the generator on purpose, and brute force: from every cell, in every direction, the cells that spell the word. A word that reads the same both ways is found twice there, hence the set of spans.
 function countOccurrences(grid: string[][], word: string): number {
   const size = grid.length;
   const spans = new Set<string>();
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       for (const [dr, dc] of ALL_DIRECTIONS) {
-        const cells = [...word].map((_, i) => [r + dr * i, c + dc * i]);
-        if (cells.some(([y, x]) => y < 0 || x < 0 || y >= size || x >= size)) continue;
-        if (cells.every(([y, x], i) => grid[y][x] === word[i])) spans.add([cells[0], cells[cells.length - 1]].map(String).sort().join('|'));
+        const endR = r + dr * (word.length - 1);
+        const endC = c + dc * (word.length - 1);
+        if (endR < 0 || endC < 0 || endR >= size || endC >= size) continue;
+        let spells = true;
+        for (let i = 0; i < word.length && spells; i++) spells = grid[r + dr * i][c + dc * i] === word[i];
+        if (spells) spans.add([[r, c], [endR, endC]].map(String).sort().join('|'));
       }
     }
   }
   return spans.size;
 }
 
-const read = (grid: string[][], { word, r, c, dr, dc }: WordPlacement) => [...word].map((_, i) => grid[r + dr * i]?.[c + dc * i]).join('');
+/** Everything a puzzle promises, checked without the code that made it. Gives the list of what is wrong, empty when all is well. */
+function check(puzzle: WordSearchPuzzle, size: number, allowed: Set<string>, language: WordLanguage, forbidden: readonly string[]): string[] {
+  const errors: string[] = [];
+  const { grid, placements, hidden } = puzzle;
+  if (puzzle.size !== size || grid.length !== size) errors.push('size');
+  for (const row of grid) if (row.length !== size || !row.every(letter => /^[A-Z]$/.test(letter))) errors.push('letters');
+
+  const covered = Array.from({ length: size }, () => new Array<boolean>(size).fill(false));
+  for (const { word, r, c, dr, dc } of placements) {
+    if (word.length < 4 || word.length > Math.min(size, 10)) errors.push(`length of ${word}`);
+    if (!WORDS[language].includes(word)) errors.push(`${word} is not in the list`);
+    if (!allowed.has(String([dr, dc]))) errors.push(`direction of ${word}`);
+    for (let i = 0; i < word.length; i++) {
+      const y = r + dr * i;
+      const x = c + dc * i;
+      if (y < 0 || x < 0 || y >= size || x >= size) { errors.push(`${word} leaves the grid`); break; }
+      if (grid[y][x] !== word[i]) errors.push(`${word} is not in the grid where it says`);
+      covered[y][x] = true;
+    }
+  }
+
+  const words = placements.map(p => p.word);
+  if (new Set(words).size !== words.length) errors.push('a word twice');
+  for (const a of words) for (const b of words) if (a !== b && (a.includes(b) || a.includes(reversed(b)))) errors.push(`${a} contains ${b}`);
+  for (const word of words) if (countOccurrences(grid, word) !== 1) errors.push(`${word} is not there exactly once`);
+  for (const word of forbidden) if (countOccurrences(grid, word) > 0) errors.push(`forbidden ${word}`);
+
+  const left: [number, number][] = [];
+  for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (!covered[r][c]) left.push([r, c]);
+  if (left.length < 4 || left.length > 10) errors.push(`${left.length} cells left`);
+  if (left.map(([r, c]) => grid[r][c]).join('') !== hidden.word) errors.push('the cells left do not spell the hidden word');
+  if (JSON.stringify(left) !== JSON.stringify(hidden.cells)) errors.push('the cells of the hidden word');
+  if (hidden.cells.length !== hidden.word.length) errors.push('length of the hidden word');
+  if (!WORDS[language].includes(hidden.word)) errors.push('the hidden word is not in the list');
+  if (words.includes(hidden.word)) errors.push('the hidden word is one of the words to find');
+  for (const word of forbidden) if (hidden.word.includes(word) || hidden.word.includes(reversed(word))) errors.push('the hidden word is forbidden');
+
+  return errors;
+}
 
 describe('getWordSearchLevel', () => {
-  it('gives the size, the words and the ways to read them of each level', () => {
+  it('gives the size and the ways to read the words of each level', () => {
     const summary = DIFFICULTIES.map(d => {
-      const { size, wordCount, directions, backwards } = getWordSearchLevel(d);
-      return [d, size, wordCount, directions.length, backwards];
+      const { size, directions, backwards } = getWordSearchLevel(d);
+      return [d, size, directions.length, backwards];
     });
 
     expect(summary).toEqual([
-      ['beginner', 8, 6, 2, false],
-      ['easy', 10, 8, 3, false],
-      ['medium', 12, 10, 4, false],
-      ['hard', 14, 12, 4, true],
-      ['expert', 16, 14, 4, true],
+      ['beginner', 6, 2, false],
+      ['easy', 7, 3, false],
+      ['medium', 8, 4, false],
+      ['hard', 10, 4, true],
+      ['expert', 12, 4, true],
     ]);
+  });
+
+  it('has no number of words: it follows from the packing', () => {
+    expect(Object.keys(getWordSearchLevel('easy')).sort()).toEqual(['backwards', 'directions', 'size']);
   });
 
   it('starts with right and down, then adds the down-right and the down-left diagonals', () => {
@@ -59,55 +114,40 @@ describe('getWordSearchLevel', () => {
 
 describe('generateWordSearch', () => {
   describe.each(DIFFICULTIES.flatMap(d => WORD_LANGUAGES.map(l => [d, l] as const)))('%s, %s', (difficulty, language) => {
-    const { size, wordCount, directions, backwards } = getWordSearchLevel(difficulty);
+    const { size, directions, backwards } = getWordSearchLevel(difficulty);
     const allowed = new Set((backwards ? directions.flatMap(([dr, dc]) => [[dr, dc], [-dr, -dc]]) : directions).map(String));
-    const runs = Array.from({ length: 5 }, () => generateWordSearch(difficulty, language, FORBIDDEN));
+    let runs: WordSearchPuzzle[] = [];
 
-    it('gives a square grid of single capital letters', () => {
-      for (const puzzle of runs) {
-        expect(puzzle.size).toBe(size);
-        expect(puzzle.grid).toHaveLength(size);
-        for (const row of puzzle.grid) {
-          expect(row).toHaveLength(size);
-          for (const letter of row) expect(letter).toMatch(/^[A-Z]$/);
-        }
+    beforeAll(() => {
+      vi.spyOn(Math, 'random').mockImplementation(seeded(difficulty.length * 1000 + language.charCodeAt(0)));
+      runs = Array.from({ length: RUNS }, () => generateWordSearch(difficulty, language, FORBIDDEN));
+    });
+    afterAll(() => vi.restoreAllMocks());
+
+    it('gives puzzles that keep every promise of the rules, run after run', () => {
+      expect(runs.flatMap(puzzle => check(puzzle, size, allowed, language, FORBIDDEN))).toEqual([]);
+    });
+
+    it('leaves 4 to 10 cells for a hidden word that is not one of the words to find', () => {
+      for (const { hidden, placements } of runs) {
+        expect(hidden.word.length).toBeGreaterThanOrEqual(4);
+        expect(hidden.word.length).toBeLessThanOrEqual(10);
+        expect(hidden.cells).toHaveLength(hidden.word.length);
+        expect(placements.map(p => p.word)).not.toContain(hidden.word);
       }
     });
+  });
 
-    it('has the number of words of the level, all different, from the list of the language', () => {
-      for (const { placements } of runs) {
-        const words = placements.map(p => p.word);
-        expect(words).toHaveLength(wordCount);
-        expect(new Set(words).size).toBe(wordCount);
-        for (const word of words) {
-          expect(WORDS[language]).toContain(word);
-          expect(word.length).toBeLessThanOrEqual(Math.min(size, 10));
-        }
-      }
-    });
+  it('keeps the words that are forbidden out of the grid, the words to find and the hidden word', () => {
+    const forbidden = ['OVER', 'STAR', 'LINE'];
+    vi.spyOn(Math, 'random').mockImplementation(seeded(7));
+    try {
+      const runs = Array.from({ length: RUNS }, () => generateWordSearch('medium', 'en', forbidden));
 
-    it('lays each word only in the directions of the level', () => {
-      for (const { placements } of runs) for (const p of placements) expect(allowed.has(String([p.dr, p.dc]))).toBe(true);
-    });
-
-    it('has every placement reading its word in the grid, inside it', () => {
-      for (const { grid, placements } of runs) {
-        for (const p of placements) {
-          expect(read(grid, p)).toBe(p.word);
-          const endR = p.r + p.dr * (p.word.length - 1);
-          const endC = p.c + p.dc * (p.word.length - 1);
-          for (const n of [p.r, p.c, endR, endC]) expect(n >= 0 && n < size).toBe(true);
-        }
-      }
-    });
-
-    it('has every word exactly once, in any of the 8 directions', () => {
-      for (const { grid, placements } of runs) for (const { word } of placements) expect(countOccurrences(grid, word)).toBe(1);
-    });
-
-    it('spells no forbidden word, in any language or direction', () => {
-      for (const { grid } of runs) for (const bad of FORBIDDEN) expect(countOccurrences(grid, bad)).toBe(0);
-    });
+      expect(runs.flatMap(puzzle => check(puzzle, 8, new Set(['0,1', '1,0', '1,1', '1,-1']), 'en', forbidden))).toEqual([]);
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 
   it('gives different puzzles each time', () => {
@@ -120,6 +160,10 @@ describe('generateWordSearch', () => {
     expect(() => generateWordSearch('impossible' as never, 'en', FORBIDDEN)).toThrow('Unknown difficulty');
     expect(() => generateWordSearch('easy', 'xx' as never, FORBIDDEN)).toThrow('Unknown language');
     expect(() => generateWordSearch('easy', 'toString' as never, FORBIDDEN)).toThrow('Unknown language');
+  });
+
+  it('works with no forbidden words at all', () => {
+    expect(check(generateWordSearch('easy', 'en', []), 7, new Set(['0,1', '1,0', '1,1']), 'en', [])).toEqual([]);
   });
 
   it('never takes long, level after level', () => {
@@ -136,101 +180,16 @@ describe('generateWordSearch', () => {
   });
 });
 
-describe('findWordOccurrences', () => {
-  const blank = () => Array.from({ length: 8 }, () => new Array<string>(8).fill('Z'));
+describe('warmUpWordSearch', () => {
+  it('prepares every language and size, and the puzzles that come after are as good as any', () => {
+    const forbidden = [...FORBIDDEN];
 
-  it.each(ALL_DIRECTIONS.map(d => [String(d), d] as const))('finds a word planted in direction %s', (_name, [dr, dc]) => {
-    const grid = blank();
-    for (let i = 0; i < 4; i++) grid[3 + dr * i][3 + dc * i] = 'ABCD'[i];
+    expect(() => warmUpWordSearch(forbidden)).not.toThrow();
 
-    const found = findWordOccurrences(grid, 'ABCD');
-
-    expect(found).toHaveLength(1);
-    expect(found[0].map(String).sort()).toEqual([0, 1, 2, 3].map(i => String([3 + dr * i, 3 + dc * i])).sort());
-  });
-
-  it('counts a word that reads the same both ways once', () => {
-    const grid = blank();
-    [...'ABCBA'].forEach((letter, i) => { grid[2][i + 1] = letter; });
-
-    expect(findWordOccurrences(grid, 'ABCBA')).toHaveLength(1);
-  });
-
-  it('finds nothing when the word is not there, or only broken', () => {
-    const grid = blank();
-    [...'ABCD'].forEach((letter, i) => { grid[0][i * 2] = letter; });
-
-    expect(findWordOccurrences(grid, 'ABCD')).toEqual([]);
-  });
-});
-
-describe('settleFiller', () => {
-  const blank = () => Array.from({ length: 8 }, () => new Array<string>(8).fill('Z'));
-  const free = () => Array.from({ length: 8 }, () => new Array<boolean>(8).fill(false));
-
-  it.each(ALL_DIRECTIONS.map(d => [String(d), d] as const))('re-rolls a forbidden word made of filler, in direction %s', (_name, [dr, dc]) => {
-    const grid = blank();
-    for (let i = 0; i < 4; i++) grid[3 + dr * i][3 + dc * i] = 'ABCD'[i];
-
-    expect(settleFiller(grid, free(), [], ['ABCD'])).toBe(true);
-    expect(findWordOccurrences(grid, 'ABCD')).toEqual([]);
-  });
-
-  it('only changes the cells of the problem', () => {
-    const grid = blank();
-    [...'ABCD'].forEach((letter, i) => { grid[0][i] = letter; });
-
-    settleFiller(grid, free(), [], ['ABCD']);
-
-    expect(grid.slice(1).flat().every(letter => letter === 'Z')).toBe(true);
-  });
-
-  it('gives up on a forbidden word that is made only of placed letters', () => {
-    const grid = blank();
-    [...'ABCD'].forEach((letter, i) => { grid[0][i] = letter; });
-    const fixed = free();
-    for (let i = 0; i < 4; i++) fixed[0][i] = true;
-
-    expect(settleFiller(grid, fixed, [], ['ABCD'])).toBe(false);
-  });
-
-  it('re-rolls the filler of a forbidden word that uses a placed letter, and keeps the placed one', () => {
-    const grid = blank();
-    [...'ABCD'].forEach((letter, i) => { grid[0][i] = letter; });
-    const fixed = free();
-    fixed[0][0] = true;
-
-    expect(settleFiller(grid, fixed, [], ['ABCD'])).toBe(true);
-    expect(grid[0][0]).toBe('A');
-    expect(findWordOccurrences(grid, 'ABCD')).toEqual([]);
-  });
-
-  it('removes a second copy of a placed word and keeps the placed one', () => {
-    const grid = blank();
-    const fixed = free();
-    [...'ABCD'].forEach((letter, i) => { grid[0][i] = letter; fixed[0][i] = true; });
-    // The second copy is in the filler, read from the bottom up and backwards.
-    [...'DCBA'].forEach((letter, i) => { grid[7 - i][5] = letter; });
-    const placement: WordPlacement = { word: 'ABCD', r: 0, c: 0, dr: 0, dc: 1 };
-
-    expect(settleFiller(grid, fixed, [placement], [])).toBe(true);
-    expect(findWordOccurrences(grid, 'ABCD')).toHaveLength(1);
-    expect(grid[0].slice(0, 4).join('')).toBe('ABCD');
-  });
-
-  it('gives up when the second copy is made only of placed letters', () => {
-    const grid = blank();
-    const fixed = free();
-    [...'ABCD'].forEach((letter, i) => { grid[0][i] = letter; grid[1][i] = letter; fixed[0][i] = true; fixed[1][i] = true; });
-    const placement: WordPlacement = { word: 'ABCD', r: 0, c: 0, dr: 0, dc: 1 };
-
-    expect(settleFiller(grid, fixed, [placement], [])).toBe(false);
-  });
-
-  it('is true and changes nothing when there is no problem', () => {
-    const grid = blank();
-
-    expect(settleFiller(grid, free(), [], ['ABCD'])).toBe(true);
-    expect(grid).toEqual(blank());
+    for (const difficulty of DIFFICULTIES) {
+      const { size, directions, backwards } = getWordSearchLevel(difficulty);
+      const allowed = new Set((backwards ? directions.flatMap(([dr, dc]) => [[dr, dc], [-dr, -dc]]) : directions).map(String));
+      for (const language of WORD_LANGUAGES) expect(check(generateWordSearch(difficulty, language, forbidden), size, allowed, language, forbidden)).toEqual([]);
+    }
   });
 });

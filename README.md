@@ -17,6 +17,7 @@ Open the site and you are already in a room: send the link to your partner or yo
 - **Sudoku, together.** Five difficulty levels, every one solvable by deduction alone, and the whole room can start a new game when you are ready for another.
 - **Takuzu, together.** Fill the grid with 0s and 1s: no more than two equal numbers side by side, as many 0s as 1s in every row and column, and no two rows or columns alike. Tap a cell to go from empty to 0, to 1 and back. Same five levels, from 6×6 to 12×12, and every puzzle can be solved without guessing.
 - **Flower Field, together.** Open every cell that is not a mine, and use the numbers (how many mines touch a cell) to work out where the mines are. Put flags where you know, in your own color. The first cell is always safe and the field never needs a guess. Opening a mine only marks it for everybody, unless you choose in the settings to lose the game when it happens.
+- **Word Search, together (Crucipuzzle in Italian).** Find the hidden words in the grid. Drag along a line, even a diagonal or backwards one, or tap the first and the last letter. Every word you find is marked in your color, and the list shows who found what. Five levels, from 8×8 to 16×16, with more directions as they grow. The words come in English or Italian, you choose in the settings, and you can change it without leaving the room.
 - **Shared notes.** Each note is colored after the person who wrote it, so you can see who had which idea.
 - **Seeing each other.** You see where the other players are looking, in their own color.
 - **Emotes.** Ten quick reactions (💜 🌹 🔥 ...) float over the board, for when you want to say something without typing.
@@ -28,14 +29,15 @@ The game runs on a free hosting plan that goes to sleep when nobody is around, s
 
 ---
 
-## Current Status: v0.3.0-alpha
+## Current Status: v0.4.0-alpha
 
-The games are playable online. You can create a room, share the link, pick a game at the table (Sudoku, Takuzu or Flower Field), play it together, share notes in the Sudoku and react with emotes. From here the focus is on polishing the games, making rooms smooth and reliable, and adding more games.
+The games are playable online. You can create a room, share the link, pick a game at the table (Sudoku, Takuzu, Flower Field or Word Search), play it together, share notes in the Sudoku and react with emotes. From here the focus is on polishing the games, making rooms smooth and reliable, and adding more games.
 
 ### What is done
 - [x] Collaborative Sudoku with real-time rooms and shareable links (`/play/[roomId]`).
 - [x] A second game: Takuzu, with the same levels, the same players and the same reactions.
 - [x] A third game: Flower Field, with shared flags and an option to lose when a mine is opened.
+- [x] A fourth game: Word Search, with words in English and Italian that the room can switch between.
 - [x] A room that starts at the table, where the players vote for the game to open.
 - [x] Shared notes and live cell selections.
 - [x] A name for each player, like Red Panda, and a color of your own to pick; the list of players shows who is who, and a tap on a player points them out on the board.
@@ -55,7 +57,7 @@ The games are playable online. You can create a room, share the link, pick a gam
 - [ ] **Smoother reconnections:** coming back to a room after a connection drop should feel seamless.
 - [ ] **Keeping rooms in sync and safe:** consistent moves between players, limits against flooding.
 - [ ] **Keyboard play:** moving around the grid with the arrow keys, and better support for screen readers.
-- [ ] **More games:** the games live in a registry, so a new game is its engine, a cover and one entry. Three are in so far.
+- [ ] **More games:** the games live in a registry, so a new game is its engine, a cover and one entry. Four are in so far.
 - [ ] **Rooms that survive restarts**, and a backend that can scale (Redis).
 - [ ] **Hosting details:** a health check, graceful shutdown and proper logs.
 

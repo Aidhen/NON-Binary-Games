@@ -13,9 +13,12 @@ import {
   sendEmoteArgsSchema,
   toggleNoteArgsSchema,
   voteGameArgsSchema,
+  wordSearchLanguageArgsSchema,
+  wordSearchSelectArgsSchema,
 } from './schemas';
 import { EMOTES } from './emotes';
 import { GAME_IDS } from './games';
+import { WORD_LANGUAGES } from './games/word-search/types';
 
 const garbage: unknown[] = [undefined, null, 0, 1, NaN, 'text', true, [], {}, () => 1];
 
@@ -220,5 +223,51 @@ describe('flowerFieldModeArgsSchema', () => {
   it('rejects garbage and a missing payload', () => {
     for (const value of garbage) expect(flowerFieldModeArgsSchema.safeParse([value]).success).toBe(false);
     expect(flowerFieldModeArgsSchema.safeParse([]).success).toBe(false);
+  });
+});
+
+describe('wordSearchSelectArgsSchema', () => {
+  const selection = { from: { r: 0, c: 3 }, to: { r: 4, c: 3 } };
+
+  it('accepts the two ends of a selection, and only that', () => {
+    expect(wordSearchSelectArgsSchema.safeParse([selection]).success).toBe(true);
+    expect(wordSearchSelectArgsSchema.safeParse([selection, () => undefined]).success).toBe(false);
+    expect(wordSearchSelectArgsSchema.safeParse([]).success).toBe(false);
+  });
+
+  it('rejects garbage, a missing end and a payload that is not an object of two cells', () => {
+    for (const value of garbage) expect(wordSearchSelectArgsSchema.safeParse([value]).success).toBe(false);
+    expect(wordSearchSelectArgsSchema.safeParse([{ from: selection.from }]).success).toBe(false);
+    expect(wordSearchSelectArgsSchema.safeParse([{ to: selection.to }]).success).toBe(false);
+    expect(wordSearchSelectArgsSchema.safeParse([{ from: selection.from, to: null }]).success).toBe(false);
+    expect(wordSearchSelectArgsSchema.safeParse([{ from: selection.from, to: [4, 3] }]).success).toBe(false);
+  });
+
+  it('rejects negative, fractional and non-numeric coordinates in either end', () => {
+    for (const bad of [{ r: -1, c: 0 }, { r: 0, c: -1 }, { r: 0.5, c: 0 }, { r: '1', c: 0 }, { r: NaN, c: 0 }, { r: 1 }]) {
+      expect(wordSearchSelectArgsSchema.safeParse([{ from: bad, to: selection.to }]).success).toBe(false);
+      expect(wordSearchSelectArgsSchema.safeParse([{ from: selection.from, to: bad }]).success).toBe(false);
+    }
+  });
+
+  it('drops what the schema does not know, so a client cannot choose the room or the word', () => {
+    const parsed = wordSearchSelectArgsSchema.parse([{ ...selection, roomId: 'x', word: 'GATTO' }]);
+    expect(parsed[0]).toEqual(selection);
+  });
+});
+
+describe('wordSearchLanguageArgsSchema', () => {
+  it.each(WORD_LANGUAGES)('accepts %s', (language) => {
+    expect(wordSearchLanguageArgsSchema.safeParse([{ language }]).success).toBe(true);
+  });
+
+  it.each(['fr', 'EN', 'it ', '', 0, null, undefined, ['en']])('rejects %j as the language', (language) => {
+    expect(wordSearchLanguageArgsSchema.safeParse([{ language }]).success).toBe(false);
+  });
+
+  it('rejects garbage, a missing payload and extra arguments', () => {
+    for (const value of garbage) expect(wordSearchLanguageArgsSchema.safeParse([value]).success).toBe(false);
+    expect(wordSearchLanguageArgsSchema.safeParse([]).success).toBe(false);
+    expect(wordSearchLanguageArgsSchema.safeParse([{ language: 'en' }, 'it']).success).toBe(false);
   });
 });

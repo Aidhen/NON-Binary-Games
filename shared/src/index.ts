@@ -1,10 +1,11 @@
 import type { SudokuBoard, Difficulty } from './games/sudoku/types';
 import type { TakuzuGrid } from './games/takuzu/types';
 import type { FlowerCellChange, FlowerGrid, FlowerStatus } from './games/flower-field/types';
+import type { WordLanguage, WordSearchGrid } from './games/word-search/types';
 import type { Emote } from './emotes';
 import type { GameId } from './games';
 import type { PlayerColor, PlayerProfile } from './players';
-import type { CellUpdatePayload, CellUpdateResult, FlowerFieldCellPayload, FlowerFieldModePayload, ToggleNotePayload, SelectCellPayload } from './schemas';
+import type { CellUpdatePayload, CellUpdateResult, FlowerFieldCellPayload, FlowerFieldModePayload, ToggleNotePayload, SelectCellPayload, WordSearchLanguagePayload, WordSearchSelectPayload } from './schemas';
 
 export * from './games/sudoku/index';
 export * from './games/takuzu/index';
@@ -82,11 +83,33 @@ export interface FlowerFieldStartedPayload {
   mines: [number, number][];
 }
 
+/** A word the players have found: where it lies and who found it, by alias. Only the words found are told where they are. */
+export interface WordSearchFound {
+  word: string;
+  alias: string;
+  from: { r: number; c: number };
+  to: { r: number; c: number };
+}
+
+/**
+ * The Word Search of a room. The words to look for come in alphabetical order, so that the list says nothing about
+ * where they lie. Where each word lies stays on the server until somebody finds it.
+ */
+export interface WordSearchStartedPayload {
+  game: 'word-search';
+  size: number;
+  difficulty: DifficultyLevel;
+  language: WordLanguage;
+  grid: WordSearchGrid;
+  words: string[];
+  found: WordSearchFound[];
+}
+
 /**
  * What the players are told when a game opens or restarts, and the one who joins a room that is playing it.
  * `game` says which one it is: the page of a game ignores the start of any other.
  */
-export type GameStartedPayload = SudokuStartedPayload | TakuzuStartedPayload | FlowerFieldStartedPayload;
+export type GameStartedPayload = SudokuStartedPayload | TakuzuStartedPayload | FlowerFieldStartedPayload | WordSearchStartedPayload;
 
 export interface ServerToClientEvents {
   /** Sent to a player who joins, and to everybody each time a vote changes, a voter leaves or the game opens. */
@@ -107,6 +130,8 @@ export interface ServerToClientEvents {
   "flower-field:lost": (data: { mines: [number, number][]; exploded: [number, number] }) => void;
   /** The option to lose when a mine is opened, as the room has it now. */
   "flower-field:mode": (data: { explosive: boolean }) => void;
+  /** A word of the Word Search that somebody found, to everybody in the room, the player who found it included. The last one is followed by `game-won`. */
+  "word-search:found": (data: WordSearchFound) => void;
   "emote-received": (data: { alias: string; emote: Emote }) => void;
   /** Sent to the player who has just joined: the alias that is theirs in the list of players. */
   "joined-as": (alias: string) => void;
@@ -131,6 +156,10 @@ export interface ClientToServerEvents {
   "flower-field:flag": (payload: FlowerFieldCellPayload) => void;
   /** Only until the first cell is open: after that the option changes with a new game. */
   "flower-field:set-mode": (payload: FlowerFieldModePayload) => void;
+  /** The two ends of a selection. Nothing comes back when it is not a word: the page only shows what the server says. */
+  "word-search:select": (payload: WordSearchSelectPayload) => void;
+  /** A new puzzle in another language, with the level the room has. Everybody is told with `game-started`. */
+  "word-search:set-language": (payload: WordSearchLanguagePayload) => void;
   "send-emote": (emote: Emote) => void;
   "set-color": (color: PlayerColor) => void;
 }

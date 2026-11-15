@@ -9,8 +9,8 @@ describe('Sudoku Generator Engine', () => {
 
     expect(board.size).toBe(9);
     expect(board.boxSize).toBe(3);
-    expect(board.solution.length).toBe(9);
-    expect(board.solution[0].length).toBe(9);
+    expect(board.solution).toHaveLength(9);
+    expect(board.solution[0]).toHaveLength(9);
   });
 
   it('should generate a mathematically valid solution with no empty cells', () => {

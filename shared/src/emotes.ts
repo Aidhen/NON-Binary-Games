@@ -7,8 +7,8 @@
  * Each row has exactly EMOTES_PER_PAGE emotes (the last slot of the bar is the flip button) and no emote is repeated.
  */
 export const EMOTE_PAGES = [
-  ['💜', '❤️', '😂', '🌹', '👏', '🔥', '🤔', '😢', '😴'],
-  ['😎', '🎉', '🥳', '😍', '🙏', '💪', '👀', '🤯', '🫶'],
+  ['💜', '🔥', '😂', '😤', '👏', '😎', '🤔', '😢', '😴'],
+  ['❤️', '🎉', '🦆', '😍', '🙏', '💪', '😶‍🌫️', '🤯', '🫰'],
 ] as const;
 
 export const EMOTES_PER_PAGE = 9;

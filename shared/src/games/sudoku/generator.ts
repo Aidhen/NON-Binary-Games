@@ -5,7 +5,7 @@ import { solveWithSingles } from './solver';
 export function generateSudoku(difficulty: Difficulty, size: number = 9): SudokuBoard {
   const boxSize = Math.sqrt(size);
   if (!Number.isInteger(boxSize)) {
-    throw new TypeError("Grid size must be a perfect square (e.g., 4, 9, 16).");
+    throw new Error("Grid size must be a perfect square (e.g., 4, 9, 16).");
   }
 
   const solution = generateFullGrid(size, boxSize);

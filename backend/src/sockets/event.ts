@@ -6,7 +6,7 @@ import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
 import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
-import type { GridGame, RoomState, SudokuGame, TakuzuGame, ValueGridGame } from "../rooms/roomStore";
+import type { GridGame, RoomGame, RoomState, SudokuGame, TakuzuGame, ValueGridGame } from "../rooms/roomStore";
 import { createFlowerField, flowerFieldStarted, isRevealable, minesOf, revealCell, setExplosive, toggleFlag } from "../rooms/flowerField";
 import { assignProfile, colorIsFree, snapshotPlayers } from "../rooms/profiles";
 import { chosenGame, snapshotLobby } from "../rooms/lobby";
@@ -55,7 +55,7 @@ const createTakuzu = (difficulty: DifficultyLevel): TakuzuGame => {
 };
 
 /** One entry per game: a new id in GAME_IDS does not compile until it says how its state is created. `previous` is the game the room was playing. */
-const createGame: Record<GameId, (difficulty: DifficultyLevel, previous?: GridGame) => GridGame> = {
+const createGame: Record<GameId, (difficulty: DifficultyLevel, previous?: RoomGame) => RoomGame> = {
   sudoku: createSudoku,
   takuzu: createTakuzu,
   'flower-field': createFlowerField,
@@ -79,7 +79,7 @@ const takuzuStarted = (game: TakuzuGame): GameStartedPayload => ({
 });
 
 /** One entry per game: what a player is told about the game the room has open. */
-const gameStarted = (game: GridGame): GameStartedPayload => {
+const gameStarted = (game: RoomGame): GameStartedPayload => {
   switch (game.id) {
     case 'sudoku': return sudokuStarted(game);
     case 'takuzu': return takuzuStarted(game);

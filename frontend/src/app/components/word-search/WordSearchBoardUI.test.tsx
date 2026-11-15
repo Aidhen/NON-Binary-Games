@@ -282,7 +282,7 @@ describe('WordSearchBoardUI', () => {
 
       expect(screen.getAllByRole('button').filter((button) => button.tabIndex === 0)).toEqual([cell(0, 0)]);
 
-      cell(0, 0).focus();
+      act(() => cell(0, 0).focus());
       fireEvent.keyDown(cell(0, 0), { key: 'ArrowRight' });
       expect(cell(0, 1)).toHaveFocus();
       fireEvent.keyDown(cell(0, 1), { key: 'ArrowDown' });
@@ -297,7 +297,7 @@ describe('WordSearchBoardUI', () => {
     it('stops at the edge of the grid', () => {
       setup();
 
-      cell(0, 0).focus();
+      act(() => cell(0, 0).focus());
       fireEvent.keyDown(cell(0, 0), { key: 'ArrowUp' });
       fireEvent.keyDown(cell(0, 0), { key: 'ArrowLeft' });
 
@@ -307,7 +307,7 @@ describe('WordSearchBoardUI', () => {
     it('marks the first and the last letter on the cell the focus is on: Enter and Space click a button', () => {
       const onSelect = setup();
 
-      cell(0, 0).focus();
+      act(() => cell(0, 0).focus());
       fireEvent.click(document.activeElement as HTMLElement);
       fireEvent.keyDown(cell(0, 0), { key: 'ArrowRight' });
       fireEvent.keyDown(cell(0, 1), { key: 'ArrowRight' });

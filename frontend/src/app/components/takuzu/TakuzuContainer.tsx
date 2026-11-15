@@ -19,6 +19,10 @@ import { usePlayers } from '@/lib/usePlayers';
 /** Empty, then the first symbol, then the second, then empty again: a tap is the whole input. */
 const nextValue = (value: number) => (value + 1) % 3;
 
+/** A copy of the grid with one cell changed: the rows that do not change are the same ones. */
+const withCell = (grid: number[][], r: number, c: number, value: number): number[][] =>
+  grid.map((row, index) => (index === r ? row.map((cell, column) => (column === c ? value : cell)) : row));
+
 export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
   const [initial, setInitial] = useState<number[][]>();
   const [grid, setGrid] = useState<number[][]>();
@@ -41,7 +45,7 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
   const setCell = useCallback((r: number, c: number, value: number) => {
     if (!grid || !initial || isGameWon || initial[r][c] !== 0) return;
 
-    setGrid(grid.map((row, index) => (index === r ? row.map((cell, column) => (column === c ? value : cell)) : row)));
+    setGrid(withCell(grid, r, c, value));
     getSocket().emit('cell-update', { r, c, v: value }, (result) => {
       // The server did not apply the move: ask for the real state instead of keeping a cell nobody else sees.
       if (!result.ok) getSocket().emit('join-room', roomId);
@@ -90,7 +94,7 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
       setIsGameWon(false);
     };
     const onCellUpdated = ({ r, c, v }: { r: number; c: number; v: number }) =>
-      setGrid((previous) => previous?.map((row, index) => (index === r ? row.map((cell, column) => (column === c ? v : cell)) : row)));
+      setGrid((previous) => previous && withCell(previous, r, c, v));
     const onPlayerSelectedCell = ({ alias, r, c }: { alias: string; r: number | null; c: number | null }) =>
       setOthersSelections((previous) => {
         const next = { ...previous };

@@ -20,7 +20,7 @@ export function Dropdown<T extends string>({
   options,
   onChange,
   className
-}: DropdownProps<T>) {
+}: Readonly<DropdownProps<T>>) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

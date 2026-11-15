@@ -155,7 +155,8 @@ export const en = {
     retry: "Try again"
   },
   emotes: {
-    title: "Reactions"
+    title: "Reactions",
+    more: "More reactions"
   }
 };
 

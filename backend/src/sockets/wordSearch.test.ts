@@ -10,6 +10,7 @@ import type { ClientToServerEvents, LobbyState, ServerToClientEvents, WordSearch
 import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, voteLimit } from './event';
 import { logger } from '../logger';
 import type { WordSearchGame } from '../rooms/roomStore';
+import { FORBIDDEN } from '../rooms/wordSearchBlocklist';
 
 /** A 5x5 puzzle made by hand, so that the test knows where the words are: CAT on the first row, DOG down the last column, ANT backwards on the last row. */
 const handMade = (): WordSearchPuzzle => {
@@ -129,7 +130,7 @@ describe('a room that plays the Word Search', () => {
 
     expect(payload).toMatchObject({ size: 5, difficulty: 'easy', language: 'en', words: ['ANT', 'CAT', 'DOG'], found: [] });
     expect(payload.grid).toEqual(handMade().grid);
-    expect(generateWordSearch).toHaveBeenCalledWith('easy', 'en');
+    expect(generateWordSearch).toHaveBeenCalledWith('easy', 'en', FORBIDDEN);
     expect(rooms.get(roomId)?.game?.id).toBe('word-search');
   });
 
@@ -330,7 +331,7 @@ describe('a room that plays the Word Search', () => {
       const [told, alsoTold] = await Promise.all([toFirst, toSecond]);
       expect(told).toEqual(alsoTold);
       expect(asWordSearch(told)).toMatchObject({ language: 'it', difficulty: 'easy', found: [] });
-      expect(generateWordSearch).toHaveBeenLastCalledWith('easy', 'it');
+      expect(generateWordSearch).toHaveBeenLastCalledWith('easy', 'it', FORBIDDEN);
       expect(gameOf(roomId)).toMatchObject({ language: 'it', status: 'playing' });
       expect(gameOf(roomId).found.size).toBe(0);
       expect(rooms.get(roomId)?.played).toBe(false);
@@ -383,7 +384,7 @@ describe('a room that plays the Word Search', () => {
       player.emit('restart-game', 'hard');
 
       expect(asWordSearch(await restarted)).toMatchObject({ language: 'it', difficulty: 'hard', found: [] });
-      expect(generateWordSearch).toHaveBeenCalledWith('hard', 'it');
+      expect(generateWordSearch).toHaveBeenCalledWith('hard', 'it', FORBIDDEN);
     });
 
     it('keeps the puzzle that is being played when a new one cannot be made, and works on the next try', async () => {

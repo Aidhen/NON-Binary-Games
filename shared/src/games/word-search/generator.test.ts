@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { DIFFICULTIES } from '../sudoku/types';
 import { findWordOccurrences, generateWordSearch, getWordSearchLevel, settleFiller } from './generator';
 import type { WordDirection } from './generator';
-import { BLOCKLIST } from './blocklist';
 import { WORD_LANGUAGES } from './types';
 import type { WordPlacement } from './types';
 import { WORDS } from './words/index';
 
 const ALL_DIRECTIONS: WordDirection[] = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]];
-const FORBIDDEN = WORD_LANGUAGES.flatMap(language => BLOCKLIST[language]);
+// Pairs of letters that are in no word of the lists but turn up all the time in random filler, so a generator that ignores the list gets caught at once. The real list lives in the backend.
+const FORBIDDEN = ['QX', 'JZ', 'VK', 'ZQ', 'XJ', 'WQ'];
 
 // Written apart from the generator on purpose: from every cell, in every direction, the cells that spell the word. A word that reads the same both ways is found twice there, hence the set of spans.
 function countOccurrences(grid: string[][], word: string): number {
@@ -61,7 +61,7 @@ describe('generateWordSearch', () => {
   describe.each(DIFFICULTIES.flatMap(d => WORD_LANGUAGES.map(l => [d, l] as const)))('%s, %s', (difficulty, language) => {
     const { size, wordCount, directions, backwards } = getWordSearchLevel(difficulty);
     const allowed = new Set((backwards ? directions.flatMap(([dr, dc]) => [[dr, dc], [-dr, -dc]]) : directions).map(String));
-    const runs = Array.from({ length: 5 }, () => generateWordSearch(difficulty, language));
+    const runs = Array.from({ length: 5 }, () => generateWordSearch(difficulty, language, FORBIDDEN));
 
     it('gives a square grid of single capital letters', () => {
       for (const puzzle of runs) {
@@ -111,15 +111,15 @@ describe('generateWordSearch', () => {
   });
 
   it('gives different puzzles each time', () => {
-    const grids = new Set(Array.from({ length: 5 }, () => generateWordSearch('medium', 'en').grid.flat().join('')));
+    const grids = new Set(Array.from({ length: 5 }, () => generateWordSearch('medium', 'en', FORBIDDEN).grid.flat().join('')));
 
     expect(grids.size).toBeGreaterThan(1);
   });
 
   it('throws for a difficulty or a language it does not know', () => {
-    expect(() => generateWordSearch('impossible' as never, 'en')).toThrow('Unknown difficulty');
-    expect(() => generateWordSearch('easy', 'xx' as never)).toThrow('Unknown language');
-    expect(() => generateWordSearch('easy', 'toString' as never)).toThrow('Unknown language');
+    expect(() => generateWordSearch('impossible' as never, 'en', FORBIDDEN)).toThrow('Unknown difficulty');
+    expect(() => generateWordSearch('easy', 'xx' as never, FORBIDDEN)).toThrow('Unknown language');
+    expect(() => generateWordSearch('easy', 'toString' as never, FORBIDDEN)).toThrow('Unknown language');
   });
 
   it('never takes long, level after level', () => {
@@ -128,7 +128,7 @@ describe('generateWordSearch', () => {
       for (const language of WORD_LANGUAGES) {
         for (let run = 0; run < 20; run++) {
           const start = Date.now();
-          generateWordSearch(difficulty, language);
+          generateWordSearch(difficulty, language, FORBIDDEN);
           expect(Date.now() - start).toBeLessThan(1000);
         }
       }

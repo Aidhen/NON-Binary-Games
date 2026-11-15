@@ -1,11 +1,12 @@
 import { generateWordSearch, isSolved, resolveSelection } from "@nbg/shared";
 import type { DifficultyLevel, WordSearchCell, WordSearchFound, WordSearchStartedPayload } from "@nbg/shared";
 import type { RoomGame, WordSearchGame } from "./roomStore";
+import { FORBIDDEN } from "./wordSearchBlocklist";
 
 /** `previous` is the game the room was playing: the language is a choice of the table, so it stays. The first one is English. */
 export const createWordSearch = (difficulty: DifficultyLevel, previous?: RoomGame): WordSearchGame => {
   const language = previous?.id === 'word-search' ? previous.language : 'en';
-  return { id: 'word-search', difficulty, language, puzzle: generateWordSearch(difficulty, language), found: new Map(), status: 'playing' };
+  return { id: 'word-search', difficulty, language, puzzle: generateWordSearch(difficulty, language, FORBIDDEN), found: new Map(), status: 'playing' };
 };
 
 const foundList = (game: WordSearchGame): WordSearchFound[] =>

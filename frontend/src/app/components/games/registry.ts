@@ -5,6 +5,7 @@ import { FlowerFieldCover } from './covers/FlowerFieldCover';
 import { MysteryCover } from './covers/MysteryCover';
 import { SudokuCover } from './covers/SudokuCover';
 import { TakuzuCover } from './covers/TakuzuCover';
+import { WordSearchCover } from './covers/WordSearchCover';
 import type { AvailableGame, GameEntry } from './types';
 
 /**
@@ -41,6 +42,15 @@ export const GAMES: readonly GameEntry[] = [
     minPlayers: 1,
     maxPlayers: MAX_PLAYERS_PER_ROOM,
     Game: lazy(() => import('../flower-field/FlowerFieldContainer').then((module) => ({ default: module.FlowerFieldContainer }))),
+  },
+  {
+    id: 'word-search',
+    status: 'available',
+    titleKey: 'games.wordSearch.title',
+    Cover: WordSearchCover,
+    minPlayers: 1,
+    maxPlayers: MAX_PLAYERS_PER_ROOM,
+    Game: lazy(() => import('../word-search/WordSearchContainer').then((module) => ({ default: module.WordSearchContainer }))),
   },
   { id: 'mystery-2', status: 'soon', titleKey: 'games.mystery.title', Cover: MysteryCover, minPlayers: 1, maxPlayers: MAX_PLAYERS_PER_ROOM },
 ];

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DIFFICULTIES } from './games/sudoku/types';
+import { WORD_LANGUAGES } from './games/word-search/types';
 import { EMOTES } from './emotes';
 import { GAME_IDS } from './games';
 import { PLAYER_COLORS } from './players';
@@ -26,6 +27,9 @@ export const emoteSchema = z.enum(EMOTES);
 export const playerColorSchema = z.enum(PLAYER_COLORS);
 
 export const gameIdSchema = z.enum(GAME_IDS);
+
+/** The language of the words of a Word Search. It is a choice of the room, not of the interface of each player. */
+export const wordLanguageSchema = z.enum(WORD_LANGUAGES);
 
 /** The length of the UUID the app generates for a room (crypto.randomUUID()). */
 export const MAX_ROOM_ID_LENGTH = 36;
@@ -83,6 +87,16 @@ export const flowerFieldModePayloadSchema = z.object({
   explosive: z.boolean(),
 });
 
+/** The two ends of what a player selected in the Word Search. The server decides whether it is a word: bounds depend on the size of the grid. */
+export const wordSearchSelectPayloadSchema = z.object({
+  from: z.object({ r: coordinateSchema, c: coordinateSchema }),
+  to: z.object({ r: coordinateSchema, c: coordinateSchema }),
+});
+
+export const wordSearchLanguagePayloadSchema = z.object({
+  language: wordLanguageSchema,
+});
+
 export type CellUpdatePayload = z.infer<typeof cellUpdatePayloadSchema>;
 /** `ok: false` means the server did not apply the move, so the client must resynchronize. */
 export interface CellUpdateResult {
@@ -92,6 +106,8 @@ export type ToggleNotePayload = z.infer<typeof toggleNotePayloadSchema>;
 export type SelectCellPayload = z.infer<typeof selectCellPayloadSchema>;
 export type FlowerFieldCellPayload = z.infer<typeof flowerFieldCellPayloadSchema>;
 export type FlowerFieldModePayload = z.infer<typeof flowerFieldModePayloadSchema>;
+export type WordSearchSelectPayload = z.infer<typeof wordSearchSelectPayloadSchema>;
+export type WordSearchLanguagePayload = z.infer<typeof wordSearchLanguagePayloadSchema>;
 
 /**
  * Argument lists of the client-to-server events, as tuples.
@@ -109,6 +125,8 @@ export const toggleNoteArgsSchema = z.tuple([toggleNotePayloadSchema]);
 export const selectCellArgsSchema = z.tuple([selectCellPayloadSchema]);
 export const flowerFieldCellArgsSchema = z.tuple([flowerFieldCellPayloadSchema]);
 export const flowerFieldModeArgsSchema = z.tuple([flowerFieldModePayloadSchema]);
+export const wordSearchSelectArgsSchema = z.tuple([wordSearchSelectPayloadSchema]);
+export const wordSearchLanguageArgsSchema = z.tuple([wordSearchLanguagePayloadSchema]);
 export const restartGameArgsSchema = z.tuple([difficultySchema]);
 export const sendEmoteArgsSchema = z.tuple([emoteSchema]);
 export const setColorArgsSchema = z.tuple([playerColorSchema]);

@@ -50,6 +50,24 @@ export const en = {
     mine: "mine",
     empty: "no mines around"
   },
+  wordSearch: {
+    cleared: "All the words are found!",
+    compliment: "Every word was hiding somewhere, and you found them together.",
+    rules: "How it works",
+    ruleFind: "Find the words of the list in the grid. They run in a straight line, in any of the eight directions, even backwards.",
+    ruleDrag: "Drag from the first letter to the last, or tap the first letter and then the last. Tap the first again to cancel.",
+    ruleKeyboard: "With the keyboard: arrow keys to move, Enter or Space to mark the first and the last letter, Escape to cancel.",
+    words: "Words to find",
+    counter: "{found}/{total}",
+    counterLabel: "{found} of {total} words found",
+    wordFound: "found",
+    language: "Language of the words",
+    languageHint: "This is the language of the words in the puzzle, not of the page. Changing it starts a new puzzle for everybody.",
+    cell: "{letter}, row {row}, column {column}",
+    cellStart: "{letter}, row {row}, column {column}, first letter selected",
+    cellFound: "{letter}, row {row}, column {column}, part of a word found",
+    grid: "Word search grid"
+  },
   takuzu: {
     cleared: "Puzzle cleared!",
     compliment: "Every row and column is in balance.",
@@ -121,6 +139,9 @@ export const en = {
     },
     flowerField: {
       title: "Flower Field"
+    },
+    wordSearch: {
+      title: "Word Search"
     },
     mystery: {
       title: "Mystery box"

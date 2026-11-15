@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, playerIdSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, playerIdSchema, wordSearchLanguageArgsSchema, wordSearchSelectArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, DifficultyLevel, GameId, GameStartedPayload, ServerToClientEvents, SocketData, SudokuStartedPayload } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
@@ -8,6 +8,7 @@ import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
 import type { GridGame, RoomGame, RoomState, SudokuGame, TakuzuGame, ValueGridGame } from "../rooms/roomStore";
 import { createFlowerField, flowerFieldStarted, isRevealable, minesOf, revealCell, setExplosive, toggleFlag } from "../rooms/flowerField";
+import { createWordSearch, selectWord, wordSearchStarted } from "../rooms/wordSearch";
 import { assignProfile, colorIsFree, snapshotPlayers } from "../rooms/profiles";
 import { chosenGame, snapshotLobby } from "../rooms/lobby";
 
@@ -59,6 +60,7 @@ const createGame: Record<GameId, (difficulty: DifficultyLevel, previous?: RoomGa
   sudoku: createSudoku,
   takuzu: createTakuzu,
   'flower-field': createFlowerField,
+  'word-search': createWordSearch,
 };
 
 const sudokuStarted = (game: SudokuGame): SudokuStartedPayload => ({
@@ -84,6 +86,7 @@ const gameStarted = (game: RoomGame): GameStartedPayload => {
     case 'sudoku': return sudokuStarted(game);
     case 'takuzu': return takuzuStarted(game);
     case 'flower-field': return flowerFieldStarted(game);
+    case 'word-search': return wordSearchStarted(game);
   }
 };
 
@@ -91,7 +94,13 @@ const gameStarted = (game: RoomGame): GameStartedPayload => {
 const maxValueOf = (game: ValueGridGame): number => (game.id === 'sudoku' ? game.board.size : TAKUZU_SYMBOLS.length);
 
 /** Cells on each side of the grid. */
-const sizeOf = (game: GridGame): number => (game.id === 'flower-field' ? game.size : game.board.size);
+const sizeOf = (game: GridGame): number => {
+  switch (game.id) {
+    case 'flower-field': return game.size;
+    case 'word-search': return game.puzzle.size;
+    default: return game.board.size;
+  }
+};
 
 /** Tabs (sockets) one player can have open in the same room. */
 export const MAX_SOCKETS_PER_PLAYER = 3;
@@ -195,7 +204,7 @@ const getCurrentGridGame = (socket: GameSocket) => {
 /** The same, for the events of a game where the players write a value in a cell (the Sudoku and the Takuzu). */
 const getCurrentValueGame = (socket: GameSocket) => {
   const current = getCurrentRoom(socket);
-  if (!current?.room.game || current.room.game.id === 'flower-field') return undefined;
+  if (!current?.room.game || (current.room.game.id !== 'sudoku' && current.room.game.id !== 'takuzu')) return undefined;
 
   return { ...current, game: current.room.game };
 };
@@ -204,6 +213,14 @@ const getCurrentValueGame = (socket: GameSocket) => {
 const getCurrentFlowerField = (socket: GameSocket) => {
   const current = getCurrentRoom(socket);
   if (current?.room.game?.id !== 'flower-field') return undefined;
+
+  return { ...current, game: current.room.game };
+};
+
+/** The same, for the events of the Word Search. */
+const getCurrentWordSearch = (socket: GameSocket) => {
+  const current = getCurrentRoom(socket);
+  if (current?.room.game?.id !== 'word-search') return undefined;
 
   return { ...current, game: current.room.game };
 };
@@ -475,6 +492,39 @@ export const setupSocketHandlers = (io: GameServer) => {
       }
 
       io.to(channelOf(roomId)).emit("flower-field:mode", { explosive });
+    }, allowEvent));
+
+    socket.on("word-search:select", safeHandler(wordSearchSelectArgsSchema, ({ from, to }) => {
+      const current = getCurrentWordSearch(socket);
+      if (!current) return;
+      const { roomId, room, game, alias } = current;
+
+      const size = game.puzzle.size;
+      if (from.r >= size || from.c >= size || to.r >= size || to.c >= size) return;
+
+      const result = selectWord(game, from, to, alias);
+      if (!result) return;
+
+      room.played = true;
+      const channel = io.to(channelOf(roomId));
+      channel.emit("word-search:found", result.found);
+      if (result.won) channel.emit("game-won");
+    }, allowEvent));
+
+    socket.on("word-search:set-language", safeHandler(wordSearchLanguageArgsSchema, ({ language }) => {
+      const current = getCurrentWordSearch(socket);
+      if (!current) return;
+      const { roomId, room, game: playing } = current;
+
+      if (playing.language === language) return;
+      // A new puzzle costs what a restart costs, and is paid the same way. Dropped without an answer, like a restart.
+      if (!allowRestart(budgetKey()) || !allowBoardGeneration()) return;
+
+      const game = createWordSearch(playing.difficulty, { ...playing, language });
+      room.game = game;
+      room.played = false;
+
+      io.to(channelOf(roomId)).emit("game-started", gameStarted(game));
     }, allowEvent));
 
     // Fire and forget: the sender already shows its own emote, so only the others are notified.

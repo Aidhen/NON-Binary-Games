@@ -9,6 +9,7 @@ import type { CellUpdatePayload, CellUpdateResult, FlowerFieldCellPayload, Flowe
 export * from './games/sudoku/index';
 export * from './games/takuzu/index';
 export * from './games/flower-field/index';
+export * from './games/word-search/index';
 export * from './schemas';
 export * from './emotes';
 export * from './games';

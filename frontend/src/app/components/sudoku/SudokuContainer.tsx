@@ -25,7 +25,7 @@ export interface GameSettings {
   godMode: boolean;
 }
 
-export function SudokuContainer({ roomId }: { roomId: string }) {
+export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
   const [board, setBoard] = useState<SudokuBoard>();
   const [playerGrid, setPlayerGrid] = useState<number[][]>();
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);

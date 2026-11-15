@@ -8,7 +8,7 @@ interface ServerLoaderProps {
   onRetry: () => void;
 }
 
-export function ServerLoader({ status, onRetry }: ServerLoaderProps) {
+export function ServerLoader({ status, onRetry }: Readonly<ServerLoaderProps>) {
   const { t } = useTranslation();
 
   const isWaiting = status === 'waking' || status === 'failed';

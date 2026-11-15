@@ -39,7 +39,7 @@ export function Lobby({ roomId, games, players, self, votes, status, onRetry, on
   const ownVote = votes?.find(({ alias }) => alias === self)?.game ?? null;
   // The box the player touched last, else the one they voted for, else the first that can be played.
   const selected = playable.find(({ id }) => id === (lookedAt ?? ownVote)) ?? playable[0];
-  const voted = selected !== undefined && ownVote === selected.id;
+  const voted = ownVote === selected?.id;
   const count = selected ? (votes ?? []).filter((vote) => vote.game === selected.id).length : 0;
 
   return (

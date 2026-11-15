@@ -9,7 +9,7 @@ interface EmoteBarProps {
   disabled?: boolean;
 }
 
-export function EmoteBar({ onSend, disabled = false }: EmoteBarProps) {
+export function EmoteBar({ onSend, disabled = false }: Readonly<EmoteBarProps>) {
   const { t } = useTranslation();
 
   return (

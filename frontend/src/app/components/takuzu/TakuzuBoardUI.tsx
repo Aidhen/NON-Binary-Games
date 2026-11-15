@@ -25,6 +25,19 @@ interface TakuzuBoardUIProps {
   highlightedAlias?: string | null;
 }
 
+const backgroundClass = (isSelected: boolean, isGiven: boolean): string => {
+  if (isSelected) return 'bg-[var(--cell-background-selected)]';
+  if (isGiven) return 'bg-[var(--cell-background-initial)]';
+  return 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)]';
+};
+
+/** The color of a symbol: the ones the puzzle gave are bolder, and a clash shows only on a cell a player wrote. */
+const symbolClass = (isGiven: boolean, isConflict: boolean): string => {
+  if (isGiven) return 'text-[var(--number-initial)] font-bold';
+  if (isConflict) return 'text-[var(--number-error)] font-bold';
+  return 'text-[var(--number-player)] font-medium';
+};
+
 export function TakuzuBoardUI({ size, grid, initial, selectedCell, conflicts, isGameWon, onCellClick, othersSelections = {}, profiles = {}, highlightedAlias = null }: Readonly<TakuzuBoardUIProps>) {
   const { t } = useTranslation();
 
@@ -73,9 +86,9 @@ export function TakuzuBoardUI({ size, grid, initial, selectedCell, conflicts, is
                 "cursor-pointer select-none overflow-hidden focus-visible:-outline-offset-4",
                 c < size - 1 && "border-r border-r-[var(--grid-border-inner)]",
                 r < size - 1 && "border-b border-b-[var(--grid-border-inner)]",
-                isSelected ? 'bg-[var(--cell-background-selected)]' : isGiven ? 'bg-[var(--cell-background-initial)]' : 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)]',
+                backgroundClass(isSelected, isGiven),
                 value === 0 && 'text-transparent',
-                value !== 0 && (isGiven ? 'text-[var(--number-initial)] font-bold' : isConflict ? 'text-[var(--number-error)] font-bold' : 'text-[var(--number-player)] font-medium'),
+                value !== 0 && symbolClass(isGiven, isConflict),
                 isSelected && 'outline-2 -outline-offset-2 outline-[var(--number-player)]/70',
                 ringClass
               )}

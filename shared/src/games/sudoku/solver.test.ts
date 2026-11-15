@@ -44,23 +44,14 @@ describe('solveWithSingles', () => {
   describe('refuses a puzzle whose given numbers clash', () => {
     const empty = () => parse('0'.repeat(81));
 
-    it('in a row', () => {
+    // Where the second 5 goes: the first one is in the top left corner.
+    it.each([
+      ['row', 0, 8],
+      ['column', 8, 0],
+      ['box', 1, 1],
+    ])('in a %s', (_unit, r, c) => {
       const puzzle = empty();
-      puzzle[0][0] = 5; puzzle[0][8] = 5;
-
-      expect(solveWithSingles(puzzle, 9, 3)).toBeNull();
-    });
-
-    it('in a column', () => {
-      const puzzle = empty();
-      puzzle[0][0] = 5; puzzle[8][0] = 5;
-
-      expect(solveWithSingles(puzzle, 9, 3)).toBeNull();
-    });
-
-    it('in a box', () => {
-      const puzzle = empty();
-      puzzle[0][0] = 5; puzzle[1][1] = 5;
+      puzzle[0][0] = 5; puzzle[r][c] = 5;
 
       expect(solveWithSingles(puzzle, 9, 3)).toBeNull();
     });

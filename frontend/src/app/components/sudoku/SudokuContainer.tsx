@@ -8,6 +8,8 @@ import { ServerLoader } from '../loader/ServerLoader';
 import { EmoteBar } from '../emotes/EmoteBar';
 import { EmoteOverlay } from '../emotes/EmoteOverlay';
 import { PlayerBar } from '../players/PlayerBar';
+import { GameOverCard } from '../play/GameOverCard';
+import { GameToolbar } from '../play/GameToolbar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from "@/lib/socket";
@@ -278,18 +280,7 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
     <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
       <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={setColor} onHighlight={highlight} />
 
-      <div className="w-full flex justify-between items-center">
-        <div className="rounded-full bg-[var(--paper)] px-4 py-1.5 text-[var(--subtitle-text)] text-sm font-bold uppercase tracking-wider shadow-[var(--shadow-paper-sm)]">
-          {t('sudoku.mode')}: {t(`sudoku.${difficulty}`)}
-        </div>
-        <button
-          onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-          aria-expanded={isSettingsOpen}
-          className="cursor-pointer rounded-full bg-[var(--paper)] px-4 py-1.5 text-[var(--subtitle-text)] hover:text-[var(--title-text)] text-sm font-bold uppercase shadow-[var(--shadow-paper-sm)] transition-colors"
-        >
-          {isSettingsOpen ? t('sudoku.closeSettings') : `${t('sudoku.settings')}`}
-        </button>
-      </div>
+      <GameToolbar difficulty={difficulty} isSettingsOpen={isSettingsOpen} onToggleSettings={() => setIsSettingsOpen(!isSettingsOpen)} />
 
       {isSettingsOpen && (
         <SettingsPanel
@@ -302,33 +293,7 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
 
       <div className="relative w-full">
         {isGameWon && (
-          <div className={cn(
-            "absolute inset-0 z-20 rounded-2xl",
-            "flex flex-col items-center justify-center",
-            "bg-black/60 backdrop-blur-sm transition-all duration-500"
-          )}>
-            <div className={cn(
-              "flex flex-col items-center p-8 text-center rounded-[var(--radius-paper)]",
-              "bg-[var(--paper)] shadow-[var(--shadow-paper)]"
-            )}>
-              <h2 className="font-display text-3xl font-extrabold text-[var(--title-text)] mb-2">
-                {t('sudoku.cleared')}
-              </h2>
-              <p className="text-[var(--subtitle-text)] mb-6 font-medium">
-                {t('sudoku.compliment')}
-              </p>
-              <button
-                onClick={() => getSocket().emit("restart-game", difficulty)}
-                className={cn(
-                  "cursor-pointer px-6 py-3 rounded-[var(--radius-control)] font-display text-lg font-extrabold",
-                  "bg-[var(--accent)] text-[var(--accent-ink)] shadow-[var(--shadow-paper-sm)]",
-                  "transition-transform duration-150 motion-reduce:transition-none active:translate-y-0.5 active:shadow-none"
-                )}
-              >
-                {t('sudoku.playAgain')}
-              </button>
-            </div>
-          </div>
+          <GameOverCard title={t('sudoku.cleared')} message={t('sudoku.compliment')} onPlayAgain={() => getSocket().emit('restart-game', difficulty)} />
         )}
 
         <SudokuBoardUI

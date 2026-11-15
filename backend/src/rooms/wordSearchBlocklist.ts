@@ -2,7 +2,7 @@ import { WORD_LANGUAGES } from "@nbg/shared";
 import type { WordLanguage } from "@nbg/shared";
 
 /** ROT13: the words are kept scrambled so that nobody has to read them in the code, and are not found by searching it. It hides nothing from whoever decodes them on purpose. */
-const decode = (scrambled: string): string[] => scrambled.replace(/[A-Z]/g, letter => String.fromCharCode(((letter.charCodeAt(0) - 65 + 13) % 26) + 65)).split(' ');
+const decode = (scrambled: string): string[] => scrambled.replace(/[A-Z]/g, letter => String.fromCodePoint(((letter.codePointAt(0) ?? 65) - 65 + 13) % 26 + 65)).split(' ');
 
 /**
  * Words the random filler letters must never spell, in any of the 8 directions: slurs, insults, sexual and violent

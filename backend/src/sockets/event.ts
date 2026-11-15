@@ -94,7 +94,13 @@ const gameStarted = (game: RoomGame): GameStartedPayload => {
 const maxValueOf = (game: ValueGridGame): number => (game.id === 'sudoku' ? game.board.size : TAKUZU_SYMBOLS.length);
 
 /** Cells on each side of the grid. */
-const sizeOf = (game: GridGame): number => (game.id === 'flower-field' ? game.size : game.id === 'word-search' ? game.puzzle.size : game.board.size);
+const sizeOf = (game: GridGame): number => {
+  switch (game.id) {
+    case 'flower-field': return game.size;
+    case 'word-search': return game.puzzle.size;
+    default: return game.board.size;
+  }
+};
 
 /** Tabs (sockets) one player can have open in the same room. */
 export const MAX_SOCKETS_PER_PLAYER = 3;

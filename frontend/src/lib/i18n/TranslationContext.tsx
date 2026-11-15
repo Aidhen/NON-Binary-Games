@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { en, Translations } from '@/locales/en';
 import { it } from '@/locales/it';
 
@@ -16,7 +16,7 @@ interface TranslationContextType {
 
 const TranslationContext = createContext<TranslationContextType | null>(null);
 
-export function TranslationProvider({ children }: { children: React.ReactNode }) {
+export function TranslationProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [language, setLanguage] = useState<Language>('en');
 
   const t = useCallback((path: string): string => {
@@ -34,8 +34,11 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
     return current;
   }, [language]);
 
+  // `t` changes with the language and `setLanguage` never does: the value is new only when the language is.
+  const value = useMemo(() => ({ t, language, setLanguage }), [t, language]);
+
   return (
-    <TranslationContext.Provider value={{ t, language, setLanguage }}>
+    <TranslationContext.Provider value={value}>
       {children}
     </TranslationContext.Provider>
   );

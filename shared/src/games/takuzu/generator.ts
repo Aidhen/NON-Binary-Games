@@ -38,7 +38,7 @@ export function generateTakuzu(difficulty: Difficulty): TakuzuBoard {
   // Never expected to fail: every cell was emptied only after deduction still finished the puzzle.
   // If it ever does, a player would get a puzzle that needs a guess, so fail loudly instead.
   const solved = solveTakuzuByDeduction(initial);
-  if (!solved || !solved.every((row, r) => row.every((value, c) => value === solution[r][c]))) {
+  if (!solved?.every((row, r) => row.every((value, c) => value === solution[r][c]))) {
     throw new Error("Generated a puzzle that cannot be solved by deduction alone");
   }
 

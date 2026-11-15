@@ -157,6 +157,7 @@ export const it: Translations = {
     retry: "Riprova"
   },
   emotes: {
-    title: "Reazioni"
+    title: "Reazioni",
+    more: "Altre reazioni"
   }
 };

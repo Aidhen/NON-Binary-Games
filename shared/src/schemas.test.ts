@@ -16,7 +16,7 @@ import {
   wordSearchLanguageArgsSchema,
   wordSearchSelectArgsSchema,
 } from './schemas';
-import { EMOTES } from './emotes';
+import { EMOTE_PAGES, EMOTES, EMOTES_PER_PAGE } from './emotes';
 import { GAME_IDS } from './games';
 import { WORD_LANGUAGES } from './games/word-search/types';
 
@@ -170,9 +170,12 @@ describe('restartGameArgsSchema', () => {
 });
 
 describe('EMOTES', () => {
-  it('stays small enough to fit a button bar and has no duplicates', () => {
-    expect(EMOTES.length).toBeGreaterThan(0);
-    expect(EMOTES.length).toBeLessThanOrEqual(10);
+  it('fills both sides of the emote bar and has no duplicates', () => {
+    expect(EMOTE_PAGES).toHaveLength(2);
+    for (const page of EMOTE_PAGES) {
+      expect(page).toHaveLength(EMOTES_PER_PAGE);
+    }
+    expect(EMOTES).toEqual([...EMOTE_PAGES[0], ...EMOTE_PAGES[1]]);
     expect(new Set(EMOTES).size).toBe(EMOTES.length);
   });
 });

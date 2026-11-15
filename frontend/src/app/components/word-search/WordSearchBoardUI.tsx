@@ -68,9 +68,9 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
   const styleOf = (alias: string) => (Object.hasOwn(profiles, alias) ? styleOfColor(profiles[alias].color) : UNKNOWN_PLAYER_STYLE);
 
   const foundByCell = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const { alias, from, to } of found) {
-      for (const { r, c } of lineCells(from, to, size)) map.set(`${r}-${c}`, [...(map.get(`${r}-${c}`) ?? []), alias]);
+    const map = new Map<string, { word: string; alias: string }[]>();
+    for (const { word, alias, from, to } of found) {
+      for (const { r, c } of lineCells(from, to, size)) map.set(`${r}-${c}`, [...(map.get(`${r}-${c}`) ?? []), { word, alias }]);
     }
     return map;
   }, [found, size]);
@@ -176,7 +176,7 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
             const isStart = tapStart?.r === r && tapStart?.c === c;
             const inPreview = previewKeys.has(key);
             const isFocusCell = focused.r === r && focused.c === c;
-            const lastFinder = finders.at(-1);
+            const lastFinder = finders.at(-1)?.alias;
 
             return (
               <button
@@ -201,9 +201,9 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
                 )}
               >
                 {/* Under the letter: a soft bar in the color of whoever found the word, for each word that crosses the cell. */}
-                {finders.map((alias, i) => (
+                {finders.map(({ word, alias }) => (
                   <span
-                    key={`${alias}-${i}`}
+                    key={word}
                     aria-hidden="true"
                     className={cn('absolute inset-0.5 rounded-md opacity-30', styleOf(alias).swatch, alias === highlightedAlias && 'opacity-60 motion-safe:animate-pulse')}
                   />

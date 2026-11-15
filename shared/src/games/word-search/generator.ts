@@ -90,33 +90,44 @@ export function generateWordSearch(difficulty: Difficulty, language: WordLanguag
  * only of placed letters, since nothing can be changed, or after a few rounds. Changes the grid in place.
  */
 export function settleFiller(grid: string[][], fixed: boolean[][], placements: readonly WordPlacement[], forbidden: readonly string[]): boolean {
-  const size = grid.length;
-  const lines = getLines(size);
+  const lines = getLines(grid.length);
 
   for (let round = 0; round < MAX_SETTLE_ROUNDS; round++) {
-    const texts = lines.map(line => line.map(([r, c]) => grid[r][c]).join(''));
-    const dirty = new Map<number, Cell>();
-    // A problem is cured by changing the filler it is made of; with none, the attempt is lost.
-    const blame = (hit: Cell[]): boolean => {
-      const filler = hit.filter(([r, c]) => !fixed[r][c]);
-      for (const cell of filler) dirty.set(cell[0] * size + cell[1], cell);
-      return filler.length > 0;
-    };
-
-    for (const word of forbidden) {
-      for (const hit of scanLines(lines, texts, word)) if (!blame(hit)) return false;
-    }
-    for (const placement of placements) {
-      for (const hit of scanLines(lines, texts, placement.word)) {
-        if (!isPlacement(hit, placement) && !blame(hit)) return false;
-      }
-    }
+    const dirty = fillerToReroll(grid, fixed, lines, placements, forbidden);
+    if (dirty === null) return false;
     if (dirty.size === 0) return true;
 
     for (const [r, c] of dirty.values()) grid[r][c] = randomLetter();
   }
 
   return false;
+}
+
+/**
+ * The filler cells behind every problem of the grid (a forbidden word, or a second copy of a word): an empty map when
+ * there is none. A problem is cured by changing the filler it is made of, so one made only of placed letters cannot
+ * be cured and the attempt is lost (null).
+ */
+function fillerToReroll(grid: string[][], fixed: boolean[][], lines: Cell[][], placements: readonly WordPlacement[], forbidden: readonly string[]): Map<number, Cell> | null {
+  const size = grid.length;
+  const texts = lines.map(line => line.map(([r, c]) => grid[r][c]).join(''));
+  const dirty = new Map<number, Cell>();
+  const blame = (hit: Cell[]): boolean => {
+    const filler = hit.filter(([r, c]) => !fixed[r][c]);
+    for (const cell of filler) dirty.set(cell[0] * size + cell[1], cell);
+    return filler.length > 0;
+  };
+
+  for (const word of forbidden) {
+    for (const hit of scanLines(lines, texts, word)) if (!blame(hit)) return null;
+  }
+  for (const placement of placements) {
+    for (const hit of scanLines(lines, texts, placement.word)) {
+      if (!isPlacement(hit, placement) && !blame(hit)) return null;
+    }
+  }
+
+  return dirty;
 }
 
 /** Every place where the word is read in the grid, in any of the 8 directions, as the cells it covers. A word that reads the same both ways is counted once per place. */
@@ -203,7 +214,8 @@ function overlaps(a: string, b: string): boolean {
 function isPlacement(hit: Cell[], { r, c, dr, dc, word }: WordPlacement): boolean {
   const endR = r + dr * (word.length - 1);
   const endC = c + dc * (word.length - 1);
-  const [first, end] = [hit[0], hit[hit.length - 1]];
+  const first = hit[0];
+  const end = hit.at(-1) ?? first;
   const same = (a: Cell, row: number, col: number) => a[0] === row && a[1] === col;
 
   return (same(first, r, c) && same(end, endR, endC)) || (same(first, endR, endC) && same(end, r, c));

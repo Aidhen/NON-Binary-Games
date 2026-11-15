@@ -19,7 +19,7 @@ export const wordSearchStarted = (game: WordSearchGame): WordSearchStartedPayloa
   language: game.language,
   grid: game.puzzle.grid,
   // Alphabetical, so that the list says nothing about where the words lie (the placements come in the order they were laid).
-  words: game.puzzle.placements.map(placement => placement.word).sort(),
+  words: game.puzzle.placements.map(placement => placement.word).sort((a, b) => a.localeCompare(b)),
   found: foundList(game),
 });
 

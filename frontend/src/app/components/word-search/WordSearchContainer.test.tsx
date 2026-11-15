@@ -8,6 +8,7 @@ import { WordSearchContainer } from './WordSearchContainer';
 type BoardMockProps = {
   grid: string[][];
   found: WordSearchFound[];
+  hiddenCells?: WordSearchCell[];
   isOver: boolean;
   onSelect: (from: WordSearchCell, to: WordSearchCell) => void;
 };
@@ -85,7 +86,7 @@ vi.mock('./WordSearchBoardUI', () => ({
   WordSearchBoardUI: (props: BoardMockProps) => (
     <div data-testid="board-ui">
       <button data-testid="select" onClick={() => props.onSelect({ r: 0, c: 0 }, { r: 0, c: 2 })}>Select</button>
-      <output data-testid="board-state">{JSON.stringify({ grid: props.grid, found: props.found, isOver: props.isOver })}</output>
+      <output data-testid="board-state">{JSON.stringify({ grid: props.grid, found: props.found, hiddenCells: props.hiddenCells ?? [], isOver: props.isOver })}</output>
     </div>
   ),
 }));
@@ -111,6 +112,7 @@ const started = (overrides: Record<string, unknown> = {}) => ({
   language: 'en',
   grid,
   words: ['CAT', 'DOG', 'EGG'],
+  hiddenLength: 4,
   found: [],
   ...overrides,
 });
@@ -202,6 +204,63 @@ describe('WordSearchContainer', () => {
 
     expect(screen.getByText(en.wordSearch.cleared)).toBeInTheDocument();
     expect(boardState().isOver).toBe(true);
+  });
+
+  it('shows one blank per letter of the hidden word while playing, and no word', async () => {
+    await renderGame({ hiddenLength: 6, found: [cat] });
+
+    expect(screen.getAllByTestId('hidden-letter')).toHaveLength(6);
+    expect(screen.getByText('Hidden word: 6 letters')).toBeInTheDocument();
+    expect(screen.queryByText(/The hidden word was/)).not.toBeInTheDocument();
+    expect(boardState().hiddenCells).toEqual([]);
+  });
+
+  it('does not work the word out while a word is missing', async () => {
+    await renderGame({ found: [cat, dog] });
+
+    expect(boardState().hiddenCells).toEqual([]);
+    expect(screen.queryByText(/The hidden word was/)).not.toBeInTheDocument();
+  });
+
+  it('does not reveal anything when the win arrives but a word is not found', async () => {
+    await renderGame({ found: [cat, dog] });
+    await act(async () => { mocks.dispatch('game-won'); });
+
+    expect(boardState().hiddenCells).toEqual([]);
+    expect(screen.queryByText(/The hidden word was/)).not.toBeInTheDocument();
+  });
+
+  it('reveals the hidden word, from the cells no word covers, when the last word is found', async () => {
+    // EGG is marked on its first two cells only: the last cell of the row is covered by no word.
+    const egg: WordSearchFound = { word: 'EGG', alias: 'me', from: { r: 2, c: 0 }, to: { r: 2, c: 1 } };
+    await renderGame({ hiddenLength: 1, found: [cat, dog] });
+
+    await act(async () => { mocks.dispatch('word-search:found', egg); });
+    await act(async () => { mocks.dispatch('game-won'); });
+
+    expect(boardState().hiddenCells).toEqual([{ r: 2, c: 2 }]);
+    expect(screen.getByText(/together\. The hidden word was G$/)).toBeInTheDocument();
+    expect(screen.getAllByTestId('hidden-letter')[0]).toHaveTextContent('G');
+  });
+
+  it('reveals the hidden word to somebody who joins when every word is already found', async () => {
+    const egg: WordSearchFound = { word: 'EGG', alias: 'me', from: { r: 2, c: 0 }, to: { r: 2, c: 1 } };
+
+    await renderGame({ hiddenLength: 1, found: [cat, dog, egg] });
+
+    expect(boardState().hiddenCells).toEqual([{ r: 2, c: 2 }]);
+    expect(screen.getByText(/together\. The hidden word was G$/)).toBeInTheDocument();
+  });
+
+  it('hides the word again when a new puzzle starts', async () => {
+    const egg: WordSearchFound = { word: 'EGG', alias: 'me', from: { r: 2, c: 0 }, to: { r: 2, c: 1 } };
+    await renderGame({ hiddenLength: 1, found: [cat, dog, egg] });
+
+    await act(async () => { mocks.dispatch('game-started', started({ hiddenLength: 4 })); });
+
+    expect(boardState().hiddenCells).toEqual([]);
+    expect(screen.getAllByTestId('hidden-letter')).toHaveLength(4);
+    expect(screen.queryByText(/The hidden word was/)).not.toBeInTheDocument();
   });
 
   it('ignores the start of another game', async () => {

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { DifficultyLevel, GameStartedPayload, WordLanguage, WordSearchCell, WordSearchFound } from '@nbg/shared';
 import { WordSearchBoardUI } from './WordSearchBoardUI';
 import { WordSearchSettingsPanel } from './WordSearchSettingsPanel';
+import { hiddenWordOf } from './hiddenWord';
 import { ServerLoader } from '../loader/ServerLoader';
 import { EmoteBar } from '../emotes/EmoteBar';
 import { EmoteOverlay } from '../emotes/EmoteOverlay';
@@ -23,6 +24,7 @@ interface Puzzle {
   size: number;
   grid: string[][];
   words: string[];
+  hiddenLength: number;
   found: WordSearchFound[];
   difficulty: DifficultyLevel;
   language: WordLanguage;
@@ -65,6 +67,7 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
         size: payload.size,
         grid: payload.grid,
         words: payload.words,
+        hiddenLength: payload.hiddenLength,
         found: payload.found,
         difficulty: payload.difficulty,
         language: payload.language,
@@ -99,6 +102,8 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
   const finderOf = new Map(puzzle.found.map(({ word, alias }) => [word, alias]));
   const styleOf = (alias: string) => (Object.hasOwn(profiles, alias) ? styleOfColor(profiles[alias].color) : UNKNOWN_PLAYER_STYLE);
   const counter = { found: String(puzzle.found.length), total: String(puzzle.words.length) };
+  // Worked out here from the words found, only once the game is won: the server never sends the word.
+  const hidden = puzzle.won ? hiddenWordOf(puzzle.grid, puzzle.found, puzzle.words.length) : null;
   const fill = (text: string) => text.replace('{found}', counter.found).replace('{total}', counter.total);
 
   return (
@@ -117,28 +122,39 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
       )}
 
       <div className="relative w-full">
-        {puzzle.won && (
-          <GameOverCard title={t('wordSearch.cleared')} message={t('wordSearch.compliment')} onPlayAgain={() => getSocket().emit('restart-game', puzzle.difficulty)} />
-        )}
-
         <WordSearchBoardUI
           size={puzzle.size}
           grid={puzzle.grid}
           found={puzzle.found}
           profiles={profiles}
           highlightedAlias={highlighted}
+          hiddenCells={hidden?.cells}
           isOver={puzzle.won}
           onSelect={handleSelect}
         />
       </div>
 
+      {puzzle.won && (
+        <GameOverCard overlay={false} title={t('wordSearch.cleared')} message={hidden ? `${t('wordSearch.compliment')} ${t('wordSearch.revealed').replace('{word}', hidden.word)}` : t('wordSearch.compliment')} onPlayAgain={() => getSocket().emit('restart-game', puzzle.difficulty)} />
+      )}
+
       <div className="w-full flex flex-col gap-3 mt-2">
         <div className="rounded-[var(--radius-paper)] bg-[var(--paper)] p-4 text-sm text-[var(--subtitle-text)] shadow-[var(--shadow-paper-sm)]">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-2 flex items-center justify-between">
             <h2 className="font-black uppercase tracking-wide text-[var(--title-text)]">{t('wordSearch.words')}</h2>
             <span className="font-black text-[var(--title-text)]" aria-label={fill(t('wordSearch.counterLabel'))}>{fill(t('wordSearch.counter'))}</span>
           </div>
-          <ul className="flex flex-wrap gap-x-4 gap-y-1.5" lang={puzzle.language}>
+          {/* One blank per letter. The letters take their place when the word is worked out. */}
+          <p className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <span className="sr-only">{hidden ? t('wordSearch.revealed').replace('{word}', hidden.word) : t('wordSearch.hidden').replace('{n}', String(puzzle.hiddenLength))}</span>
+            <span aria-hidden="true">{t('wordSearch.hiddenTitle')}</span>
+            <span aria-hidden="true" className="flex gap-1 font-display text-base font-black text-[var(--title-text)]">
+              {Array.from({ length: puzzle.hiddenLength }, (_, i) => (
+                <span key={i} data-testid="hidden-letter" className="inline-block w-4 border-b-2 border-[var(--title-text)] text-center leading-5">{hidden?.word[i] ?? ''}</span>
+              ))}
+            </span>
+          </p>
+          <ul className="grid grid-cols-3 gap-x-2 gap-y-1 text-xs sm:text-sm" lang={puzzle.language}>
             {puzzle.words.map((word) => {
               const finder = finderOf.get(word);
               const isFound = finder !== undefined;
@@ -146,7 +162,7 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
                 <li
                   key={word}
                   className={cn(
-                    "font-display font-bold tracking-wide",
+                    "min-w-0 break-words font-display font-bold tracking-wide",
                     isFound ? cn('line-through decoration-2', styleOf(finder).text, finder === highlighted && 'motion-safe:animate-pulse') : 'text-[var(--title-text)]'
                   )}
                 >

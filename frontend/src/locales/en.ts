@@ -60,12 +60,16 @@ export const en = {
     words: "Words to find",
     counter: "{found}/{total}",
     counterLabel: "{found} of {total} words found",
+    hidden: "Hidden word: {n} letters",
+    hiddenTitle: "Hidden word",
+    revealed: "The hidden word was {word}",
     wordFound: "found",
     language: "Language of the words",
     languageHint: "This is the language of the words in the puzzle, not of the page. Changing it starts a new puzzle for everybody.",
     cell: "{letter}, row {row}, column {column}",
     cellStart: "{letter}, row {row}, column {column}, first letter selected",
     cellFound: "{letter}, row {row}, column {column}, part of a word found",
+    cellHidden: "{letter}, row {row}, column {column}, part of the hidden word",
     grid: "Word search grid"
   },
   takuzu: {

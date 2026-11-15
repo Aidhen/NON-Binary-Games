@@ -62,12 +62,16 @@ export const it: Translations = {
     words: "Parole da trovare",
     counter: "{found}/{total}",
     counterLabel: "{found} parole trovate su {total}",
+    hidden: "Parola nascosta: {n} lettere",
+    hiddenTitle: "Parola nascosta",
+    revealed: "La parola nascosta era {word}",
     wordFound: "trovata",
     language: "Lingua delle parole",
     languageHint: "È la lingua delle parole del puzzle, non quella della pagina. Cambiarla avvia un nuovo puzzle per tutti.",
     cell: "{letter}, riga {row}, colonna {column}",
     cellStart: "{letter}, riga {row}, colonna {column}, prima lettera selezionata",
     cellFound: "{letter}, riga {row}, colonna {column}, parte di una parola trovata",
+    cellHidden: "{letter}, riga {row}, colonna {column}, parte della parola nascosta",
     grid: "Griglia del crucipuzzle"
   },
   takuzu: {

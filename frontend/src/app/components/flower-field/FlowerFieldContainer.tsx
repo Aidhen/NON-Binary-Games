@@ -200,6 +200,8 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
           </button>
         </div>
 
+        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
+
         <div className="rounded-[var(--radius-paper)] bg-[var(--paper)] p-4 text-sm text-[var(--subtitle-text)] shadow-[var(--shadow-paper-sm)]">
           <p className="mb-2 font-black uppercase tracking-wide text-[var(--title-text)]">{t('flowerField.rules')}</p>
           <ul className="flex list-disc flex-col gap-1 pl-5">
@@ -209,8 +211,6 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
             <li>{field.explosive ? t('flowerField.ruleMineLoses') : t('flowerField.ruleMineMarks')}</li>
           </ul>
         </div>
-
-        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
       </div>
 
       <EmoteOverlay emotes={emotes} />

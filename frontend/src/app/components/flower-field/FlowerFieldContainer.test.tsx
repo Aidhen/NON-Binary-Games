@@ -164,6 +164,16 @@ describe('FlowerFieldContainer', () => {
     expect(screen.getByText('flowerField.ruleMineMarks')).toBeInTheDocument();
   });
 
+  it('puts the flag switch first, then the emotes, then the rules: what is used while playing comes first', async () => {
+    await renderGame();
+
+    const flags = screen.getByRole('button', { name: /flowerField\.flagMode/ });
+    const emotes = screen.getByRole('group', { name: 'emotes.title' });
+    const rules = screen.getByText('flowerField.rules');
+    expect(flags.compareDocumentPosition(emotes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(emotes.compareDocumentPosition(rules) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('ignores the start of another game', async () => {
     render(<FlowerFieldContainer roomId="room-1" />);
 

@@ -172,6 +172,8 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
       </div>
 
       <div className="w-full flex flex-col gap-3 mt-2">
+        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
+
         <div className="rounded-[var(--radius-paper)] bg-[var(--paper)] p-4 text-sm text-[var(--subtitle-text)] shadow-[var(--shadow-paper-sm)]">
           <p className="mb-2 font-black uppercase tracking-wide text-[var(--title-text)]">{t('takuzu.rules')}</p>
           <ul className="flex list-disc flex-col gap-1 pl-5">
@@ -181,8 +183,6 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
           </ul>
           <p className="mt-3 font-medium">{t('takuzu.tapHint')}</p>
         </div>
-
-        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
       </div>
 
       <EmoteOverlay emotes={emotes} />

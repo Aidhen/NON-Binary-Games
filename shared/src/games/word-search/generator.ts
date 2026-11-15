@@ -36,6 +36,9 @@ const MAX_ATTEMPTS = 200;
 /** The search also stops after this long. It runs on the one thread that serves every room, so it cannot take as long as the attempts allow. */
 const MAX_BUILD_MS = 50;
 
+/** Tries made whatever the clock says. A try fails now and then (a few in a hundred), and on a slow machine or at a cold start one try can take longer than the whole time: without these, one unlucky try would become an error for the players. */
+const MIN_ATTEMPTS = 5;
+
 export function getWordSearchLevel(difficulty: Difficulty): WordSearchLevel {
   // Fail loudly: an unknown difficulty would otherwise give a grid of nothing.
   if (!Object.hasOwn(LEVELS, difficulty)) throw new Error(`Unknown difficulty: ${String(difficulty)}`);
@@ -83,9 +86,9 @@ export function generateWordSearch(difficulty: Difficulty, language: WordLanguag
 
   const deadline = Date.now() + MAX_BUILD_MS;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    // The first try is always made, and runs to its end: the time only decides whether to go on.
-    if (attempt > 0 && Date.now() > deadline) break;
-    const puzzle = packWordSearch(table, attempt === 0 ? null : deadline);
+    // The first tries are always made, and run to their end: the time only decides whether to go on after them.
+    if (attempt >= MIN_ATTEMPTS && Date.now() > deadline) break;
+    const puzzle = packWordSearch(table, attempt < MIN_ATTEMPTS ? null : deadline);
     if (puzzle) return puzzle;
   }
 

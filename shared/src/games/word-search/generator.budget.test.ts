@@ -8,8 +8,8 @@ const FORBIDDEN = ['ABCD', 'EFGH', 'IJKL', 'MNOP', 'QRST', 'UVWX', 'YZAB'];
 afterEach(() => vi.restoreAllMocks());
 
 describe('generateWordSearch, when no puzzle is found', () => {
-  it('stops when the time is up, after trying once, and does not use all the attempts', () => {
-    // The first reading sets the deadline, every one after is long past it: the loop reads the clock once more, to see it, and stops.
+  it('stops when the time is up, after the tries that are always made, and does not use all the attempts', () => {
+    // The first reading sets the deadline, every one after is long past it: the loop makes its first tries without reading the clock, then reads it once more, to see it, and stops.
     const now = vi.spyOn(Date, 'now').mockReturnValue(10_000);
     now.mockReturnValueOnce(0);
 

@@ -166,6 +166,21 @@ describe('generateWordSearch', () => {
     expect(check(generateWordSearch('easy', 'en', []), 7, new Set(['0,1', '1,0', '1,1']), 'en', [])).toEqual([]);
   });
 
+  it('does not give up after one unlucky try when the clock says the time is up', () => {
+    // A try fails now and then. When the machine is slow the time is up before the second one: without tries that are made whatever the clock says, that is an error for the players.
+    const now = vi.spyOn(Date, 'now');
+    try {
+      for (let run = 0; run < 200; run++) {
+        now.mockReset();
+        now.mockReturnValue(10_000);
+        now.mockReturnValueOnce(0);
+        expect(() => generateWordSearch('expert', 'en', FORBIDDEN)).not.toThrow();
+      }
+    } finally {
+      now.mockRestore();
+    }
+  });
+
   it('never takes long, level after level', () => {
     // A generous bound: the real limit is a few tens of milliseconds, this only catches a search that has got lost.
     for (const difficulty of DIFFICULTIES) {

@@ -12,7 +12,7 @@ export const createWordSearch = (difficulty: DifficultyLevel, previous?: RoomGam
 const foundList = (game: WordSearchGame): WordSearchFound[] =>
   [...game.found].map(([word, { alias, from, to }]) => ({ word, alias, from, to }));
 
-/** What the players are told about the game. The placements are not here: only the words found say where they lie. */
+/** What the players are told about the game. The placements are not here: only the words found say where they lie. Nor is the hidden word: only how long it is. */
 export const wordSearchStarted = (game: WordSearchGame): WordSearchStartedPayload => ({
   game: 'word-search',
   size: game.puzzle.size,
@@ -21,6 +21,7 @@ export const wordSearchStarted = (game: WordSearchGame): WordSearchStartedPayloa
   grid: game.puzzle.grid,
   // Alphabetical, so that the list says nothing about where the words lie (the placements come in the order they were laid).
   words: game.puzzle.placements.map(placement => placement.word).sort((a, b) => a.localeCompare(b)),
+  hiddenLength: game.puzzle.hidden.word.length,
   found: foundList(game),
 });
 

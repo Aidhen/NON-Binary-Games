@@ -9,6 +9,7 @@ vi.mock('@/lib/i18n/TranslationContext', () => ({
       'wordSearch.cell': '{letter} R{row} C{column}',
       'wordSearch.cellStart': '{letter} R{row} C{column} start',
       'wordSearch.cellFound': '{letter} R{row} C{column} found',
+      'wordSearch.cellHidden': '{letter} R{row} C{column} hidden',
       'wordSearch.grid': 'grid',
     })[key] ?? key,
   }),
@@ -385,3 +386,28 @@ describe('WordSearchBoardUI', () => {
     });
   });
 });
+
+describe('hidden cells', () => {
+  it('marks the cells it is given, and only those, in the label and not by color alone', () => {
+    setup({ hiddenCells: [{ r: 1, c: 1 }, { r: 3, c: 4 }] });
+
+    expect(screen.getByRole('button', { name: 'G R2 C2 hidden' }).className).toContain('underline');
+    expect(screen.getByRole('button', { name: 'T R4 C5 hidden' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /hidden$/ })).toHaveLength(2);
+    expect(cell(0, 0).className).not.toContain('underline');
+  });
+
+  it('marks nothing when it is given no cells', () => {
+    setup();
+
+    expect(screen.queryAllByRole('button', { name: /hidden$/ })).toHaveLength(0);
+  });
+
+  it('keeps a cell that a found word crosses as part of that word when it is not hidden', () => {
+    setup({ hiddenCells: [{ r: 4, c: 4 }], found: [{ word: 'ABC', alias: 'friend', from: { r: 0, c: 0 }, to: { r: 0, c: 2 } }], profiles });
+
+    expect(cell(0, 1)).toHaveAccessibleName('B R1 C2 found');
+    expect(screen.getAllByRole('button', { name: /hidden$/ })).toHaveLength(1);
+  });
+});
+

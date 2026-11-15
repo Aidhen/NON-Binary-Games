@@ -20,4 +20,13 @@ describe('GameOverCard', () => {
 
     expect(onPlayAgain).toHaveBeenCalledOnce();
   });
+
+  it('covers the board by default, and is a block of the page when the board has to stay in view', () => {
+    const { container, rerender } = render(<GameOverCard title="Cleared" message="Well played" onPlayAgain={() => {}} />);
+    expect(container.firstElementChild).toHaveClass('absolute', 'inset-0');
+
+    rerender(<GameOverCard title="Cleared" message="Well played" onPlayAgain={() => {}} overlay={false} />);
+    expect(container.firstElementChild).not.toHaveClass('absolute');
+    expect(screen.getByRole('heading', { name: 'Cleared' })).toBeInTheDocument();
+  });
 });

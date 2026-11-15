@@ -5,6 +5,7 @@ import type { PlayerProfile, WordSearchCell, WordSearchFound } from '@nbg/shared
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { UNKNOWN_PLAYER_STYLE, styleOfColor } from '@/lib/playerPalette';
+import { lineCells } from './hiddenWord';
 
 interface WordSearchBoardUIProps {
   size: number;
@@ -15,6 +16,8 @@ interface WordSearchBoardUIProps {
   profiles?: Record<string, PlayerProfile>;
   /** The player being pointed out for a moment: their words stand out. */
   highlightedAlias?: string | null;
+  /** The cells no word covers, once every word is found: they spell the hidden word and are marked apart from the words. */
+  hiddenCells?: WordSearchCell[];
   /** The game is won: the grid takes no more selections. */
   isOver: boolean;
   /** A straight line of at least two cells the player marked. The server decides whether it is a word. */
@@ -45,19 +48,9 @@ export const snapLine = (from: WordSearchCell, pointer: WordSearchCell, size: nu
   return { r: from.r + sr * steps, c: from.c + sc * steps };
 };
 
-/** The cells from one end to the other, or none when it is not a straight line inside the grid. */
-const lineCells = (from: WordSearchCell, to: WordSearchCell, size: number): WordSearchCell[] => {
-  const dr = to.r - from.r;
-  const dc = to.c - from.c;
-  const length = Math.max(Math.abs(dr), Math.abs(dc));
-  const inside = [from, to].every(({ r, c }) => r >= 0 && c >= 0 && r < size && c < size);
-  if (!inside || (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc))) return [];
-  return Array.from({ length: length + 1 }, (_, i) => ({ r: from.r + Math.sign(dr) * i, c: from.c + Math.sign(dc) * i }));
-};
-
 const ARROWS: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
 
-export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlightedAlias = null, isOver, onSelect }: Readonly<WordSearchBoardUIProps>) {
+export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlightedAlias = null, hiddenCells = [], isOver, onSelect }: Readonly<WordSearchBoardUIProps>) {
   const { t } = useTranslation();
   const gridRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -77,6 +70,8 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
     }
     return map;
   }, [found, size]);
+
+  const hiddenKeys = useMemo(() => new Set(hiddenCells.map(({ r, c }) => `${r}-${c}`)), [hiddenCells]);
 
   // The line being marked: the drag, or the first tap followed by the cell the keyboard is on.
   const preview = drag ?? (tapStart ? { from: tapStart, to: snapLine(tapStart, focused, size) } : null);
@@ -155,6 +150,7 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
   const labelOf = (r: number, c: number, letter: string) => {
     let key = 'wordSearch.cell';
     if (tapStart?.r === r && tapStart?.c === c) key = 'wordSearch.cellStart';
+    else if (hiddenKeys.has(`${r}-${c}`)) key = 'wordSearch.cellHidden';
     else if (foundByCell.has(`${r}-${c}`)) key = 'wordSearch.cellFound';
     return t(key).replace('{letter}', letter).replace('{row}', String(r + 1)).replace('{column}', String(c + 1));
   };
@@ -181,6 +177,7 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
             const isStart = tapStart?.r === r && tapStart?.c === c;
             const inPreview = previewKeys.has(key);
             const isFocusCell = focused.r === r && focused.c === c;
+            const isHidden = hiddenKeys.has(key);
             const lastFinder = finders.at(-1)?.alias;
 
             return (
@@ -196,12 +193,14 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
                 onKeyDown={(event) => handleKeyDown(event, { r, c })}
                 className={cn(
                   "relative flex items-center justify-center font-display font-bold leading-none touch-none",
-                  size > 12 ? "text-sm sm:text-lg" : "text-base sm:text-xl",
+                  size >= 10 ? "text-sm sm:text-lg" : "text-base sm:text-xl",
                   "cursor-pointer select-none focus-visible:-outline-offset-4",
                   c < size - 1 && "border-r border-r-[var(--grid-border-inner)]",
                   r < size - 1 && "border-b border-b-[var(--grid-border-inner)]",
                   inPreview ? 'bg-[var(--cell-background-selected)]' : 'bg-[var(--cell-background-initial)] hover:bg-[var(--cell-background)]',
                   lastFinder === undefined ? 'text-[var(--number-initial)]' : cn(styleOf(lastFinder).text, 'font-black'),
+                  // Not only a color: the letter is underlined and boxed with a dashed line, which no found word has.
+                  isHidden && 'font-black underline decoration-2 underline-offset-4',
                   (inPreview || isStart) && 'outline-2 -outline-offset-2 outline-[var(--number-player)]/70'
                 )}
               >
@@ -213,6 +212,7 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
                     className={cn('absolute inset-0.5 rounded-md opacity-30', styleOf(alias).swatch, alias === highlightedAlias && 'opacity-60 motion-safe:animate-pulse')}
                   />
                 ))}
+                {isHidden && <span aria-hidden="true" className="absolute inset-0.5 rounded-md border-2 border-dashed border-[var(--title-text)]" />}
                 <span className="relative">{letter}</span>
               </button>
             );

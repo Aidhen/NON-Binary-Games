@@ -10,7 +10,7 @@ const placements: WordPlacement[] = [
   { word: 'ANTI', r: 2, c: 6, dr: 1, dc: -1 }, // (2,6) to (5,3)
   { word: 'LEFT', r: 6, c: 5, dr: 0, dc: -1 }, // (6,5) to (6,2), laid backwards
 ];
-const puzzle: WordSearchPuzzle = { size: 8, grid: Array.from({ length: 8 }, () => new Array<string>(8).fill('A')), placements };
+const puzzle: WordSearchPuzzle = { size: 8, grid: Array.from({ length: 8 }, () => new Array<string>(8).fill('A')), placements, hidden: { word: 'ABCD', cells: [[7, 0], [7, 1], [7, 2], [7, 3]] } };
 const none: ReadonlySet<string> = new Set();
 
 describe('resolveSelection', () => {

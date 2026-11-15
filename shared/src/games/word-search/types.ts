@@ -15,10 +15,20 @@ export interface WordPlacement {
   dc: number;
 }
 
+/** A step from one letter to the next: `[dr, dc]`. */
+export type WordDirection = readonly [dr: number, dc: number];
+
+/** The word spelled by the cells no other word covers, read in order, row by row. Kept by the server, never sent to the clients: the page works it out when every word is found. */
+export interface HiddenWord {
+  word: string;
+  cells: [r: number, c: number][];
+}
+
 export interface WordSearchPuzzle {
   size: number;
   grid: WordSearchGrid;
   placements: WordPlacement[];
+  hidden: HiddenWord;
 }
 
 /** A cell the player pointed at. */

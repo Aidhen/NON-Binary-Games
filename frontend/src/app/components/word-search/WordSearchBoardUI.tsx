@@ -37,7 +37,10 @@ export const snapLine = (from: WordSearchCell, pointer: WordSearchCell, size: nu
   const sc = Math.round(Math.cos(angle));
   // Steps along the direction: a diagonal step covers one row and one column, so the dot product counts twice.
   let steps = Math.round((dr * sr + dc * sc) / (sr * sr + sc * sc));
-  const room = (step: number, at: number) => (step > 0 ? size - 1 - at : step < 0 ? at : Infinity);
+  const room = (step: number, at: number) => {
+    if (step > 0) return size - 1 - at;
+    return step < 0 ? at : Infinity;
+  };
   steps = Math.max(0, Math.min(steps, room(sr, from.r), room(sc, from.c)));
   return { r: from.r + sr * steps, c: from.c + sc * steps };
 };
@@ -150,7 +153,9 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
   };
 
   const labelOf = (r: number, c: number, letter: string) => {
-    const key = tapStart && tapStart.r === r && tapStart.c === c ? 'wordSearch.cellStart' : foundByCell.has(`${r}-${c}`) ? 'wordSearch.cellFound' : 'wordSearch.cell';
+    let key = 'wordSearch.cell';
+    if (tapStart?.r === r && tapStart?.c === c) key = 'wordSearch.cellStart';
+    else if (foundByCell.has(`${r}-${c}`)) key = 'wordSearch.cellFound';
     return t(key).replace('{letter}', letter).replace('{row}', String(r + 1)).replace('{column}', String(c + 1));
   };
 

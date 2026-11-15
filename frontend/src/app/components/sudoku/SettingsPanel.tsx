@@ -16,7 +16,7 @@ export function SettingsPanel({
   onToggle,
   currentDifficulty,
   onDifficultyChange
-}: SettingsPanelProps) {
+}: Readonly<SettingsPanelProps>) {
 
   const { t } = useTranslation();
 

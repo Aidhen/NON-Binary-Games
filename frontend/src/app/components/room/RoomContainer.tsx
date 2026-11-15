@@ -42,7 +42,7 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
   }
 
   // The table is there from the first moment, also while the server is still waking up: only the vote waits.
-  if (!lobby || lobby.game === null) {
+  if (!lobby?.game) {
     return (
       <Lobby
         roomId={roomId}

@@ -13,7 +13,7 @@ interface SudokuCellProps {
   boxSize?: number;
 }
 
-export function SudokuCell({ value, bgClass, textClass, isRightBorder, isBottomBorder, onClick, notes, boardSize = 9, boxSize = 3 }: SudokuCellProps) {
+export function SudokuCell({ value, bgClass, textClass, isRightBorder, isBottomBorder, onClick, notes, boardSize = 9, boxSize = 3 }: Readonly<SudokuCellProps>) {
   return (
     <button
       type="button"

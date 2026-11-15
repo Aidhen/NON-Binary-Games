@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PlayerProfile } from '@nbg/shared';
 import { WordSearchBoardUI, snapLine } from './WordSearchBoardUI';
@@ -320,7 +320,7 @@ describe('WordSearchBoardUI', () => {
       setup();
 
       fireEvent.click(cell(0, 0));
-      cell(2, 2).focus();
+      act(() => cell(2, 2).focus());
 
       for (const i of [0, 1, 2]) expect(cell(i, i).className).toContain('cell-background-selected');
     });

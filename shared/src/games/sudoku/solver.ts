@@ -41,12 +41,14 @@ export function solveWithSingles(puzzle: SudokuGrid, size: number, boxSize: numb
   // The cells of every row, column and box.
   const units: [number, number][][] = [];
   for (let i = 0; i < size; i++) {
-    units.push(Array.from({ length: size }, (_, k): [number, number] => [i, k]));
-    units.push(Array.from({ length: size }, (_, k): [number, number] => [k, i]));
-    units.push(Array.from({ length: size }, (_, k): [number, number] => [
-      Math.floor(i / boxSize) * boxSize + Math.floor(k / boxSize),
-      (i % boxSize) * boxSize + (k % boxSize),
-    ]));
+    units.push(
+      Array.from({ length: size }, (_, k): [number, number] => [i, k]),
+      Array.from({ length: size }, (_, k): [number, number] => [k, i]),
+      Array.from({ length: size }, (_, k): [number, number] => [
+        Math.floor(i / boxSize) * boxSize + Math.floor(k / boxSize),
+        (i % boxSize) * boxSize + (k % boxSize),
+      ]),
+    );
   }
 
   let progress = true;

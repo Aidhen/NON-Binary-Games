@@ -29,6 +29,21 @@ interface FlowerFieldBoardUIProps {
 const MINE = '✸';
 const FLAG = '⚑';
 
+/** The mine that lost the game comes first, then the cell the player is on, then whether the cell shows what it holds. */
+const backgroundClass = (isExploded: boolean, isSelected: boolean, isShown: boolean): string => {
+  if (isExploded) return 'bg-[var(--number-error)]/30';
+  if (isSelected) return 'bg-[var(--cell-background-selected)]';
+  if (isShown) return 'bg-[var(--cell-background-initial)]';
+  return 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)]';
+};
+
+/** What is drawn in a cell: a mine, a flag, the number of mines around it, or nothing. */
+const contentOf = (value: number, isMine: boolean, isFlagged: boolean): string | number => {
+  if (isMine) return MINE;
+  if (isFlagged) return FLAG;
+  return value > 0 ? value : '';
+};
+
 export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selectedCell, isOver, onCellClick, othersSelections = {}, profiles = {}, highlightedAlias = null }: Readonly<FlowerFieldBoardUIProps>) {
   const { t } = useTranslation();
 
@@ -85,7 +100,7 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
                 "cursor-pointer select-none overflow-hidden focus-visible:-outline-offset-4",
                 c < size - 1 && "border-r border-r-[var(--grid-border-inner)]",
                 r < size - 1 && "border-b border-b-[var(--grid-border-inner)]",
-                isExploded ? 'bg-[var(--number-error)]/30' : isSelected ? 'bg-[var(--cell-background-selected)]' : isOpen || isMine ? 'bg-[var(--cell-background-initial)]' : 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)]',
+                backgroundClass(isExploded, isSelected, isOpen || isMine),
                 isOpen && 'text-[var(--number-initial)] font-bold',
                 isMine && 'text-[var(--number-error)]',
                 flagger !== null && cn(styleOf(flagger).text, flagger === highlightedAlias && 'font-black motion-safe:animate-pulse'),
@@ -93,7 +108,7 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
                 ringClass
               )}
             >
-              {isMine ? MINE : flagger !== null ? FLAG : isOpen && value > 0 ? value : ''}
+              {contentOf(value, isMine, flagger !== null)}
             </button>
           );
         }))}

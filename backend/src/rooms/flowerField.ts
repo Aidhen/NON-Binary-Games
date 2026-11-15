@@ -1,11 +1,11 @@
 import { FLOWER_HIDDEN, FLOWER_MARKED, createHiddenGrid, getFlowerFieldLevel, layMines, openCells } from "@nbg/shared";
 import type { DifficultyLevel, FlowerCellChange, FlowerFieldStartedPayload } from "@nbg/shared";
-import type { FlowerFieldGame, RoomGame } from "./roomStore";
+import type { FlowerFieldGame, GridGame } from "./roomStore";
 
 const keyOf = (r: number, c: number) => `${r}-${c}`;
 
 /** `previous` is the game the room was playing: the option to lose is a choice of the table, so it stays. */
-export const createFlowerField = (difficulty: DifficultyLevel, previous?: RoomGame): FlowerFieldGame => {
+export const createFlowerField = (difficulty: DifficultyLevel, previous?: GridGame): FlowerFieldGame => {
   const { size, mines } = getFlowerFieldLevel(difficulty);
   return {
     id: 'flower-field',

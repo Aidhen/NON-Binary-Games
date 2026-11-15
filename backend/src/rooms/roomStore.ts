@@ -48,15 +48,15 @@ export interface FlowerFieldGame {
 /** A game where the players write a value in a cell: it is what `cell-update` works on. */
 export type ValueGridGame = SudokuGame | TakuzuGame;
 
-/** A game played on a square grid of cells: it is what `select-cell` and `restart-game` work on. */
+/**
+ * A game played on a square grid of cells: it is what `select-cell` and `restart-game` work on. Every game a room can
+ * have open is one of these today. A new game adds its own state here, told apart by `id`.
+ */
 export type GridGame = ValueGridGame | FlowerFieldGame;
-
-/** The game a room has open. A new game adds its own state here, told apart by `id`. */
-export type RoomGame = GridGame;
 
 export interface RoomState {
   /** Null while the players are still choosing (see `votes`). Once chosen, the game of a room does not change. */
-  game: RoomGame | null;
+  game: GridGame | null;
   /** The game each player in the room wants (by player id). At most one per player, gone when they leave or the game opens. */
   votes: Map<string, GameId>;
   /** Sockets of each player: the same player can have more than one open (two tabs). */

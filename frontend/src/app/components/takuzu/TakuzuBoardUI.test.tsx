@@ -74,6 +74,70 @@ describe('TakuzuBoardUI', () => {
     expect(screen.getByRole('button', { name: 'R1 C2: 1' }).className).not.toContain('--number-error');
   });
 
+  it('tells apart the cell the player is on, the cells the puzzle gave and the ones still free, by their background', () => {
+    render(<TakuzuBoardUI {...baseProps} selectedCell={[0, 0]} />);
+
+    const selected = screen.getByRole('button', { name: 'R1 C1: 0' });
+    const given = screen.getByRole('button', { name: 'R1 C4: 1' });
+    const free = screen.getByRole('button', { name: 'R1 C2: 1' });
+
+    expect(selected.className).toContain('bg-[var(--cell-background-selected)]');
+    expect(selected.className).toContain('outline-2');
+    expect(given.className.split(' ')).toContain('bg-[var(--cell-background-initial)]');
+    expect(given.className).not.toContain('outline-2');
+    expect(free.className.split(' ')).toContain('bg-[var(--cell-background)]');
+    expect(free.className).toContain('hover:bg-[var(--cell-background-initial)]');
+  });
+
+  it('writes the symbols of the puzzle bolder than the ones of a player, and hides the text of an empty cell', () => {
+    render(<TakuzuBoardUI {...baseProps} />);
+
+    expect(screen.getByRole('button', { name: 'R1 C1: 0' }).className).toContain('text-[var(--number-initial)] font-bold');
+    expect(screen.getByRole('button', { name: 'R1 C2: 1' }).className).toContain('text-[var(--number-player)] font-medium');
+    expect(screen.getByRole('button', { name: 'R1 C3: empty' }).className).toContain('text-transparent');
+  });
+
+  it('writes smaller symbols on a grid of more than eight cells a side', () => {
+    const big = Array.from({ length: 10 }, () => new Array<number>(10).fill(0));
+    const { unmount } = render(<TakuzuBoardUI {...baseProps} size={10} grid={big} initial={big} />);
+    expect(screen.getByRole('button', { name: 'R1 C1: empty' }).className).toContain('text-lg');
+    unmount();
+
+    render(<TakuzuBoardUI {...baseProps} />);
+    expect(screen.getByRole('button', { name: 'R1 C1: 0' }).className).toContain('text-2xl sm:text-3xl');
+  });
+
+  it('draws a line between the cells, and none on the last column and the last row', () => {
+    render(<TakuzuBoardUI {...baseProps} />);
+
+    expect(screen.getByRole('button', { name: 'R1 C1: 0' }).className).toContain('border-r border-r-[var(--grid-border-inner)] border-b');
+    expect(screen.getByRole('button', { name: 'R4 C4: empty' }).className).not.toContain('border-');
+  });
+
+  it('makes the cursor of the player being pointed out stand out, and only that one', () => {
+    const profiles: Record<string, PlayerProfile> = { friend: { alias: 'friend', animal: 'fox', color: 'teal' }, other: { alias: 'other', animal: 'owl', color: 'teal' } };
+    render(<TakuzuBoardUI {...baseProps} othersSelections={{ friend: [0, 2], other: [1, 1] }} profiles={profiles} highlightedAlias="friend" />);
+
+    expect(screen.getByRole('button', { name: 'R1 C3: empty' }).className).toContain('ring-8 motion-safe:animate-pulse');
+    expect(screen.getByRole('button', { name: 'R2 C2: empty' }).className).toContain('ring-4');
+    expect(screen.getByRole('button', { name: 'R2 C2: empty' }).className).not.toContain('ring-8');
+    expect(screen.getByRole('button', { name: 'R2 C1: empty' }).className).not.toContain('ring-');
+  });
+
+  it('keeps the background of the selected cell when another player is on it too', () => {
+    const profiles: Record<string, PlayerProfile> = { friend: { alias: 'friend', animal: 'fox', color: 'teal' } };
+    const { rerender } = render(<TakuzuBoardUI {...baseProps} othersSelections={{ friend: [0, 2] }} profiles={profiles} />);
+    const tinted = screen.getByRole('button', { name: 'R1 C3: empty' }).className;
+
+    rerender(<TakuzuBoardUI {...baseProps} selectedCell={[0, 2]} othersSelections={{ friend: [0, 2] }} profiles={profiles} />);
+    const selected = screen.getByRole('button', { name: 'R1 C3: empty' }).className;
+
+    expect(selected).toContain('bg-[var(--cell-background-selected)]');
+    expect(selected).toContain('ring-4');
+    expect(tinted).not.toContain('bg-[var(--cell-background-selected)]');
+    expect(tinted).not.toBe(selected);
+  });
+
   it('rings the cell of another player, with their color', () => {
     const profiles: Record<string, PlayerProfile> = { friend: { alias: 'friend', animal: 'fox', color: 'teal' } };
     render(<TakuzuBoardUI {...baseProps} othersSelections={{ friend: [0, 2] }} profiles={profiles} />);

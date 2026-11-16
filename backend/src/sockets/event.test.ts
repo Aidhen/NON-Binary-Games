@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
 import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, colorLimit, voteLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
-import { applyConnectionLimits } from './connectionLimits';
+import { createConnectionGuard } from './connectionLimits';
 import { logger } from '../logger';
 import type { AddressOf } from './connectionLimits';
 import { DIFFICULTIES, EMOTE_COOLDOWN_MS, EMOTES, getCluesCount, MAX_PLAYERS_PER_ROOM, PLAYER_ANIMALS, PLAYER_COLORS, solveWithSingles } from '@nbg/shared';
@@ -1164,10 +1164,13 @@ describe('Socket Events Security & Bounds Checking', () => {
 
     type Budgets = { roomCreation?: number; restart?: number; boardGeneration?: number };
 
+    // A server that limits connections only takes them from its own frontend, so every client says it comes from there.
+    const budgetOrigin = 'https://games.example.com';
+
     // These budgets are read when a server is set up, so each of these tests starts a server of its own.
     const withServer = async (
       budgets: Budgets,
-      run: (connect: (auth?: Record<string, unknown>) => Promise<TestClientSocket>) => Promise<void>,
+      run: (connect: (auth?: Record<string, unknown>, address?: string) => Promise<TestClientSocket>) => Promise<void>,
       addressOf?: AddressOf,
     ) => {
       roomCreationLimit.max = budgets.roomCreation ?? Number.POSITIVE_INFINITY;
@@ -1175,8 +1178,9 @@ describe('Socket Events Security & Bounds Checking', () => {
       boardGenerationLimit.max = budgets.boardGeneration ?? Number.POSITIVE_INFINITY;
 
       const httpServer = createServer();
-      const otherIo = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
-      if (addressOf) applyConnectionLimits(otherIo, addressOf);
+      const guard = addressOf ? createConnectionGuard(budgetOrigin, addressOf) : undefined;
+      const otherIo = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, guard ? { allowRequest: guard.allowRequest } : {});
+      guard?.track(otherIo);
       setupSocketHandlers(otherIo);
       // Same synchronisation event as the main test server, for flushSocketEvents.
       otherIo.on('connection', (socket) => { (socket as any).on('__test-barrier', (ack: () => void) => ack()); });
@@ -1188,8 +1192,8 @@ describe('Socket Events Security & Bounds Checking', () => {
       const url = `http://127.0.0.1:${(httpServer.address() as AddressInfo).port}`;
 
       const sockets: TestClientSocket[] = [];
-      const connect = async (auth: Record<string, unknown> = {}) => {
-        const socket = Client(url, { auth }) as TestClientSocket;
+      const connect = async (auth: Record<string, unknown> = {}, address?: string) => {
+        const socket = Client(url, { auth, extraHeaders: { origin: budgetOrigin, ...(address ? { 'x-test-address': address } : {}) } }) as TestClientSocket;
         sockets.push(socket);
         clients.add(socket);
         await new Promise<void>((resolve) => { socket.once('connect', resolve); });
@@ -1221,17 +1225,17 @@ describe('Socket Events Security & Bounds Checking', () => {
     });
 
     it('counts the rooms created from one address together, also after reconnecting', async () => {
-      const addressOf: AddressOf = (socket) => socket.handshake.auth.address as string;
+      const addressOf: AddressOf = (req) => req.headers['x-test-address'] as string;
 
       await withServer({ roomCreation: 1 }, async (connect) => {
-        const first = await connect({ address: 'address-x' });
+        const first = await connect({}, 'address-x');
         await expect(joinOutcome(first, idOf('address-a'))).resolves.toBe('joined');
         first.disconnect();
 
-        const again = await connect({ address: 'address-x' });
+        const again = await connect({}, 'address-x');
         await expect(joinOutcome(again, idOf('address-b'))).resolves.toBe('too-fast');
 
-        const elsewhere = await connect({ address: 'address-y' });
+        const elsewhere = await connect({}, 'address-y');
         await expect(joinOutcome(elsewhere, idOf('address-c'))).resolves.toBe('joined');
       }, addressOf);
     });

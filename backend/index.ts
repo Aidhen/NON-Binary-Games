@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import { warmUpWordSearch } from "@nbg/shared";
 import { setupSocketHandlers } from "./src/sockets/event";
-import { addressResolverFromEnv, applyConnectionLimits, MAX_MESSAGE_BYTES } from "./src/sockets/connectionLimits";
+import { addressResolverFromEnv, CONNECT_TIMEOUT_MS, createConnectionGuard, MAX_MESSAGE_BYTES } from "./src/sockets/connectionLimits";
 import { createHttpServer, installCrashLogging, parsePort, resolveAllowedOrigin, shutdown } from "./src/server";
 import { logger } from "./src/logger";
 import { FORBIDDEN } from "./src/rooms/wordSearchBlocklist";
@@ -20,17 +20,21 @@ warmUpWordSearch(FORBIDDEN);
 
 const httpServer = createHttpServer();
 
+const addressOf = addressResolverFromEnv();
+if (!addressOf) logger.warn("Limits on connections are off, they need to know the address of each player: set CLIENT_IP_HEADER (or LIMIT_BY_PEER_ADDRESS=true when there is no proxy).");
+const guard = createConnectionGuard(allowedOrigin, addressOf);
+
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigin,
     methods: ["GET", "POST"]
   },
-  maxHttpBufferSize: MAX_MESSAGE_BYTES
+  maxHttpBufferSize: MAX_MESSAGE_BYTES,
+  connectTimeout: CONNECT_TIMEOUT_MS,
+  allowRequest: guard.allowRequest
 });
 
-const addressOf = addressResolverFromEnv();
-if (!addressOf) logger.warn("Limits on connections are off, they need to know the address of each player: set CLIENT_IP_HEADER (or LIMIT_BY_PEER_ADDRESS=true when there is no proxy).");
-applyConnectionLimits(io, addressOf);
+guard.track(io);
 setupSocketHandlers(io);
 
 io.on("connection", (socket) => {

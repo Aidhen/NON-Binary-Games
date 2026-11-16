@@ -5,7 +5,7 @@
   "types": "src/index.ts",
   "type": "module",
   "author": "Aidhen",
-  "license": "GPL-3.0-or-later",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "dependencies": {
     "zod": "^4.6.7"
   }

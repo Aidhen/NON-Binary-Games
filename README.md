@@ -117,12 +117,16 @@ docker compose run --rm node-cli npm run lint --workspace=frontend
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_SOCKET_URL` | frontend | `http://localhost:4000` | URL of the Socket.IO backend |
 | `PORT` | backend | `4000` | Port the backend listens on (Render sets it) |
-| `FRONTEND_URL` | backend | `http://localhost:3000` | Origin allowed by CORS. Required in production (`NODE_ENV=production`, or on Render): without it, or if it is not an http(s) URL, the server does not start. Only its origin is used, so a final slash does no harm |
-| `CLIENT_IP_HEADER` | backend | not set | Header where the hosting platform puts the address of the player; needed for the limits per address. On Render use `cf-connecting-ip` |
+| `FRONTEND_URL` | backend | `http://localhost:3000` | The only origin players can connect from: a connection that does not declare it is refused. Required in production (`NODE_ENV=production`, or on Render): without it, or if it is not an http(s) URL, the server does not start. Only its origin is used, so a final slash does no harm |
+| `CLIENT_IP_HEADER` | backend | not set | Header where the hosting platform puts the address of the player; needed for the limits per address. On Render use `cf-connecting-ip`. An IPv6 network (/64) counts as one address |
 | `LIMIT_BY_PEER_ADDRESS` | backend | not set | `true` to limit by the address of the connection itself: only for local development or a server with no proxy, never behind one |
 
 ---
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE).
+The code is released under the [PolyForm Noncommercial License 1.0.0](LICENSE). You can read it, run it, change it and share it for any noncommercial purpose, as long as you keep the license and the copyright notice. Making money from it is not allowed.
+
+Versions published before this change were released under GPL-3.0-or-later, and that license still applies to those versions.
+
+The name (non)BinaryGames and its logo are not covered by the license: please do not use them for your own version of the project.

@@ -18,3 +18,20 @@ describe('the names of the difficulty levels', () => {
     }
   });
 });
+
+// Every key of a dictionary, as the path the pages ask for ("home.create").
+const pathsOf = (dictionary: object, prefix = ''): string[] => Object.entries(dictionary).flatMap(([key, value]) =>
+  typeof value === 'string' ? [`${prefix}${key}`] : pathsOf(value as object, `${prefix}${key}.`));
+
+describe('the two dictionaries', () => {
+  it('have the same keys, so that no page falls back to the name of a key in one language', () => {
+    expect(pathsOf(italian).sort()).toEqual(pathsOf(en).sort());
+  });
+
+  it.each([['English', en], ['Italian', italian]])('have no empty sentence, in %s', (_language, dictionary) => {
+    const lookUp = (path: string) => path.split('.').reduce<unknown>((current, part) => (current as Record<string, unknown>)[part], dictionary);
+    for (const path of pathsOf(dictionary)) {
+      expect((lookUp(path) as string).trim(), path).not.toBe('');
+    }
+  });
+});

@@ -163,5 +163,130 @@ export const it: Translations = {
   emotes: {
     title: "Reazioni",
     more: "Altre reazioni"
+  },
+  nav: {
+    label: "Principale",
+    home: "(non)BinaryGames, home",
+    rooms: "Stanze",
+    diary: "Diario",
+    feedback: "Feedback"
+  },
+  footer: {
+    tagline: "Un progetto queer-owned, fatto per giocare insieme.",
+    github: "GitHub",
+    social: "Instagram, X e TikTok: in arrivo"
+  },
+  home: {
+    badge: "Puzzle chill, per due o per tutta la compagnia",
+    titleStart: "Giochiamo insieme,",
+    titleAccent: "senza fretta",
+    lead: "Giochi semplici da fare fianco a fianco, anche a distanza. Niente timer, niente punteggi: conta stare insieme, non vincere.",
+    create: "Crea una stanza",
+    discover: "Scopri i giochi",
+    gotLink: "Ti hanno mandato un link? Aprilo e sei già al tavolo.",
+    howTitle: "Come funziona",
+    step1Title: "Crea una stanza",
+    step1Text: "Un clic e sei al tavolo. Niente account, niente installazioni.",
+    step2Title: "Manda il link",
+    step2Text: "Copia l'indirizzo della stanza e mandalo a chi vuoi: chi lo apre si siede con te.",
+    step3Title: "Scegliete la scatola",
+    step3Text: "Ogni gioco è una scatola. Si apre quando più di metà della stanza la vuole.",
+    emotesTitle: "Dillo con una faccina",
+    emotesText: "Reazioni veloci che volano sopra il tavolo, per dire qualcosa senza scrivere.",
+    gamesTitle: "I giochi sul tavolo",
+    gamesHint: "Scegli un gioco per vedere com'è fatto e come si gioca."
+  },
+  gamesPage: {
+    preview: "Anteprima",
+    previewHint: "I contorni colorati mostrano dove stanno guardando gli altri giocatori.",
+    howToPlay: "Come si gioca",
+    soonText: "Altri giochi in arrivo",
+    noTimer: "Niente timer",
+    levels: "5 livelli",
+    sizes: "Da 6×6 a 12×12",
+    sudoku: {
+      tagline: "Il classico, in compagnia",
+      description: "Riempite la griglia insieme: ogni riga, colonna e riquadro contiene i numeri da 1 a 9 una volta sola.",
+      rule1: "Ogni riga, ogni colonna e ogni riquadro 3×3 contiene i numeri da 1 a 9, senza ripetizioni.",
+      rule2: "Cinque livelli di difficoltà, tutti risolvibili con la sola logica: non serve mai tirare a indovinare.",
+      rule3: "Le note sono condivise e colorate come chi le ha scritte.",
+      rule4: "Quando siete pronti, tutta la stanza può iniziare una nuova partita.",
+      fact: "Note condivise"
+    },
+    takuzu: {
+      tagline: "Zeri e uni in equilibrio",
+      description: "Una griglia da riempire con 0 e 1, seguendo tre regole semplici.",
+      rule5: "Cinque livelli, dalla griglia 6×6 alla 12×12, sempre risolvibili senza indovinare."
+    },
+    flowerField: {
+      tagline: "Un prato da esplorare insieme",
+      description: "Aprite tutte le celle che non nascondono una mina, usando i numeri per capire dove sono.",
+      fact1: "Bandierine del tuo colore",
+      fact2: "Prima cella sempre sicura"
+    },
+    wordSearch: {
+      tagline: "Parole nascoste, trovate insieme",
+      description: "Trovate le parole nascoste nella griglia. Ogni parola trovata resta segnata nel tuo colore.",
+      rule3: "Cinque livelli, dalla griglia 6×6 alla 12×12, con più direzioni man mano che crescono.",
+      rule4: "Parole in italiano o in inglese: la stanza può passare dall'una all'altra.",
+      fact: "Italiano e inglese"
+    }
+  },
+  rooms: {
+    title: "Stanze",
+    lead: "Oggi ogni stanza è privata e si condivide con un link. Le stanze pubbliche sono in lavorazione.",
+    todayTitle: "Come funzionano oggi",
+    privateTitle: "Private, sempre",
+    privateText: "Una stanza esiste solo per chi ha il link. Il suo codice non compare nella pagina.",
+    noAccountTitle: "Senza account",
+    noAccountText: "Ricevi un nome di fantasia, come Panda Rosso, e un colore tutto tuo.",
+    togetherTitle: "Si decide insieme",
+    togetherText: "Le scatole si votano: un gioco si apre quando più di metà della stanza lo vuole.",
+    wip: "Lavori in corso",
+    publicTitle: "Stanze pubbliche",
+    publicText: "L'idea: tavoli aperti a cui sedersi anche senza un invito, per quando hai voglia di giocare e non hai nessuno a portata di link. Non c'è ancora una data: prima vengono le stanze stabili e le riconnessioni.",
+    publicAsk: "Ti piacerebbero? Hai dubbi su sicurezza o moderazione?",
+    publicAskLink: "Scrivimelo nel feedback"
+  },
+  diary: {
+    title: "Diario",
+    lead: "Cosa sta arrivando, cosa è appena uscito e qualche pagina dietro le quinte.",
+    filter: "Mostra",
+    all: "Tutto",
+    upcoming: "In arrivo",
+    released: "Rilasciato",
+    behindTheScenes: "Dietro le quinte",
+    aboutTitle: "Chi c'è dietro",
+    about1: "Ciao, sono Aidhen.",
+    about2: "(non)BinaryGames è nato cercando un modo leggero per passare il tempo con una persona lontana. Non sempre si hanno le energie per qualcosa di impegnativo: un sudoku fatto insieme è bastato.",
+    about3: "Da lì l'idea: giochi semplici, fianco a fianco, dove conta la connessione e non la competizione."
+  },
+  feedback: {
+    title: "Feedback",
+    lead: "Il sito è in alpha: dimmi cosa non funziona, cosa ti manca o cosa ti è piaciuto.",
+    wip: "Lavori in corso",
+    wipText: "Questo modulo non è ancora attivo: non si può compilare né inviare. Aprirà presto.",
+    kind: "Di cosa si tratta?",
+    kindBug: "Qualcosa non va",
+    kindIdea: "Ho un'idea",
+    kindOther: "Altro",
+    about: "Riguarda",
+    aboutAll: "Tutto il sito",
+    aboutRooms: "Stanze e inviti",
+    headline: "In una riga",
+    headlinePlaceholder: "Es. Le note spariscono quando rientro",
+    details: "Racconta",
+    detailsPlaceholder: "Cosa stavi facendo, cosa ti aspettavi e cosa è successo.",
+    contact: "Un contatto, se vuoi una risposta",
+    optional: "facoltativo",
+    contactPlaceholder: "nome@esempio.it",
+    send: "Invia il feedback",
+    afterTitle: "Cosa succederà dopo",
+    after1Title: "Arriva a chi sviluppa",
+    after1Text: "Il messaggio diventa una segnalazione privata: non è pubblico.",
+    after2Title: "Viene letto",
+    after2Text: "Ogni segnalazione viene letta. Non sempre c'è una risposta diretta.",
+    after3Title: "Finisce nel diario",
+    after3Text: "Se diventa una modifica, la trovi tra le novità."
   }
 };

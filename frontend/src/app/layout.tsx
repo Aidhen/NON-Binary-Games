@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { TranslationProvider } from "@/lib/i18n/TranslationContext";
-import { ThemeSelector } from "./components/ui/ThemeSelector";
-import { LanguageSelector } from "./components/ui/LanguageSelector";
+import { SiteHeader } from "./components/site/SiteHeader";
+import { SiteFooter } from "./components/site/SiteFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,14 +45,11 @@ export default function RootLayout({
       )}>
         <TranslationProvider>
           <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem themes={['light', 'dark', 'retro', 'oled', 'non-binary']}>
-            <header className="w-full p-4 sm:p-8 flex justify-between items-center gap-3 max-w-5xl mx-auto">
-              <ThemeSelector />
-              <p className="min-w-0 truncate font-display text-base font-extrabold leading-none sm:text-xl">(non)BinaryGames</p>
-              <LanguageSelector />
-            </header>
+            <SiteHeader />
             <main className="flex-grow flex flex-col items-center justify-center w-full">
               {children}
             </main>
+            <SiteFooter />
           </ThemeProvider>
         </TranslationProvider>
       </body>

@@ -89,6 +89,16 @@
   --box-soon-1: #cbd5e1;
   --box-soon-2: #bfdbfe;
   --box-soon-ink: #0f172a;
+  /* The logo: its two tiles, where they overlap, outline, shadow, faces and star; then the two colored words of the name. */
+  --logo-left: #14b8a6;
+  --logo-right: #f97316;
+  --logo-overlap: #7c9bff;
+  --logo-line: #0f172a;
+  --logo-shadow: #0f172a;
+  --logo-face: #0f172a;
+  --logo-sparkle: #fbbf24;
+  --logo-non: #c2410c;
+  --logo-games: #0f766e;
 }
 
 /* Theme: DARK */
@@ -141,6 +151,15 @@
   --box-soon-1: #334155;
   --box-soon-2: #1e3a8a;
   --box-soon-ink: #f8fafc;
+  --logo-left: #14b8a6;
+  --logo-right: #fb923c;
+  --logo-overlap: #60a5fa;
+  --logo-line: #f8fafc;
+  --logo-shadow: #334155;
+  --logo-face: #020617;
+  --logo-sparkle: #facc15;
+  --logo-non: #fdba74;
+  --logo-games: #2dd4bf;
 }
 
 /* Theme: RETRO */
@@ -193,6 +212,15 @@
   --box-soon-1: #d1bfae;
   --box-soon-2: #e7d395;
   --box-soon-ink: #4a3c31;
+  --logo-left: #79b4a4;
+  --logo-right: #e3884f;
+  --logo-overlap: #9b7bb8;
+  --logo-line: #4a3c31;
+  --logo-shadow: #4a3c31;
+  --logo-face: #4a3c31;
+  --logo-sparkle: #e7b93e;
+  --logo-non: #92400e;
+  --logo-games: #0f766e;
 }
 
 /* Theme: OLED */
@@ -245,6 +273,15 @@
   --box-soon-1: #222222;
   --box-soon-2: #393939;
   --box-soon-ink: #ffffff;
+  --logo-left: #14b8a6;
+  --logo-right: #f97316;
+  --logo-overlap: #c084fc;
+  --logo-line: #ffffff;
+  --logo-shadow: #2a2a2a;
+  --logo-face: #000000;
+  --logo-sparkle: #facc15;
+  --logo-non: #f97316;
+  --logo-games: #2dd4bf;
 }
 
 /* Theme: NON-BINARY */
@@ -300,6 +337,15 @@
   --box-soon-1: #9553cc;
   --box-soon-2: #ffffff;
   --box-soon-ink: #1a1a1a;
+  --logo-left: #f3f3f3;
+  --logo-right: #fcf434;
+  --logo-overlap: #9553cc;
+  --logo-line: #1a1a1a;
+  --logo-shadow: #5b3a7e;
+  --logo-face: #1a1a1a;
+  --logo-sparkle: #fcf434;
+  --logo-non: #fcf434;
+  --logo-games: #c39bea;
 }
 
 /* Animations (used with Tailwind's motion-safe: variant) */

@@ -124,4 +124,8 @@ docker compose run --rm node-cli npm run lint --workspace=frontend
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE).
+The code is released under the [PolyForm Noncommercial License 1.0.0](LICENSE). You can read it, run it, change it and share it for any noncommercial purpose, as long as you keep the license and the copyright notice. Making money from it is not allowed.
+
+Versions published before this change were released under GPL-3.0-or-later, and that license still applies to those versions.
+
+The name (non)BinaryGames and its logo are not covered by the license: please do not use them for your own version of the project.

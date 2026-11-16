@@ -177,9 +177,9 @@ export const it: Translations = {
     social: "Instagram, X e TikTok: in arrivo"
   },
   home: {
-    titleStart: "Gioca in compagnia o in solitaria,",
-    titleAccent: "senza fretta",
-    lead: "Rilassati o metti alla prova la tua logica, in solitaria o collaborando con altre persone. Niente timer, niente punteggi: conta stare insieme, non vincere.",
+    titleStart: "Prenditi una pausa: gioca in solitaria o",
+    titleAccent: "in compagnia",
+    lead: "Rilassati o metti alla prova la tua logica, in solitaria o collaborando con altre persone. Mi raccomando, conta stare insieme, non vincere.",
     create: "Crea una stanza",
     discover: "Scopri i giochi",
     gotLink: "Ti hanno mandato un link? Aprilo e sei già al tavolo.",

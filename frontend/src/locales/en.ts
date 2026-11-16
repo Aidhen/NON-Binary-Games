@@ -175,9 +175,9 @@ export const en = {
     social: "Instagram, X and TikTok: coming soon"
   },
   home: {
-    titleStart: "Play together or on your own,",
-    titleAccent: "no rush",
-    lead: "Unwind or put your logic to the test, on your own or working together with others. No timers, no scores: what counts is being together, not winning.",
+    titleStart: "Take a break: play on your own or",
+    titleAccent: "together",
+    lead: "Unwind or put your logic to the test, on your own or working together with others. And remember: what counts is being together, not winning.",
     create: "Create a room",
     discover: "Discover the games",
     gotLink: "Did someone send you a link? Open it and you are already at the table.",

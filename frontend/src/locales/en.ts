@@ -179,7 +179,6 @@ export const en = {
     titleAccent: "together",
     lead: "Unwind or put your logic to the test, on your own or working together with others. And remember: what counts is being together, not winning.",
     create: "Create a room",
-    discover: "Discover the games",
     gotLink: "Did someone send you a link? Open it and you are already at the table.",
     howTitle: "How it works",
     step1Title: "Create a room",

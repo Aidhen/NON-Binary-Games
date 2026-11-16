@@ -181,7 +181,6 @@ export const it: Translations = {
     titleAccent: "in compagnia",
     lead: "Rilassati o metti alla prova la tua logica, in solitaria o collaborando con altre persone. Mi raccomando, conta stare insieme, non vincere.",
     create: "Crea una stanza",
-    discover: "Scopri i giochi",
     gotLink: "Ti hanno mandato un link? Aprilo e sei già al tavolo.",
     howTitle: "Come funziona",
     step1Title: "Crea una stanza",

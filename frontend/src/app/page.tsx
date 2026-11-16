@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { warmUpServer } from '@/lib/warmUp';
 import { EmoteShowcase } from './components/emotes/EmoteShowcase';
 import { GameShelf } from './components/games/GameShelf';
-import { BAND, BODY, BUTTON_PRIMARY, BUTTON_SECONDARY, CARD, HEADING } from './components/site/styles';
+import { BAND, BODY, BUTTON_PRIMARY, CARD, HEADING } from './components/site/styles';
 
 const STEPS = ['step1', 'step2', 'step3'] as const;
 
@@ -36,10 +36,7 @@ export default function Home() {
             </span>.
           </h1>
           <p className={cn(BODY, "text-lg")}>{t('home.lead')}</p>
-          <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={openNewRoom} className={BUTTON_PRIMARY}>{t('home.create')}</button>
-            <a href="#games" className={BUTTON_SECONDARY}>{t('home.discover')}</a>
-          </div>
+          <button type="button" onClick={openNewRoom} className={BUTTON_PRIMARY}>{t('home.create')}</button>
           <p className={cn(BODY, "text-sm")}>{t('home.gotLink')}</p>
         </div>
         {/* On a phone the large logo would only push the page down: the small one in the header is enough. */}
@@ -74,7 +71,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="games" aria-labelledby="games-title" className="flex scroll-mt-4 flex-col gap-3">
+      <section aria-labelledby="games-title" className="flex flex-col gap-3">
         <div>
           <h2 id="games-title" className={cn(HEADING, "text-3xl")}>{t('home.gamesTitle')}</h2>
           <p className={cn(BODY, "text-sm")}>{t('home.gamesHint')}</p>

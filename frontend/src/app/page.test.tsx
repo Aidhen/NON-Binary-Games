@@ -63,11 +63,10 @@ describe('Home', () => {
     expect(first).not.toBe(second);
   });
 
-  it('leads to the games further down the page', () => {
+  it('shows the games further down the page', () => {
     render(<Home />);
 
-    expect(screen.getByRole('link', { name: 'home.discover' })).toHaveAttribute('href', '#games');
-    expect(document.getElementById('games')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'home.gamesTitle' })).toBeInTheDocument();
   });
 
   it('explains how it works in three steps, in order', () => {

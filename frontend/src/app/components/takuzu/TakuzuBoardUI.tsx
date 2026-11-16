@@ -72,7 +72,7 @@ export function TakuzuBoardUI({ size, grid, initial, selectedCell, conflicts, is
           "w-full h-full grid overflow-hidden rounded-2xl",
           "border-4 border-[var(--grid-border-outer)] shadow-[var(--shadow-paper)]"
         )}
-        style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${size}, minmax(0, 1fr))` }}
       >
         {grid.map((row, r) => row.map((value, c) => {
           const isGiven = initial[r][c] !== 0;

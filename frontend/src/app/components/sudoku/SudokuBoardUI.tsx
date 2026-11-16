@@ -129,7 +129,7 @@ export function SudokuBoardUI({
           "w-full h-full grid overflow-hidden rounded-2xl transition-colors duration-300",
           "border-4 border-[var(--grid-border-outer)] shadow-[var(--shadow-paper)]"
         )}
-        style={{ gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${board.size}, minmax(0, 1fr))` }}
       >
         {playerGrid.map((row, rIndex) => (
           row.map((cellValue, cIndex) => {

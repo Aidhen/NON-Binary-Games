@@ -4,7 +4,8 @@
   "workspaces": [
     "frontend",
     "backend",
-    "shared"
+    "shared",
+    "art"
   ],
   "devDependencies": {
     "@types/node": "^25.6.2",
@@ -19,7 +20,7 @@
     "test": "vitest",
     "coverage-no-file": "vitest run --coverage --coverage.reporter=text",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit -p shared && tsc --noEmit -p backend && tsc --noEmit -p frontend"
+    "typecheck": "tsc --noEmit -p shared && tsc --noEmit -p art && tsc --noEmit -p backend && tsc --noEmit -p frontend"
   },
   "lint-staged": {
     "frontend/**/*.{ts,tsx,js,jsx,mjs}": "npm run lint --workspace=frontend -- --fix"

@@ -16,6 +16,7 @@ export default defineConfig({
         configDir,
         '../shared/src/index.ts'
       ),
+      '@nbg/art': path.resolve(configDir, '../art/src/index.ts'),
     },
   },
 

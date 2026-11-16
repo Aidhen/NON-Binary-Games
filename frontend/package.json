@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "0.5.1-alpha",
   "author": "Aidhen",
-  "license": "GPL-3.0-or-later",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",

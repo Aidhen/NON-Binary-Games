@@ -9,7 +9,7 @@
     "test": "vitest"
   },
   "author": "Aidhen",
-  "license": "GPL-3.0-or-later",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "dependencies": {
     "@nbg/shared": "*",
     "socket.io": "^4.8.3",

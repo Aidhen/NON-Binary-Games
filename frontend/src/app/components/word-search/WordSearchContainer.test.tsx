@@ -266,9 +266,9 @@ describe('WordSearchContainer', () => {
   it('puts the emotes right under the grid, above the words and the rules: they are used while playing', async () => {
     await renderGame();
 
-    const emotes = screen.getByRole('group', { name: 'emotes.title' });
-    expect(emotes.compareDocumentPosition(screen.getByText('wordSearch.words')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(emotes.compareDocumentPosition(screen.getByText('wordSearch.rules')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const emotes = screen.getByRole('group', { name: en.emotes.title });
+    expect(emotes.compareDocumentPosition(screen.getByText(en.wordSearch.words)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(emotes.compareDocumentPosition(screen.getByText(en.wordSearch.rules)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('ignores the start of another game', async () => {

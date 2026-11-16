@@ -1,6 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import packageInfo from '../../../../package.json';
+
+// The version is read when the module loads, like the build does: it has to be there before the import.
+vi.hoisted(() => { process.env.NEXT_PUBLIC_APP_VERSION = '1.2.3-test'; });
+
 import { REPOSITORY_URL, SiteFooter } from './SiteFooter';
 
 vi.mock('@/lib/i18n/TranslationContext', () => ({
@@ -11,7 +14,7 @@ describe('SiteFooter', () => {
   it('says which version of the site this is', () => {
     render(<SiteFooter />);
 
-    expect(screen.getByText(new RegExp(`v${packageInfo.version.replaceAll('.', '\\.')}`))).toBeInTheDocument();
+    expect(screen.getByText(/v1\.2\.3-test/)).toBeInTheDocument();
   });
 
   it('leads to the feedback page and to the repository, without telling the repository where the player came from', () => {

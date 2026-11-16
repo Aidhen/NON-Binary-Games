@@ -29,7 +29,7 @@ The game runs on a free hosting plan that goes to sleep when nobody is around, s
 
 ---
 
-## Current Status: v0.5.0-alpha
+## Current Status: v0.5.1-alpha
 
 The games are playable online. You can create a room, share the link, pick a game at the table (Sudoku, Takuzu, Flower Field or Word Search), play it together, share notes in the Sudoku and react with emotes. From here the focus is on polishing the games, making rooms smooth and reliable, and adding more games.
 

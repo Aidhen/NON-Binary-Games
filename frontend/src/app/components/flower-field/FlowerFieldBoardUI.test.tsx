@@ -37,6 +37,13 @@ describe('FlowerFieldBoardUI', () => {
     expect(screen.getByRole('button', { name: 'R2 C1: mine' })).toHaveTextContent('✸');
   });
 
+  it('gives the rows a fixed share of the board, so a cell is never squashed by what it holds', () => {
+    render(<FlowerFieldBoardUI {...baseProps} />);
+
+    const board = screen.getAllByRole('button')[0].parentElement as HTMLElement;
+    expect(board.style.gridTemplateRows).toBe('repeat(3, minmax(0, 1fr))');
+  });
+
   it('shows a flag in the color of the player who put it', () => {
     render(<FlowerFieldBoardUI {...baseProps} flags={{ '0-0': 'friend' }} profiles={profiles} />);
 

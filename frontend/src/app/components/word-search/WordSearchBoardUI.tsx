@@ -164,7 +164,7 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
           aria-label={t('wordSearch.grid')}
           // Without this the browser takes a drag for a scroll of the page and stops sending the moves.
           className="w-full h-full grid touch-none select-none"
-          style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${size}, minmax(0, 1fr))` }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}

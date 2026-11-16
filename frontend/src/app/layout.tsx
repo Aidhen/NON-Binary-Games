@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Baloo_2, Geist, Geist_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   title: "(non)BinaryGames",
   description: "Calm games to play together in real time. Open a room, share the link and pick a box.",
 };
+
+// Fixed to the width of the phone, so a page never opens wider than the screen.
+export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({
   children,

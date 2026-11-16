@@ -314,6 +314,13 @@
   }
 }
 
+/* The cut-outs below stick out of the screen on purpose: without this a phone can pan the page sideways to look at them. */
+html,
+body {
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
 body {
   background-color: var(--bg);
   transition: background-color 0.3s ease;

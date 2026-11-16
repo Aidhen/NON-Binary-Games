@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { EMOTE_PAGES } from '@nbg/shared';
 import type { Emote } from '@nbg/shared';
+import { EmoteArt } from '@nbg/art';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +12,9 @@ interface EmoteBarProps {
 }
 
 const [FRONT_EMOTES, BACK_EMOTES] = EMOTE_PAGES;
+
+// The buttons are 40 pixels tall: the drawing fills them without touching the edge.
+const ART_SIZE = 30;
 
 const FACE_CLASSES = cn(
   "absolute inset-0 flex items-center justify-center rounded-[var(--radius-control)] backface-hidden",
@@ -28,6 +32,8 @@ export function EmoteBar({ onSend, disabled = false }: Readonly<EmoteBarProps>) 
           key={emote}
           onClick={() => onSend(flipped ? BACK_EMOTES[index] : emote)}
           disabled={disabled}
+          // The drawings are decoration: the button is named after the emoji it sends, which every screen reader can say.
+          aria-label={flipped ? BACK_EMOTES[index] : emote}
           className={cn(
             "group h-10 cursor-pointer text-xl perspective-midrange transition-transform motion-reduce:transition-none",
             "active:scale-90 disabled:cursor-not-allowed"
@@ -41,9 +47,8 @@ export function EmoteBar({ onSend, disabled = false }: Readonly<EmoteBarProps>) 
               flipped && "rotate-y-180"
             )}
           >
-            {/* The side facing away is hidden from screen readers too: the button is named after the emote it sends. */}
-            <span aria-hidden={flipped} className={FACE_CLASSES}>{emote}</span>
-            <span aria-hidden={!flipped} className={cn(FACE_CLASSES, "rotate-y-180")}>{BACK_EMOTES[index]}</span>
+            <span className={FACE_CLASSES}><EmoteArt emote={emote} size={ART_SIZE} /></span>
+            <span className={cn(FACE_CLASSES, "rotate-y-180")}><EmoteArt emote={BACK_EMOTES[index]} size={ART_SIZE} /></span>
           </span>
         </button>
       ))}

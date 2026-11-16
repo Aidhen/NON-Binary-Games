@@ -1,4 +1,8 @@
+import { EmoteArt } from '@nbg/art';
 import type { FloatingEmote } from '@/lib/useEmotes';
+
+// As large as the emoji it replaces (text-5xl).
+const ART_SIZE = 48;
 
 // Purely decorative: it never captures clicks and is hidden from assistive technology.
 export function EmoteOverlay({ emotes }: Readonly<{ emotes: FloatingEmote[] }>) {
@@ -8,10 +12,11 @@ export function EmoteOverlay({ emotes }: Readonly<{ emotes: FloatingEmote[] }>) 
         <span
           key={id}
           data-testid="floating-emote"
+          data-emote={emote}
           style={{ left: `${left}%` }}
-          className="absolute bottom-24 text-5xl motion-safe:animate-float"
+          className="absolute bottom-24 motion-safe:animate-float"
         >
-          {emote}
+          <EmoteArt emote={emote} size={ART_SIZE} />
         </span>
       ))}
     </div>

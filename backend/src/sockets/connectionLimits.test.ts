@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { createServer, get } from 'node:http';
 import type { IncomingMessage } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import type { AddressInfo, Socket as NetSocket } from 'node:net';
 import { Server } from 'socket.io';
 import Client from 'socket.io-client';
 import type { Socket as ClientSocket } from 'socket.io-client';
@@ -25,6 +25,8 @@ const headersOf = ({ address, origin = ORIGIN }: From) => ({ ...(origin === null
 describe('createConnectionGuard', () => {
   let io: Server<ClientToServerEvents, ServerToClientEvents> | undefined;
   const clients: TestClient[] = [];
+  /** Connections of the sessions opened by hand on a WebSocket: nothing on this side answers the server when it closes them. */
+  const heldOpen: NetSocket[] = [];
 
   const start = async (addressOf?: AddressOf, maxHttpBufferSize?: number) => {
     const httpServer = createServer();
@@ -64,8 +66,11 @@ describe('createConnectionGuard', () => {
           resolve({ status, reason });
         });
       });
-      // The session is left open, as a client that holds a place would: the server closes it at the end of the test.
-      request.on('upgrade', (response) => resolve({ status: response.statusCode ?? 0 }));
+      // The session is left open, as a client that holds a place would, until the end of the test.
+      request.on('upgrade', (response, socket) => {
+        heldOpen.push(socket as NetSocket);
+        resolve({ status: response.statusCode ?? 0 });
+      });
       request.on('error', reject);
     });
 
@@ -80,6 +85,8 @@ describe('createConnectionGuard', () => {
 
   afterEach(async () => {
     clients.splice(0).forEach((client) => client.disconnect());
+    // Closed from here: the server would otherwise wait for the answer to its closing frame, and it never comes.
+    heldOpen.splice(0).forEach((socket) => socket.destroy());
     await new Promise<void>((resolve) => { io ? io.close(() => resolve()) : resolve(); });
     io = undefined;
     rooms.clear();

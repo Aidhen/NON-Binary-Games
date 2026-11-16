@@ -21,7 +21,7 @@ const ABOUT = ['diary.about1', 'diary.about2', 'diary.about3'];
 
 /**
  * What is coming, what came out and a few stories. The entries are closed until one is chosen, one at a
- * time: the page stays a list to scan. The box about who makes the game is always open, next to the list.
+ * time: the page stays a list to scan. The box about who makes the game is always open, under the list.
  */
 export default function DiaryPage() {
   const { t, language } = useTranslation();
@@ -33,7 +33,7 @@ export default function DiaryPage() {
 
   return (
     <Page title={t('diary.title')} lead={t('diary.lead')}>
-      <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="flex flex-col gap-8">
         <div className="flex min-w-0 flex-col gap-4">
           <div role="group" aria-label={t('diary.filter')} className="flex flex-wrap gap-2">
             {(['all', ...DIARY_TYPES] as const).map((type) => (
@@ -80,7 +80,7 @@ export default function DiaryPage() {
                     </button>
                   </h2>
                   {expanded && (
-                    <div id={`diary-${entry.id}`} className="flex max-w-2xl flex-col gap-3 px-5 pb-5 text-base font-medium text-[var(--title-text)]">
+                    <div id={`diary-${entry.id}`} className="flex max-w-3xl flex-col gap-3 px-5 pb-5 text-base font-medium text-[var(--title-text)]">
                       {text.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
                     </div>
                   )}

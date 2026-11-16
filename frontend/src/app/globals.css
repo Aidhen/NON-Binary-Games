@@ -24,9 +24,9 @@
   --color-numpad-hover: var(--numpad-hover);
   --color-numpad-active: var(--numpad-active);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-baloo), var(--font-geist-sans), ui-rounded, sans-serif;
+  --font-display: var(--font-baloo), var(--font-inter), ui-rounded, sans-serif;
 
   /*
    * Paper cut-out style: large radii and flat shadows that fall down and to the right, like paper lying on

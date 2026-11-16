@@ -177,10 +177,9 @@ export const it: Translations = {
     social: "Instagram, X e TikTok: in arrivo"
   },
   home: {
-    badge: "Puzzle chill, per due o per tutta la compagnia",
-    titleStart: "Giochiamo insieme,",
+    titleStart: "Gioca in compagnia o in solitaria,",
     titleAccent: "senza fretta",
-    lead: "Giochi semplici da fare fianco a fianco, anche a distanza. Niente timer, niente punteggi: conta stare insieme, non vincere.",
+    lead: "Rilassati o metti alla prova la tua logica, in solitaria o collaborando con altre persone. Niente timer, niente punteggi: conta stare insieme, non vincere.",
     create: "Crea una stanza",
     discover: "Scopri i giochi",
     gotLink: "Ti hanno mandato un link? Aprilo e sei già al tavolo.",
@@ -198,7 +197,6 @@ export const it: Translations = {
   },
   gamesPage: {
     preview: "Anteprima",
-    previewHint: "I contorni colorati mostrano dove stanno guardando gli altri giocatori.",
     howToPlay: "Come si gioca",
     soonText: "Altri giochi in arrivo",
     noTimer: "Niente timer",

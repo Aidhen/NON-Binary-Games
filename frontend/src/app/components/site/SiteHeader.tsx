@@ -26,7 +26,7 @@ export function SiteHeader() {
       <Link href="/" aria-label={t('nav.home')} className="flex min-w-0 items-center gap-2">
         <LogoMark size={44} />
         <span className="truncate font-display text-xl leading-none sm:text-2xl">
-          <span className="font-semibold text-[var(--logo-non)]">(non)</span>
+          <span className="font-medium text-[var(--logo-non)]">(non)</span>
           <span className="font-extrabold text-[var(--title-text)]">Binary</span>
           <span className="font-extrabold text-[var(--logo-games)]">Games</span>
         </span>

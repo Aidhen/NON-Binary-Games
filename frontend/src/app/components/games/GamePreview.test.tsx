@@ -1,22 +1,38 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GAME_IDS } from '@nbg/shared';
 import { GamePreview } from './GamePreview';
 
+vi.mock('@/lib/i18n/TranslationContext', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+const cellsOf = (preview: HTMLElement) => preview.querySelectorAll('button');
+
 describe('GamePreview', () => {
-  it.each(GAME_IDS)('draws a square board for %s, with two players looking at it', (id) => {
+  it.each(GAME_IDS)('draws the board of %s itself, as a square', (id) => {
     render(<GamePreview game={id} />);
 
-    const board = screen.getByTestId('game-preview');
-    const cells = board.children.length;
+    const cells = cellsOf(screen.getByTestId('game-preview')).length;
+    expect(cells).toBeGreaterThan(0);
     expect(Math.sqrt(cells) % 1).toBe(0);
-    expect(board.style.gridTemplateColumns).toContain(`repeat(${Math.sqrt(cells)},`);
-    expect(board.querySelectorAll('.ring-inset')).toHaveLength(2);
   });
 
-  it('is decoration: the rules say the same in words', () => {
+  it.each(GAME_IDS)('is a picture of %s: it takes no clicks or focus, and screen readers skip it', (id) => {
+    render(<GamePreview game={id} />);
+
+    const preview = screen.getByTestId('game-preview');
+    expect(preview).toHaveAttribute('inert');
+    expect(preview).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('shows the Sudoku with the lines between its nine boxes', () => {
     render(<GamePreview game="sudoku" />);
 
-    expect(screen.getByTestId('game-preview')).toHaveAttribute('aria-hidden', 'true');
+    const cells = [...cellsOf(screen.getByTestId('game-preview'))];
+    expect(cells).toHaveLength(81);
+    // Two thick vertical lines and two horizontal ones, each nine cells long.
+    expect(cells.filter((cell) => cell.classList.contains('border-r-2'))).toHaveLength(18);
+    expect(cells.filter((cell) => cell.classList.contains('border-b-2'))).toHaveLength(18);
   });
 });

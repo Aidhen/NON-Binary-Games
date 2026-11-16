@@ -65,7 +65,6 @@ export function GameShelf() {
               <section className="flex min-w-0 flex-col gap-2">
                 <h4 className={cn(HEADING, "text-xl")}>{t('gamesPage.preview')}</h4>
                 <GamePreview game={game.id} />
-                <p className={cn(BODY, "text-xs")}>{t('gamesPage.previewHint')}</p>
               </section>
               <section className="flex min-w-0 flex-col gap-2">
                 <h4 className={cn(HEADING, "text-xl")}>{t('gamesPage.howToPlay')}</h4>

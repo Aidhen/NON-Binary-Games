@@ -29,7 +29,7 @@ export default function FeedbackPage() {
 
   return (
     <Page title={t('feedback.title')} lead={t('feedback.lead')}>
-      <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="flex flex-col gap-8">
         <div className="flex min-w-0 flex-col gap-4">
           <p role="status" className={cn(BAND, "flex flex-wrap items-center gap-3 p-4 text-base font-medium text-[var(--title-text)]")}>
             <span className={PILL}>{t('feedback.wip')}</span>
@@ -81,14 +81,13 @@ export default function FeedbackPage() {
 
         <aside aria-labelledby="feedback-after" className={cn(BAND, "flex flex-col gap-4 p-5 sm:p-6")}>
           <h2 id="feedback-after" className={cn(HEADING, "text-2xl")}>{t('feedback.afterTitle')}</h2>
-          {AFTER.map((item) => (
-            <div key={item}>
-              <h3 className={cn(HEADING, "text-lg")}>{t(`feedback.${item}Title`)}</h3>
-              <p className={cn(BODY, "text-sm")}>{t(`feedback.${item}Text`)}</p>
-            </div>
-          ))}
-          <div className="flex justify-center">
-            <EmoteArt emote="🙏" size={104} />
+          <div className="grid gap-4 md:grid-cols-3">
+            {AFTER.map((item) => (
+              <div key={item}>
+                <h3 className={cn(HEADING, "text-lg")}>{t(`feedback.${item}Title`)}</h3>
+                <p className={cn(BODY, "text-sm")}>{t(`feedback.${item}Text`)}</p>
+              </div>
+            ))}
           </div>
         </aside>
       </div>

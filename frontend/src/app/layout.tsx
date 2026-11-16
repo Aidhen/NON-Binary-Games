@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Baloo_2, Geist, Geist_Mono } from "next/font/google";
+import { Baloo_2, Geist_Mono, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
@@ -7,8 +7,9 @@ import { TranslationProvider } from "@/lib/i18n/TranslationContext";
 import { SiteHeader } from "./components/site/SiteHeader";
 import { SiteFooter } from "./components/site/SiteFooter";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// The face of everything that is read: plain and wide open, next to the round one of the titles.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -22,7 +23,7 @@ const geistMono = Geist_Mono({
 const baloo = Baloo_2({
   variable: "--font-baloo",
   subsets: ["latin"],
-  weight: ["600", "800"],
+  weight: ["500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -37,7 +38,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn(geistSans.variable, geistMono.variable, baloo.variable, "h-full antialiased")}>
+    <html lang="en" suppressHydrationWarning className={cn(inter.variable, geistMono.variable, baloo.variable, "h-full antialiased")}>
       <body className={cn(
         "min-h-full flex flex-col",
         "text-[var(--title-text)]",

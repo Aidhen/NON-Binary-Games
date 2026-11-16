@@ -175,10 +175,9 @@ export const en = {
     social: "Instagram, X and TikTok: coming soon"
   },
   home: {
-    badge: "Chill puzzles, for two or for the whole group",
-    titleStart: "Let's play together,",
+    titleStart: "Play together or on your own,",
     titleAccent: "no rush",
-    lead: "Simple games to play side by side, even from far away. No timers, no scores: what counts is being together, not winning.",
+    lead: "Unwind or put your logic to the test, on your own or working together with others. No timers, no scores: what counts is being together, not winning.",
     create: "Create a room",
     discover: "Discover the games",
     gotLink: "Did someone send you a link? Open it and you are already at the table.",
@@ -196,7 +195,6 @@ export const en = {
   },
   gamesPage: {
     preview: "Preview",
-    previewHint: "The colored outlines show where the other players are looking.",
     howToPlay: "How to play",
     soonText: "More games on the way",
     noTimer: "No timer",

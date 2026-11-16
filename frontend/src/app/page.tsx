@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { warmUpServer } from '@/lib/warmUp';
 import { EmoteShowcase } from './components/emotes/EmoteShowcase';
 import { GameShelf } from './components/games/GameShelf';
-import { BAND, BODY, BUTTON_PRIMARY, BUTTON_SECONDARY, CARD, HEADING, PILL } from './components/site/styles';
+import { BAND, BODY, BUTTON_PRIMARY, BUTTON_SECONDARY, CARD, HEADING } from './components/site/styles';
 
 const STEPS = ['step1', 'step2', 'step3'] as const;
 
@@ -25,10 +25,15 @@ export default function Home() {
     <div className="mb-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-12 pt-2 sm:px-8">
       <section className="flex flex-wrap items-center justify-between gap-x-12 gap-y-8">
         <div className="flex min-w-0 max-w-xl flex-1 basis-96 flex-col items-start gap-5">
-          <span className={PILL}>{t('home.badge')}</span>
           <h1 className={cn(HEADING, "text-5xl sm:text-6xl")}>
             {t('home.titleStart')}{' '}
-            <span className="whitespace-nowrap text-[var(--logo-non)] underline decoration-[var(--logo-sparkle)] decoration-wavy decoration-4 underline-offset-8">{t('home.titleAccent')}</span>.
+            <span className="relative inline-block whitespace-nowrap text-[var(--logo-non)]">
+              {t('home.titleAccent')}
+              {/* One stroke of a marker under the words, stretched to their width. */}
+              <svg aria-hidden="true" viewBox="0 0 100 10" preserveAspectRatio="none" className="absolute -bottom-1.5 left-0 h-2.5 w-full">
+                <path d="M2 6 Q14 1 26 5 T50 5 T74 5 T98 4" fill="none" strokeWidth="5" strokeLinecap="round" vectorEffect="non-scaling-stroke" style={{ stroke: 'var(--logo-sparkle)' }} />
+              </svg>
+            </span>.
           </h1>
           <p className={cn(BODY, "text-lg")}>{t('home.lead')}</p>
           <div className="flex flex-wrap gap-3">

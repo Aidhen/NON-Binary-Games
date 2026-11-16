@@ -89,7 +89,7 @@ describe('DiaryPage', () => {
     expect(screen.getByText(newestFirst[0].it.title)).toBeInTheDocument();
   });
 
-  it('always shows who is behind the game, next to the list', () => {
+  it('always shows who is behind the game, under the list', () => {
     language.current = 'en';
     render(<DiaryPage />);
 

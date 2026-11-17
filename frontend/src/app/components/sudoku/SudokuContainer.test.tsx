@@ -698,7 +698,7 @@ describe('SudokuContainer', () => {
       fireEvent.click(screen.getByRole('button', { name: EMOTES[5] }));
 
       expect(mocks.emitted).toContainEqual({ event: 'send-emote', args: [EMOTES[5]] });
-      expect(screen.getAllByTestId('floating-emote').map((element) => element.textContent)).toEqual([EMOTES[5]]);
+      expect(screen.getAllByTestId('floating-emote').map((element) => element.dataset.emote)).toEqual([EMOTES[5]]);
     });
 
     it('waits for the cooldown before accepting another reaction', async () => {
@@ -716,7 +716,7 @@ describe('SudokuContainer', () => {
 
       await act(async () => { mocks.dispatch('emote-received', { alias: 'someone-else', emote: EMOTES[3] }); });
 
-      expect(screen.getAllByTestId('floating-emote').map((element) => element.textContent)).toEqual([EMOTES[3]]);
+      expect(screen.getAllByTestId('floating-emote').map((element) => element.dataset.emote)).toEqual([EMOTES[3]]);
       expect(mocks.emitted.some(({ event }) => event === 'send-emote')).toBe(false);
     });
 

@@ -5,6 +5,12 @@ import { GameSettings } from './SudokuContainer';
 import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils';
 import { UNKNOWN_PLAYER_STYLE, styleOfColor } from '@/lib/playerPalette';
+import { BOARD_TRAY } from '../games/boardStyles';
+
+// The room between two tiles, in pixels. The lines between the boxes are exactly this wide: they fill it.
+const GAP = 3;
+
+const BOX_LINE = "pointer-events-none absolute rounded-full bg-[var(--grid-border-outer)]";
 
 interface SudokuBoardUIProps {
   board: SudokuBoard;
@@ -114,6 +120,11 @@ export function SudokuBoardUI({
     return 'text-[var(--number-player)] font-medium';
   };
 
+  // Where a box ends and the next begins, counted in cells from the edge of the board.
+  const boxEdges = Array.from({ length: board.size / board.boxSize - 1 }, (_, index) => (index + 1) * board.boxSize);
+  // The gap after that many cells: every cell takes the same share of the board, a gap included, except that the last one has none.
+  const lineAt = (cells: number) => `calc(${cells} * (100% + ${GAP}px) / ${board.size} - ${GAP}px)`;
+
   const cellOccupantsMap = useMemo(() => {
     const map = new Map<string, string>();
     Object.entries(othersSelections).forEach(([alias, [r, c]]) => {
@@ -123,19 +134,13 @@ export function SudokuBoardUI({
   }, [othersSelections]);
 
   return (
-    <div className="relative w-full aspect-square">
+    <div className={cn("relative aspect-square", BOARD_TRAY)}>
       <div
-        className={cn(
-          "w-full h-full grid overflow-hidden rounded-2xl transition-colors duration-300",
-          "border-4 border-[var(--grid-border-outer)] shadow-[var(--shadow-paper)]"
-        )}
-        style={{ gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${board.size}, minmax(0, 1fr))` }}
+        className="relative grid h-full w-full"
+        style={{ gap: GAP, gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${board.size}, minmax(0, 1fr))` }}
       >
         {playerGrid.map((row, rIndex) => (
           row.map((cellValue, cIndex) => {
-            const isRightBorder = (cIndex + 1) % board.boxSize === 0 && cIndex !== board.size - 1;
-            const isBottomBorder = (rIndex + 1) % board.boxSize === 0 && rIndex !== board.size - 1;
-
             const initial = isCellInitial(rIndex, cIndex);
             const selected = isCellSelected(rIndex, cIndex);
             const displayError = shouldDisplayError(rIndex, cIndex, cellValue);
@@ -178,8 +183,6 @@ export function SudokuBoardUI({
                 value={cellValue}
                 bgClass={finalBgClass}
                 textClass={textClass}
-                isRightBorder={isRightBorder}
-                isBottomBorder={isBottomBorder}
                 onClick={() => !isGameWon && onCellClick(rIndex, cIndex)}
                 notes={parsedNotes}
                 boardSize={board.size}
@@ -187,6 +190,13 @@ export function SudokuBoardUI({
               />
             );
           })
+        ))}
+        {/* The lines between the boxes: one in each gap where a box ends and the next begins, across and down. */}
+        {boxEdges.map((edge) => (
+          <div key={`column-${edge}`} aria-hidden="true" data-box-line="column" className={BOX_LINE} style={{ left: lineAt(edge), top: 0, bottom: 0, width: GAP }} />
+        ))}
+        {boxEdges.map((edge) => (
+          <div key={`row-${edge}`} aria-hidden="true" data-box-line="row" className={BOX_LINE} style={{ top: lineAt(edge), left: 0, right: 0, height: GAP }} />
         ))}
       </div>
     </div>

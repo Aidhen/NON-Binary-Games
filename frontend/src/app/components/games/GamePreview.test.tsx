@@ -31,8 +31,7 @@ describe('GamePreview', () => {
 
     const cells = [...cellsOf(screen.getByTestId('game-preview'))];
     expect(cells).toHaveLength(81);
-    // Two thick vertical lines and two horizontal ones, each nine cells long.
-    expect(cells.filter((cell) => cell.classList.contains('border-r-2'))).toHaveLength(18);
-    expect(cells.filter((cell) => cell.classList.contains('border-b-2'))).toHaveLength(18);
+    // Two lines down and two across, between the boxes.
+    expect(screen.getByTestId('game-preview').querySelectorAll('[data-box-line]')).toHaveLength(4);
   });
 });

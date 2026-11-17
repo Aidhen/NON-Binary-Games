@@ -9,6 +9,7 @@ This is a personal project with a single owner, who also uses it to learn Node.j
 npm workspaces monorepo, TypeScript everywhere.
 
 - `shared/` (`@nbg/shared`): game engines, the Socket.IO event contracts and the zod schemas for every client payload. Types are inferred from the schemas.
+- `art/` (`@nbg/art`): the logo and the drawings of the emotes, as React components. Inline SVG, no dependency but React.
 - `backend/`: Node.js and Socket.IO server. Rooms live in memory behind `RoomStore`. Hosted on Render (free plan, sleeps when idle).
 - `frontend/`: Next.js (App Router), React, Tailwind with themes as CSS variables, no UI library. Hosted on Vercel.
 
@@ -17,10 +18,10 @@ Where things are, so nobody has to explore the repo to find them (tests sit next
 - Contract: `shared/src/schemas.ts` (zod schemas, event types), `shared/src/emotes.ts`, `shared/src/players.ts`.
 - Sudoku engine: `shared/src/games/sudoku/` (`generator.ts`, `validator.ts`, `types.ts`).
 - Server: `backend/src/server.ts` (HTTP, CORS, health check, shutdown), `backend/src/sockets/event.ts` (every socket handler), `safeHandler.ts`, `rateLimiter.ts`, `connectionLimits.ts` in the same folder, `backend/src/rooms/roomStore.ts`, `backend/src/logger.ts`.
-- Pages: `frontend/src/app/page.tsx` (home), `frontend/src/app/play/[roomId]/page.tsx` (room).
+- Pages: `frontend/src/app/page.tsx` (home), `frontend/src/app/play/[roomId]/page.tsx` (room), and `rooms/`, `diary/`, `feedback/` next to them.
 - Components, under `frontend/src/app/components/`: `sudoku/`, `players/`, `emotes/`, `loader/`, `minigames/`, `ui/`.
 - Client plumbing, under `frontend/src/lib/`: `socket.ts`, `storage.ts`, `playerId.ts`, `securityHeaders.ts`, the `use*.ts` hooks, `i18n/`.
-- Strings: `frontend/src/locales/en.ts` and `it.ts`.
+- Strings: `frontend/src/locales/en.ts` and `it.ts`. Diary entries: `frontend/src/locales/diary.ts` (rules in `docs/DIARY.md`).
 
 ## Commands
 
@@ -80,7 +81,7 @@ In a cloud session where the Docker daemon is not available, run the same npm co
 
 Before 1.0 the version is `0.MINOR.PATCH-alpha`. A PR that adds a feature for the players raises MINOR; one that fixes something they can see raises PATCH. Chores, docs, tests and CI do not change it.
 
-- **The bump is part of the PR that earns it:** the same number in `shared/package.json`, `backend/package.json` and `frontend/package.json`, the three matching entries in `package-lock.json`, and "Current Status" in the README. A PR with more than one feature raises MINOR once.
+- **The bump is part of the PR that earns it:** the same number in `shared/package.json`, `art/package.json`, `backend/package.json` and `frontend/package.json`, the matching entries in `package-lock.json`, and "Current Status" in the README. A PR with more than one feature raises MINOR once.
 - **Tag and release come after the merge,** on the merge commit: `vX.Y.Z-alpha`. The owner decides when (see Git); a tag is made by Claude only when asked. The release notes list the PRs since the previous tag, one line each, as the GitHub "What's Changed" does.
 - **Say it in the report:** when a PR does not bump the version although it adds a feature, the report says why.
 

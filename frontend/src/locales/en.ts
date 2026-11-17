@@ -161,6 +161,128 @@ export const en = {
   emotes: {
     title: "Reactions",
     more: "More reactions"
+  },
+  nav: {
+    label: "Main",
+    home: "(non)BinaryGames, home",
+    rooms: "Rooms",
+    diary: "Diary",
+    feedback: "Feedback"
+  },
+  footer: {
+    tagline: "A queer-owned project, made to play together.",
+    github: "GitHub",
+    social: "Instagram, X and TikTok: coming soon"
+  },
+  home: {
+    titleStart: "Take a break: play on your own or",
+    titleAccent: "together",
+    lead: "Unwind or put your logic to the test, on your own or working together with others. And remember: what counts is being together, not winning.",
+    create: "Create a room",
+    gotLink: "Did someone send you a link? Open it and you are already at the table.",
+    howTitle: "How it works",
+    step1Title: "Create a room",
+    step1Text: "One click and you are at the table. No account, nothing to install.",
+    step2Title: "Send the link",
+    step2Text: "Copy the address of the room and send it to whoever you want: who opens it sits with you.",
+    step3Title: "Pick the box",
+    step3Text: "Every game is a box. It opens when more than half of the room wants it.",
+    emotesTitle: "Say it with a face",
+    emotesText: "Quick reactions that float over the table, to say something without typing.",
+    gamesTitle: "The games on the table",
+    gamesHint: "Pick a game to see what it looks like and how to play."
+  },
+  gamesPage: {
+    preview: "Preview",
+    howToPlay: "How to play",
+    soonText: "More games on the way",
+    noTimer: "No timer",
+    levels: "5 levels",
+    sizes: "From 6×6 to 12×12",
+    sudoku: {
+      tagline: "The classic, in company",
+      description: "Fill the grid together: every row, column and box holds the numbers from 1 to 9 once.",
+      rule1: "Every row, every column and every 3×3 box holds the numbers from 1 to 9, with no repeats.",
+      rule2: "Five difficulty levels, all solvable by logic alone: you never have to guess.",
+      rule3: "Notes are shared, and colored after whoever wrote them.",
+      rule4: "When you are ready, the whole room can start a new game.",
+      fact: "Shared notes"
+    },
+    takuzu: {
+      tagline: "Zeros and ones in balance",
+      description: "A grid to fill with 0s and 1s, following three simple rules.",
+      rule5: "Five levels, from 6×6 to 12×12, always solvable without guessing."
+    },
+    flowerField: {
+      tagline: "A meadow to explore together",
+      description: "Open every cell that does not hide a mine, using the numbers to work out where the mines are.",
+      fact1: "Flags in your color",
+      fact2: "First cell always safe"
+    },
+    wordSearch: {
+      tagline: "Hidden words, found together",
+      description: "Find the words hidden in the grid. Every word you find is marked in your color.",
+      rule3: "Five levels, from 6×6 to 12×12, with more directions as they grow.",
+      rule4: "Words in English or Italian: the room can switch between the two.",
+      fact: "English and Italian"
+    }
+  },
+  rooms: {
+    title: "Rooms",
+    lead: "Today every room is private and shared with a link. Public rooms are in the works.",
+    todayTitle: "How they work today",
+    privateTitle: "Private, always",
+    privateText: "A room exists only for those who have the link. Its code is not shown in the page.",
+    noAccountTitle: "No account",
+    noAccountText: "You get a made-up name, like Red Panda, and a color of your own.",
+    togetherTitle: "Decided together",
+    togetherText: "Boxes are voted: a game opens when more than half of the room wants it.",
+    wip: "Work in progress",
+    publicTitle: "Public rooms",
+    publicText: "The idea: open tables to sit at without an invitation, for when you feel like playing and nobody is a link away. There is no date yet: stable rooms and smoother reconnections come first.",
+    publicAsk: "Would you like them? Any doubts about safety or moderation?",
+    publicAskLink: "Tell me in the feedback"
+  },
+  diary: {
+    title: "Diary",
+    lead: "What is coming, what just came out, and a few pages from behind the scenes.",
+    filter: "Show",
+    all: "Everything",
+    upcoming: "Coming",
+    released: "Released",
+    behindTheScenes: "Behind the scenes",
+    aboutTitle: "Who is behind it",
+    about1: "Hi, I'm Aidhen.",
+    about2: "(non)BinaryGames was born while looking for a light way to spend time with someone far away. We do not always have the energy for something demanding: a sudoku solved together was enough.",
+    about3: "From there came the idea: simple games, side by side, where connection counts and competition does not."
+  },
+  feedback: {
+    title: "Feedback",
+    lead: "The site is in alpha: tell me what does not work, what is missing or what you liked.",
+    wip: "Work in progress",
+    wipText: "This form is not active yet: it cannot be filled in or sent. It will open soon.",
+    kind: "What is it about?",
+    kindBug: "Something is wrong",
+    kindIdea: "I have an idea",
+    kindOther: "Something else",
+    about: "It concerns",
+    aboutAll: "The whole site",
+    aboutRooms: "Rooms and invitations",
+    headline: "In one line",
+    headlinePlaceholder: "E.g. Notes disappear when I come back",
+    details: "Tell me more",
+    detailsPlaceholder: "What you were doing, what you expected and what happened.",
+    contact: "A contact, if you want an answer",
+    optional: "optional",
+    contactPlaceholder: "name@example.com",
+    send: "Send feedback",
+    afterTitle: "What will happen next",
+    after1Title: "It reaches the developer",
+    after1Text: "The message becomes a private report: it is not public.",
+    after2Title: "It gets read",
+    after2Text: "Every report is read. There is not always a direct answer.",
+    after3Title: "It ends up in the diary",
+    after3Text: "If it becomes a change, you find it among the news."
   }
 };
 

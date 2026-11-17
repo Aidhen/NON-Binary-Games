@@ -1,19 +1,18 @@
 'use client';
 import { cn } from '@/lib/utils';
+import { BOARD_TILE } from '../games/boardStyles';
 
 interface SudokuCellProps {
   value: number;
   bgClass: string;
   textClass: string;
-  isRightBorder: boolean;
-  isBottomBorder: boolean;
   onClick: () => void;
   notes?: Record<number, string>;
   boardSize?: number;
   boxSize?: number;
 }
 
-export function SudokuCell({ value, bgClass, textClass, isRightBorder, isBottomBorder, onClick, notes, boardSize = 9, boxSize = 3 }: Readonly<SudokuCellProps>) {
+export function SudokuCell({ value, bgClass, textClass, onClick, notes, boardSize = 9, boxSize = 3 }: Readonly<SudokuCellProps>) {
   return (
     <button
       type="button"
@@ -22,15 +21,7 @@ export function SudokuCell({ value, bgClass, textClass, isRightBorder, isBottomB
       className={cn(
         "relative flex items-center justify-center font-display text-2xl leading-none",
         "cursor-pointer select-none overflow-hidden",
-        // Inside the cell: the board clips what is drawn outside its edge.
-        "focus-visible:-outline-offset-4",
-        {
-          "border-r-2 border-r-[var(--grid-border-outer)]": isRightBorder,
-          "border-r border-r-[var(--grid-border-inner)]": !isRightBorder,
-
-          "border-b-2 border-b-[var(--grid-border-outer)]": isBottomBorder,
-          "border-b border-b-[var(--grid-border-inner)]": !isBottomBorder,
-        },
+        BOARD_TILE,
         bgClass,
         textClass
       )}

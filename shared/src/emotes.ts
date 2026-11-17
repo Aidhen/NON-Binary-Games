@@ -1,6 +1,7 @@
 /**
  * Quick reactions players can send to the others in the room.
- * Plain Unicode emoji: no assets to load, and screen readers know their names.
+ * Plain Unicode emoji: this is what travels between the players, and screen readers know their names.
+ * How an emote looks is up to the page: the frontend draws them with the artwork of `@nbg/art`.
  *
  * This is the only place to edit: one row per side of the emote bar, in the order the buttons are shown.
  * The first row is the side players see when the game opens, the second one appears when they flip the bar.
@@ -8,7 +9,7 @@
  */
 export const EMOTE_PAGES = [
   ['💜', '🔥', '😂', '😤', '👏', '😎', '🤔', '😢', '😴'],
-  ['❤️', '🎉', '🦆', '🫪', '🙏', '💪', '😶‍🌫️', '🤯', '🫰'],
+  ['❤️', '🎉', '🦆', '🫪', '🙏', '😓', '😶‍🌫️', '🤯', '🫰'],
 ] as const;
 
 export const EMOTES_PER_PAGE = 9;

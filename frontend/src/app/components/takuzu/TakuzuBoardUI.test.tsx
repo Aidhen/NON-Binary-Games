@@ -107,11 +107,14 @@ describe('TakuzuBoardUI', () => {
     expect(screen.getByRole('button', { name: 'R1 C1: 0' }).className).toContain('text-2xl sm:text-3xl');
   });
 
-  it('draws a line between the cells, and none on the last column and the last row', () => {
+  it('draws the cells as tiles with room between them, and no lines', () => {
     render(<TakuzuBoardUI {...baseProps} />);
 
-    expect(screen.getByRole('button', { name: 'R1 C1: 0' }).className).toContain('border-r border-r-[var(--grid-border-inner)] border-b');
+    const first = screen.getByRole('button', { name: 'R1 C1: 0' });
+    expect(first).toHaveClass('rounded-md');
+    expect(first.className).not.toContain('border-');
     expect(screen.getByRole('button', { name: 'R4 C4: empty' }).className).not.toContain('border-');
+    expect(first.parentElement?.className).toMatch(/\bgap-/);
   });
 
   it('makes the cursor of the player being pointed out stand out, and only that one', () => {

@@ -4,19 +4,19 @@ import { SudokuCell } from './SudokuCell';
 
 describe('SudokuCell', () => {
   it('renders the given value with the correct accessible label and classes', () => {
-    render(<SudokuCell value={5} bgClass="bg-white" textClass="text-black" isRightBorder={false} isBottomBorder={false} onClick={vi.fn()} />);
+    render(<SudokuCell value={5} bgClass="bg-white" textClass="text-black" onClick={vi.fn()} />);
 
     const cell = screen.getByRole('button', { name: 'Cell value 5' });
 
     expect(cell).toHaveTextContent('5');
     expect(cell).toHaveClass('bg-white', 'text-black');
-    expect(cell).toHaveClass('border-r', 'border-r-[var(--grid-border-inner)]');
-    expect(cell).toHaveClass('border-b', 'border-b-[var(--grid-border-inner)]');
+    expect(cell).toHaveClass('rounded-md');
+    expect(cell.className).not.toContain('border-');
   });
 
   it('fires onClick when the cell is clicked', () => {
     const handleClick = vi.fn();
-    render(<SudokuCell value={0} bgClass="bg-white" textClass="text-black" isRightBorder={false} isBottomBorder={false} onClick={handleClick} />);
+    render(<SudokuCell value={0} bgClass="bg-white" textClass="text-black" onClick={handleClick} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Empty cell' }));
 
@@ -24,7 +24,7 @@ describe('SudokuCell', () => {
   });
 
   it('renders an empty cell when the value is zero and no notes are provided', () => {
-    render(<SudokuCell value={0} bgClass="bg-white" textClass="text-black" isRightBorder={false} isBottomBorder={false} onClick={vi.fn()} />);
+    render(<SudokuCell value={0} bgClass="bg-white" textClass="text-black" onClick={vi.fn()} />);
 
     const cell = screen.getByRole('button', { name: 'Empty cell' });
 
@@ -32,17 +32,8 @@ describe('SudokuCell', () => {
     expect(cell.querySelector('div[style]')).toBeNull();
   });
 
-  it('renders the correct border classes when outer borders are enabled', () => {
-    render(<SudokuCell value={5} bgClass="bg-white" textClass="text-black" isRightBorder={true} isBottomBorder={true} onClick={vi.fn()} />);
-
-    const cell = screen.getByRole('button', { name: 'Cell value 5' });
-
-    expect(cell).toHaveClass('border-r-2', 'border-r-[var(--grid-border-outer)]');
-    expect(cell).toHaveClass('border-b-2', 'border-b-[var(--grid-border-outer)]');
-  });
-
   it('renders notes with the correct colors and grid dimensions', () => {
-    render(<SudokuCell value={0} bgClass="bg-white" textClass="text-black" isRightBorder={false} isBottomBorder={false} onClick={vi.fn()} notes={{ 2: 'text-red-500', 4: 'text-blue-500' }} boardSize={4} boxSize={2} />);
+    render(<SudokuCell value={0} bgClass="bg-white" textClass="text-black" onClick={vi.fn()} notes={{ 2: 'text-red-500', 4: 'text-blue-500' }} boardSize={4} boxSize={2} />);
 
     const cell = screen.getByRole('button', { name: 'Empty cell' });
     const notesGrid = cell.querySelector<HTMLDivElement>('div[style]');
@@ -63,7 +54,7 @@ describe('SudokuCell', () => {
   });
 
   it('does not render notes when the cell already has a value', () => {
-    render(<SudokuCell value={5} bgClass="bg-white" textClass="text-black" isRightBorder={false} isBottomBorder={false} onClick={vi.fn()} notes={{ 2: 'text-red-500' }} />);
+    render(<SudokuCell value={5} bgClass="bg-white" textClass="text-black" onClick={vi.fn()} notes={{ 2: 'text-red-500' }} />);
 
     const cell = screen.getByRole('button', { name: 'Cell value 5' });
 

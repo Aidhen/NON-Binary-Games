@@ -1,0 +1,12 @@
+{
+  "name": "@nbg/art",
+  "version": "0.6.0-alpha",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "author": "Aidhen",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "peerDependencies": {
+    "react": "^19"
+  }
+}

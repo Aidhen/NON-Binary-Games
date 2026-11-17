@@ -21,6 +21,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@nbg/shared": ["../shared/src/index.ts"],
+      "@nbg/art": ["../art/src/index.ts"],
       "@nbg/shared/*": ["../shared/src/*"],
       "@shared/*.js": ["../shared/*.ts"],
       "@shared/*": ["../shared/*"],

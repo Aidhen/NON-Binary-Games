@@ -1,5 +1,6 @@
 [
   "./shared/vitest.config.ts",
+  "./art/vitest.config.mjs",
   "./frontend/vitest.config.mjs",
   "./backend/vitest.config.ts"
 ]

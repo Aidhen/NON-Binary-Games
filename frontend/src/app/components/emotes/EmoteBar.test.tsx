@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { EMOTE_PAGES } from '@nbg/shared';
+import { EMOTES, EMOTE_PAGES } from '@nbg/shared';
+import { hasEmoteArt } from '@nbg/art';
 import { describe, expect, it, vi } from 'vitest';
 import { EmoteBar } from './EmoteBar';
 
@@ -23,6 +24,18 @@ describe('EmoteBar', () => {
       expect(screen.queryByRole('button', { name: emote })).not.toBeInTheDocument();
     }
     expect(screen.getByRole('button', { name: 'emotes.more' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it.each(EMOTES)('has a drawing for %s', (emote) => {
+    expect(hasEmoteArt(emote)).toBe(true);
+  });
+
+  it('draws the emotes instead of writing them, on both sides of each button', () => {
+    render(<EmoteBar onSend={vi.fn()} />);
+
+    const first = screen.getByRole('button', { name: FRONT_EMOTES[0] });
+    expect(first.querySelectorAll('svg[data-emote-art]')).toHaveLength(2);
+    expect(first).not.toHaveTextContent(FRONT_EMOTES[0]);
   });
 
   it.each(FRONT_EMOTES)('sends %s when its button is clicked', (emote) => {

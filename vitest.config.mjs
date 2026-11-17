@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     projects: [
       './shared/vitest.config.ts',
+      './art/vitest.config.mjs',
       './frontend/vitest.config.mjs',
       './backend/vitest.config.ts',
     ],
@@ -15,6 +16,7 @@ export default defineConfig({
 
       include: [
         'shared/src/**/*.{ts,tsx}',
+        'art/src/**/*.{ts,tsx}',
         'backend/src/**/*.{ts,tsx}',
         'frontend/src/**/*.{ts,tsx}',
       ],
@@ -25,6 +27,7 @@ export default defineConfig({
         '**/*.spec.ts',
         '**/*.spec.tsx',
         'shared/src/index.ts',
+        'art/src/index.ts',
         'shared/src/games/sudoku/index.ts',
         'shared/src/games/sudoku/types.ts',
         '**/layout.tsx',

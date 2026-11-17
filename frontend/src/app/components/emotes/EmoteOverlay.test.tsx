@@ -7,7 +7,8 @@ describe('EmoteOverlay', () => {
     render(<EmoteOverlay emotes={[{ id: 1, emote: '🔥', left: 25 }, { id: 2, emote: '😴', left: 70 }]} />);
 
     const floating = screen.getAllByTestId('floating-emote');
-    expect(floating.map((element) => element.textContent)).toEqual(['🔥', '😴']);
+    expect(floating.map((element) => element.dataset.emote)).toEqual(['🔥', '😴']);
+    expect(floating.map((element) => element.querySelector('svg')?.dataset.emoteArt)).toEqual(['fire', 'sleeping']);
     expect(floating.map((element) => element.style.left)).toEqual(['25%', '70%']);
   });
 
@@ -17,6 +18,12 @@ describe('EmoteOverlay', () => {
     const overlay = container.firstElementChild!;
     expect(overlay).toHaveAttribute('aria-hidden', 'true');
     expect(overlay).toHaveClass('pointer-events-none');
+  });
+
+  it('shows the emoji itself for an emote that has no drawing yet', () => {
+    render(<EmoteOverlay emotes={[{ id: 1, emote: '🌵' as never, left: 50 }]} />);
+
+    expect(screen.getByTestId('floating-emote')).toHaveTextContent('🌵');
   });
 
   it('renders nothing visible when there are no emotes', () => {

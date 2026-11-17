@@ -135,11 +135,14 @@ describe('FlowerFieldBoardUI', () => {
     expect(screen.getByRole('button', { name: 'R1 C1: closed' }).className).toContain('text-xl sm:text-2xl');
   });
 
-  it('draws a line between the cells, and none on the last column and the last row', () => {
+  it('draws the cells as tiles with room between them, and no lines', () => {
     render(<FlowerFieldBoardUI {...baseProps} />);
 
-    expect(screen.getByRole('button', { name: 'R1 C1: closed' }).className).toContain('border-r border-r-[var(--grid-border-inner)] border-b');
+    const first = screen.getByRole('button', { name: 'R1 C1: closed' });
+    expect(first).toHaveClass('rounded-md');
+    expect(first.className).not.toContain('border-');
     expect(screen.getByRole('button', { name: 'R3 C3: closed' }).className).not.toContain('border-');
+    expect(first.parentElement?.className).toMatch(/\bgap-/);
   });
 
   it('makes the flags and the cursor of the player being pointed out stand out, and only theirs', () => {

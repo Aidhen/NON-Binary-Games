@@ -10,7 +10,7 @@ I had this idea while looking for ways to pass the time with my long-distance pa
 
 ## Play together
 
-Open the site and you are already in a room: send the link to your partner or your friends and they sit at the same table. No accounts, no timers, no scores.
+Create a room from the home page, send the link to your partner or your friends and they sit at the same table. No accounts, no timers, no scores.
 
 - **A table with boxes.** Every game is a box. Each of you picks one, and the box opens when more than half of the room wants it. Whoever arrives later joins the game that is open.
 
@@ -20,7 +20,7 @@ Open the site and you are already in a room: send the link to your partner or yo
 - **Word Search, together (Crucipuzzle in Italian).** Find the hidden words in the grid. Drag along a line, even a diagonal or backwards one, or tap the first and the last letter. Every word you find is marked in your color, and the list shows who found what. Five levels, from 6×6 to 12×12, with more directions as they grow. The grids are packed with words, and the letters left over, read from the top left, spell a hidden word that shows up when you find them all. The words come in English or Italian, you choose in the settings, and you can change it without leaving the room.
 - **Shared notes.** Each note is colored after the person who wrote it, so you can see who had which idea.
 - **Seeing each other.** You see where the other players are looking, in their own color.
-- **Emotes.** Ten quick reactions (💜 🌹 🔥 ...) float over the board, for when you want to say something without typing.
+- **Emotes.** Eighteen quick reactions float over the board, for when you want to say something without typing. Each one is a little tile with a face, drawn for the game.
 - **Themes and languages.** Several themes, including a Non-Binary one, and two languages (English and Italian).
 
 ### A gentle wait
@@ -29,7 +29,7 @@ The game runs on a free hosting plan that goes to sleep when nobody is around, s
 
 ---
 
-## Current Status: v0.5.1-alpha
+## Current Status: v0.6.0-alpha
 
 The games are playable online. You can create a room, share the link, pick a game at the table (Sudoku, Takuzu, Flower Field or Word Search), play it together, share notes in the Sudoku and react with emotes. From here the focus is on polishing the games, making rooms smooth and reliable, and adding more games.
 
@@ -52,7 +52,7 @@ The games are playable online. You can create a room, share the link, pick a gam
 - [x] **Polish the game:** keep your own selection always visible, fix the overlap with the victory banner, and hide a number (on the number pad and in the notes) once all of its places are filled.
 - [x] **Themes:** consistent colors across every theme, notes mode included.
 - [x] **Room privacy:** hide the room code in the interface.
-- [ ] **A proper introduction:** a short description of the game on the home page.
+- [x] **A proper introduction:** a home page that says what the site is, with the games and how they are played.
 - [x] **Gentler feedback:** optional modes to show mistakes right away, or to see which number is wrong ("god mode").
 - [ ] **Smoother reconnections:** coming back to a room after a connection drop should feel seamless.
 - [ ] **Keeping rooms in sync and safe:** consistent moves between players, limits against flooding.
@@ -73,6 +73,7 @@ The games are playable online. You can create a room, share the link, pick a gam
 It is a **monorepo** managed with `npm workspaces`, separating the client from the game logic:
 
 - **`@nbg/shared`**: pure TypeScript core logic. The custom Sudoku engine (generator, validator), the Socket.IO event contracts, the [zod](https://zod.dev) schemas that validate every client payload (the TypeScript types are inferred from them) and the shared list of emotes.
+- **`@nbg/art`**: the drawings of the project as React components: the logo and the emotes.
 - **`@nbg/backend`**: Node.js and Socket.IO server. Rooms, real-time synchronization, shared notes, win detection and emote relaying (validated, with a cooldown).
 - **`@nbg/frontend`**: Next.js and React, styled with Tailwind CSS (themes are CSS variables) and no UI component library.
 

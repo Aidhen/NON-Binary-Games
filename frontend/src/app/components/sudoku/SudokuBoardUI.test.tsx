@@ -96,8 +96,10 @@ describe('SudokuBoardUI', () => {
     const rows = container.querySelectorAll<HTMLElement>('[data-box-line="row"]');
     expect(columns).toHaveLength(1);
     expect(rows).toHaveLength(1);
-    expect(columns[0].style.left).toBe('calc(2 * (100% + 3px) / 4 - 3px)');
-    expect(rows[0].style.top).toBe('calc(2 * (100% + 3px) / 4 - 3px)');
+    // The same calc, written two ways: jsdom may simplify it, depending on its version.
+    const lineAt = ['calc(2 * (100% + 3px) / 4 - 3px)', 'calc(-3px + 0.5 * (100% + 3px))'];
+    expect(lineAt).toContain(columns[0].style.left);
+    expect(lineAt).toContain(rows[0].style.top);
     expect(columns[0]).toHaveAttribute('aria-hidden', 'true');
   });
 

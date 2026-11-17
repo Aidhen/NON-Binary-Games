@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { FLOWER_HIDDEN, FLOWER_MARKED } from '@nbg/shared';
 import type { PlayerProfile } from '@nbg/shared';
 import { cn } from '@/lib/utils';
+import { BOARD_TILE, BOARD_TRAY, gapOf } from '../games/boardStyles';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { UNKNOWN_PLAYER_STYLE, styleOfColor } from '@/lib/playerPalette';
 
@@ -85,9 +86,9 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
     t('flowerField.cell').replace('{row}', String(r + 1)).replace('{column}', String(c + 1)).replace('{state}', stateOf(r, c, value));
 
   return (
-    <div className="relative w-full aspect-square">
+    <div className={cn("relative aspect-square", BOARD_TRAY)}>
       <div
-        className={cn("w-full h-full grid overflow-hidden rounded-2xl", "border-4 border-[var(--grid-border-outer)] shadow-[var(--shadow-paper)]")}
+        className={cn("grid h-full w-full", gapOf(size))}
         style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${size}, minmax(0, 1fr))` }}
       >
         {grid.map((row, r) => row.map((value, c) => {
@@ -107,9 +108,8 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
               className={cn(
                 "relative flex items-center justify-center font-display leading-none",
                 sizeClass,
-                "cursor-pointer select-none overflow-hidden focus-visible:-outline-offset-4",
-                c < size - 1 && "border-r border-r-[var(--grid-border-inner)]",
-                r < size - 1 && "border-b border-b-[var(--grid-border-inner)]",
+                "cursor-pointer select-none overflow-hidden",
+                BOARD_TILE,
                 backgroundClass(isAt(exploded, r, c), isSelected, isShown),
                 isOpen && 'text-[var(--number-initial)] font-bold',
                 isMine && 'text-[var(--number-error)]',

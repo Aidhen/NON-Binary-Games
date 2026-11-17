@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import type { PlayerProfile, WordSearchCell, WordSearchFound } from '@nbg/shared';
 import { cn } from '@/lib/utils';
+import { BOARD_TILE, BOARD_TRAY, gapOf } from '../games/boardStyles';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { UNKNOWN_PLAYER_STYLE, styleOfColor } from '@/lib/playerPalette';
 import { lineCells } from './hiddenWord';
@@ -156,14 +157,14 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
   };
 
   return (
-    <div className="relative w-full aspect-square">
-      <div className={cn("w-full h-full overflow-hidden rounded-2xl", "border-4 border-[var(--grid-border-outer)] shadow-[var(--shadow-paper)]")}>
+    <div className={cn("relative aspect-square", BOARD_TRAY)}>
+      <div className="h-full w-full">
         <div
           ref={gridRef}
           role="group"
           aria-label={t('wordSearch.grid')}
           // Without this the browser takes a drag for a scroll of the page and stops sending the moves.
-          className="w-full h-full grid touch-none select-none"
+          className={cn("w-full h-full grid touch-none select-none", gapOf(size))}
           style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${size}, minmax(0, 1fr))` }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -194,9 +195,8 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
                 className={cn(
                   "relative flex items-center justify-center font-display font-bold leading-none touch-none",
                   size >= 10 ? "text-sm sm:text-lg" : "text-base sm:text-xl",
-                  "cursor-pointer select-none focus-visible:-outline-offset-4",
-                  c < size - 1 && "border-r border-r-[var(--grid-border-inner)]",
-                  r < size - 1 && "border-b border-b-[var(--grid-border-inner)]",
+                  "cursor-pointer select-none",
+                  BOARD_TILE,
                   inPreview ? 'bg-[var(--cell-background-selected)]' : 'bg-[var(--cell-background-initial)] hover:bg-[var(--cell-background)]',
                   lastFinder === undefined ? 'text-[var(--number-initial)]' : cn(styleOf(lastFinder).text, 'font-black'),
                   // Not only a color: the letter is underlined and boxed with a dashed line, which no found word has.
@@ -209,10 +209,10 @@ export function WordSearchBoardUI({ size, grid, found, profiles = {}, highlighte
                   <span
                     key={word}
                     aria-hidden="true"
-                    className={cn('absolute inset-0.5 rounded-md opacity-30', styleOf(alias).swatch, alias === highlightedAlias && 'opacity-60 motion-safe:animate-pulse')}
+                    className={cn('absolute inset-0 rounded-[inherit] opacity-30', styleOf(alias).swatch, alias === highlightedAlias && 'opacity-60 motion-safe:animate-pulse')}
                   />
                 ))}
-                {isHidden && <span aria-hidden="true" className="absolute inset-0.5 rounded-md border-2 border-dashed border-[var(--title-text)]" />}
+                {isHidden && <span aria-hidden="true" className="absolute inset-0 rounded-[inherit] border-2 border-dashed border-[var(--title-text)]" />}
                 <span className="relative">{letter}</span>
               </button>
             );

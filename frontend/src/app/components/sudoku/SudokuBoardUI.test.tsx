@@ -85,13 +85,20 @@ describe('SudokuBoardUI', () => {
     expect(getCell(0, 2)).toHaveClass('text-transparent');
   });
 
-  it('renders outer and inner borders at the correct positions', () => {
-    renderBoard();
+  it('draws the tiles without lines, and one line between each pair of boxes, across and down', () => {
+    const { container } = renderBoard();
 
-    expect(getCell(0, 1)).toHaveClass('border-r-2', 'border-r-[var(--grid-border-outer)]');
-    expect(getCell(0, 3)).toHaveClass('border-r', 'border-r-[var(--grid-border-inner)]');
-    expect(getCell(1, 0)).toHaveClass('border-b-2', 'border-b-[var(--grid-border-outer)]');
-    expect(getCell(3, 0)).toHaveClass('border-b', 'border-b-[var(--grid-border-inner)]');
+    for (const cell of screen.getAllByRole('button')) {
+      expect(cell.className).not.toContain('border-');
+    }
+    // A 4x4 board has 2x2 boxes: one line down the middle and one across it.
+    const columns = container.querySelectorAll<HTMLElement>('[data-box-line="column"]');
+    const rows = container.querySelectorAll<HTMLElement>('[data-box-line="row"]');
+    expect(columns).toHaveLength(1);
+    expect(rows).toHaveLength(1);
+    expect(columns[0].style.left).toBe('calc(2 * (100% + 3px) / 4 - 3px)');
+    expect(rows[0].style.top).toBe('calc(2 * (100% + 3px) / 4 - 3px)');
+    expect(columns[0]).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('highlights the selected cell and invokes the click callback', () => {

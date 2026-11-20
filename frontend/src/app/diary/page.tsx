@@ -64,19 +64,22 @@ export default function DiaryPage() {
                       aria-expanded={expanded}
                       aria-controls={`diary-${entry.id}`}
                       onClick={() => setOpen(expanded ? null : entry.id)}
-                      className="flex w-full cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 rounded-[var(--radius-paper)] px-5 py-4 text-left"
+                      className="flex w-full cursor-pointer flex-col gap-2 rounded-[var(--radius-paper)] px-5 py-4 text-left"
                     >
-                      <span className={cn(PILL, "shrink-0")}>{t(TYPE_LABEL[entry.type])}</span>
-                      <span className="flex min-w-0 flex-1 basis-60 flex-col">
+                      {/* The label sits always on top, whatever the width: next to the title it wrapped only sometimes. */}
+                      <span className="flex w-full items-center gap-3">
+                        <span className={cn(PILL, "shrink-0")}>{t(TYPE_LABEL[entry.type])}</span>
+                        <span className={cn(BODY, "min-w-0 text-xs")}>
+                          {entry.version && `v${entry.version} · `}<time dateTime={entry.date}>{formatDate(entry.date)}</time>
+                        </span>
+                        <svg aria-hidden="true" viewBox="0 0 22 22" className={cn("ml-auto size-5 shrink-0 transition-transform duration-200 motion-reduce:transition-none", expanded && "rotate-180")}>
+                          <path d="M5 8 l6 6 l6 -6" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                      <span className="flex min-w-0 flex-col">
                         <span className={cn(HEADING, "text-xl")}>{text.title}</span>
                         <span className={cn(BODY, "text-sm")}>{text.summary}</span>
                       </span>
-                      <span className={cn(BODY, "shrink-0 text-xs")}>
-                        {entry.version && `v${entry.version} · `}<time dateTime={entry.date}>{formatDate(entry.date)}</time>
-                      </span>
-                      <svg aria-hidden="true" viewBox="0 0 22 22" className={cn("size-5 shrink-0 transition-transform duration-200 motion-reduce:transition-none", expanded && "rotate-180")}>
-                        <path d="M5 8 l6 6 l6 -6" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
                     </button>
                   </h2>
                   {expanded && (

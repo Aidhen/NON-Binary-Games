@@ -24,6 +24,7 @@ export function SiteFooter() {
         <p>(non)BinaryGames{VERSION && ` · v${VERSION}`} · {t('footer.tagline')}</p>
         <div className="flex flex-wrap items-center gap-5">
           <Link href="/feedback" className="font-bold text-[var(--title-text)] underline">{t('nav.feedback')}</Link>
+          <Link href="/privacy" className="font-bold text-[var(--title-text)] underline">{t('footer.privacy')}</Link>
           {/* noreferrer: the address of a room must not travel to another site (see securityHeaders.ts). */}
           <a href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--title-text)] underline">{t('footer.github')}</a>
           <span role="img" aria-label={t('footer.social')} className="flex gap-2">

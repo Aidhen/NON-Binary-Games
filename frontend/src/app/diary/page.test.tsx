@@ -46,7 +46,7 @@ describe('DiaryPage', () => {
     language.current = 'en';
     render(<DiaryPage />);
 
-    expect(titles().map((button) => button.querySelector('span span')?.textContent)).toEqual(newestFirst.map((entry) => entry.en.title));
+    expect(titles().map((button) => button.querySelector(':scope > span:last-child > span')?.textContent)).toEqual(newestFirst.map((entry) => entry.en.title));
     expect(entryButtons().every((button) => button.getAttribute('aria-expanded') === 'false')).toBe(true);
     expect(screen.queryByText(newestFirst[0].en.body[0])).not.toBeInTheDocument();
   });

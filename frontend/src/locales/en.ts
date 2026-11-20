@@ -171,6 +171,7 @@ export const en = {
   },
   footer: {
     tagline: "A queer-owned project, made to play together.",
+    privacy: "Privacy",
     github: "GitHub",
     social: "Instagram, X and TikTok: coming soon"
   },
@@ -243,6 +244,19 @@ export const en = {
     publicAsk: "Would you like them? Any doubts about safety or moderation?",
     publicAskLink: "Tell me in the feedback"
   },
+  privacy: {
+    title: "Privacy",
+    lead: "What the site keeps, where and for how long. In short: very little.",
+    browserTitle: "In your browser",
+    browserText: "The site saves two things in your browser's localStorage: an anonymous code, made up at random, that lets you keep your name and color when you come back to a room, and the theme you picked. No cookies, no statistics, no ads, no scripts from other sites: even the fonts come from the site itself. You can delete everything at any time from your browser settings.",
+    serverTitle: "On the server",
+    serverText: "Rooms live only in the memory of the server: the board, the moves, the notes, the animal names and the colors. An empty room disappears after ten minutes, and all of them disappear when the server restarts. Your IP address is only used to count open connections, to keep away whoever wants to overload the game: it stays in memory and does not end up in the logs of the game.",
+    hostingTitle: "Who hosts the site",
+    hostingText: "The site is hosted by Vercel and the server by Render. To know how they handle data, read their privacy policies:",
+    feedbackTitle: "The feedback form",
+    feedbackText: "The form is still switched off and sends nothing. When I connect it, this page will say what arrives, where and for how long, before it can be used.",
+    updated: "Last updated: 20 November 2026"
+  },
   diary: {
     title: "Diary",
     lead: "What is coming, what just came out, and a few pages from behind the scenes.",
@@ -254,7 +268,7 @@ export const en = {
     aboutTitle: "Who is behind it",
     about1: "Hi, I'm Aidhen.",
     about2: "(non)BinaryGames was born while looking for a light way to spend time with someone far away. We do not always have the energy for something demanding: a sudoku solved together was enough.",
-    about3: "From there came the idea: simple games, side by side, where connection counts and competition does not."
+    about3: "From there came the idea: simple games to play together, even from far away, where connection counts and competition does not."
   },
   feedback: {
     title: "Feedback",

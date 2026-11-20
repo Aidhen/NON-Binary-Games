@@ -4,75 +4,31 @@
 
 I had this idea while looking for ways to pass the time with my long-distance partner. We both don't always have the right amount of energy to engage in complex activities together, so we were looking for a low-pressure way to connect and found the answer in Sudokus and other simple games. :)
 
-**(non)BinaryGames** will be a collection of simple games meant to be played side by side by you and your partner, focusing on connection over competition.
+**(non)BinaryGames** is a web platform for small puzzle games played together in real time, from wherever each player is. One person opens a room and shares its link, and everyone in the room plays on the same board. The idea is to play without pressure: cooperation instead of competition, puzzles that can always be solved by reasoning, and nothing that pushes you to hurry.
 
 ---
 
-## Play together
+## How it works
 
-Create a room from the home page, send the link to your partner or your friends and they sit at the same table. No accounts, no timers, no scores.
+- **Rooms.** A room lives in the memory of a single Node.js server and is reached through its link. Players talk to it over Socket.IO: after joining, every event acts on the room stored on the socket, never on one named by the client. An empty room is kept for ten minutes, so that a page that lost its connection can join again.
+- **The server is the authority.** Every client payload is parsed by a [zod](https://zod.dev) schema before it is used, and the bounds that depend on the game (board size, fixed cells) are checked in the handler. Events are rate limited, connections are limited per address, and the number of rooms is capped.
+- **Game engines.** Generators and validators are pure TypeScript in a shared package, used by both server and client. Every puzzle has exactly one solution and can be solved by deduction alone.
+- **Pluggable games.** The server accepts a closed list of game ids, and the frontend has a registry of games. A room starts at a table where the players vote, and the game opens when more than half of the room wants it.
+- **No accounts.** A browser is identified by an anonymous id kept in `localStorage`, which lets players keep their name and color when they reconnect. Players can only exchange values from fixed sets (digits, emotes): there is no free text between them.
+- **Interface.** Next.js and React, Tailwind with the themes as CSS variables, translations in plain TypeScript dictionaries (English and Italian), drawings as inline SVG components.
 
-- **A table with boxes.** Every game is a box. Each of you picks one, and the box opens when more than half of the room wants it. Whoever arrives later joins the game that is open.
+### Hosting
 
-- **Sudoku, together.** Five difficulty levels, every one solvable by deduction alone, and the whole room can start a new game when you are ready for another.
-- **Takuzu, together.** Fill the grid with 0s and 1s: no more than two equal numbers side by side, as many 0s as 1s in every row and column, and no two rows or columns alike. Tap a cell to go from empty to 0, to 1 and back. Same five levels, from 6×6 to 12×12, and every puzzle can be solved without guessing.
-- **Flower Field, together.** Open every cell that is not a mine, and use the numbers (how many mines touch a cell) to work out where the mines are. Put flags where you know, in your own color. The first cell is always safe and the field never needs a guess. Opening a mine only marks it for everybody, unless you choose in the settings to lose the game when it happens.
-- **Word Search, together (Crucipuzzle in Italian).** Find the hidden words in the grid. Drag along a line, even a diagonal or backwards one, or tap the first and the last letter. Every word you find is marked in your color, and the list shows who found what. Five levels, from 6×6 to 12×12, with more directions as they grow. The grids are packed with words, and the letters left over, read from the top left, spell a hidden word that shows up when you find them all. The words come in English or Italian, you choose in the settings, and you can change it without leaving the room.
-- **Shared notes.** Each note is colored after the person who wrote it, so you can see who had which idea.
-- **Seeing each other.** You see where the other players are looking, in their own color.
-- **Emotes.** Eighteen quick reactions float over the board, for when you want to say something without typing. Each one is a little tile with a face, drawn for the game.
-- **Themes and languages.** Several themes, including a Non-Binary one, and two languages (English and Italian).
-
-### A gentle wait
-
-The game runs on a free hosting plan that goes to sleep when nobody is around, so the first visit can take about a minute. Instead of a blank page, it tells you what is happening and why.
-
----
-
-## Current Status: v0.6.0-alpha
-
-The games are playable online. You can create a room, share the link, pick a game at the table (Sudoku, Takuzu, Flower Field or Word Search), play it together, share notes in the Sudoku and react with emotes. From here the focus is on polishing the games, making rooms smooth and reliable, and adding more games.
-
-### What is done
-- [x] Collaborative Sudoku with real-time rooms and shareable links (`/play/[roomId]`).
-- [x] A second game: Takuzu, with the same levels, the same players and the same reactions.
-- [x] A third game: Flower Field, with shared flags and an option to lose when a mine is opened.
-- [x] A fourth game: Word Search, with words in English and Italian that the room can switch between.
-- [x] A room that starts at the table, where the players vote for the game to open.
-- [x] Shared notes and live cell selections.
-- [x] A name for each player, like Red Panda, and a color of your own to pick; the list of players shows who is who, and a tap on a player points them out on the board.
-- [x] Win detection and a "play again" screen.
-- [x] Five difficulty levels, from beginner to expert. Every puzzle has exactly one solution and can be solved by pure deduction: you never have to guess.
-- [x] Emotes between players.
-- [x] A friendly wait while the server wakes up.
-- [x] English and Italian translations, several themes.
-- [x] Online deployment (Vercel and Render).
-
-### What is next
-- [x] **Polish the game:** keep your own selection always visible, fix the overlap with the victory banner, and hide a number (on the number pad and in the notes) once all of its places are filled.
-- [x] **Themes:** consistent colors across every theme, notes mode included.
-- [x] **Room privacy:** hide the room code in the interface.
-- [x] **A proper introduction:** a home page that says what the site is, with the games and how they are played.
-- [x] **Gentler feedback:** optional modes to show mistakes right away, or to see which number is wrong ("god mode").
-- [ ] **Smoother reconnections:** coming back to a room after a connection drop should feel seamless.
-- [ ] **Keeping rooms in sync and safe:** consistent moves between players, limits against flooding.
-- [ ] **Keyboard play:** moving around the grid with the arrow keys, and better support for screen readers.
-- [ ] **More games:** the games live in a registry, so a new game is its engine, a cover and one entry. Four are in so far.
-- [ ] **Rooms that survive restarts**, and a backend that can scale (Redis).
-- [ ] **Hosting details:** a health check, graceful shutdown and proper logs.
-
----
-
-## Under the hood
+Both sides run on free plans: the frontend on Vercel, the backend on Render. The Render service sleeps when idle and takes about a minute to wake up, so the frontend pings `/healthz` as soon as a page opens, and the site stays usable while the server starts: only the vote at the table waits for it. The backend shuts down gracefully and writes timestamped logs. Since rooms live in memory, a restart drops them: keeping them across restarts would need an external store (Redis), which the free plan does not offer.
 
 <details>
-<summary>Tech stack and project structure</summary>
+<summary>Workspaces and tooling</summary>
 
 &nbsp;
 
 It is a **monorepo** managed with `npm workspaces`, separating the client from the game logic:
 
-- **`@nbg/shared`**: pure TypeScript core logic. The custom Sudoku engine (generator, validator), the Socket.IO event contracts, the [zod](https://zod.dev) schemas that validate every client payload (the TypeScript types are inferred from them) and the shared list of emotes.
+- **`@nbg/shared`**: pure TypeScript core logic. The engines of the four games (generators and validators), the Socket.IO event contracts, the [zod](https://zod.dev) schemas that validate every client payload (the TypeScript types are inferred from them) and the shared list of emotes.
 - **`@nbg/art`**: the drawings of the project as React components: the logo and the emotes.
 - **`@nbg/backend`**: Node.js and Socket.IO server. Rooms, real-time synchronization, shared notes, win detection and emote relaying (validated, with a cooldown).
 - **`@nbg/frontend`**: Next.js and React, styled with Tailwind CSS (themes are CSS variables) and no UI component library.
@@ -80,6 +36,35 @@ It is a **monorepo** managed with `npm workspaces`, separating the client from t
 Tooling: **Vitest** for unit, component and integration tests (the server tests use real Socket.IO sockets), coverage with V8 and SonarQube Cloud, **Docker Compose** for development, **GitHub Actions** for linting and tests, **Husky** with `lint-staged` for pre-commit and pre-push checks.
 
 </details>
+
+---
+
+## Current status: v0.6.0-alpha
+
+Four games are playable online. What changed in each version is in the [releases](https://github.com/Aidhen/NON-Binary-Games/releases); news for the players is in the Diary on the site.
+
+### Next
+
+**Before telling more people about the game**
+- [ ] Sudoku: check mistakes on the server, so that the solution is no longer sent to the clients, as in the other games.
+- [ ] Board generation budget per client, so that one client cannot use up the shared one ([#67](https://github.com/Aidhen/NON-Binary-Games/issues/67)).
+- [ ] Tell the room when a board could not be generated ([#64](https://github.com/Aidhen/NON-Binary-Games/issues/64)), and send `game-won` only once in Sudoku and Takuzu ([#68](https://github.com/Aidhen/NON-Binary-Games/issues/68)).
+
+**Rooms**
+- [ ] Reconnections: a grace period before a dropped player is removed (no "left" message, votes kept) and a reconnecting state in the game screen.
+- [ ] Feedback form connected to a private issue tracker.
+- [ ] Ask the room before a new game or a language change discards a Word Search in progress ([#86](https://github.com/Aidhen/NON-Binary-Games/issues/86)).
+
+**Accessibility**
+- [ ] Keyboard play in every game: one Tab stop per grid (roving tabindex), arrow keys to move, the keys of each game to play ([#71](https://github.com/Aidhen/NON-Binary-Games/issues/71) for the Takuzu).
+
+**Games**
+- [ ] A Memory game with tarot cards.
+- [ ] Harder Sudoku levels that still never need a guess ([#62](https://github.com/Aidhen/NON-Binary-Games/issues/62)).
+- [ ] A third language for the interface and the word lists ([#76](https://github.com/Aidhen/NON-Binary-Games/issues/76)).
+
+**Later**
+- [ ] Rooms that survive restarts (Redis), when the hosting allows it.
 
 ---
 
@@ -111,15 +96,9 @@ docker compose run --rm node-cli npm run coverage
 docker compose run --rm node-cli npm run lint --workspace=frontend
 ```
 
-### Environment variables
+### Configuration
 
-| Variable | Where | Default | Purpose |
-| --- | --- | --- | --- |
-| `NEXT_PUBLIC_SOCKET_URL` | frontend | `http://localhost:4000` | URL of the Socket.IO backend |
-| `PORT` | backend | `4000` | Port the backend listens on (Render sets it) |
-| `FRONTEND_URL` | backend | `http://localhost:3000` | The only origin players can connect from: a connection that does not declare it is refused. Required in production (`NODE_ENV=production`, or on Render): without it, or if it is not an http(s) URL, the server does not start. Only its origin is used, so a final slash does no harm |
-| `CLIENT_IP_HEADER` | backend | not set | Header where the hosting platform puts the address of the player; needed for the limits per address. On Render use `cf-connecting-ip`. An IPv6 network (/64) counts as one address |
-| `LIMIT_BY_PEER_ADDRESS` | backend | not set | `true` to limit by the address of the connection itself: only for local development or a server with no proxy, never behind one |
+Local development works with the defaults. The variables needed in production are documented in [`backend/.env.example`](backend/.env.example) and [`frontend/.env.example`](frontend/.env.example), and the Render service is described in [`render.yaml`](render.yaml).
 
 ---
 

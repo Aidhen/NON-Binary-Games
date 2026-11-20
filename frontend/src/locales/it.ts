@@ -173,6 +173,7 @@ export const it: Translations = {
   },
   footer: {
     tagline: "Un progetto queer-owned, fatto per giocare insieme.",
+    privacy: "Privacy",
     github: "GitHub",
     social: "Instagram, X e TikTok: in arrivo"
   },
@@ -245,6 +246,19 @@ export const it: Translations = {
     publicAsk: "Ti piacerebbero? Hai dubbi su sicurezza o moderazione?",
     publicAskLink: "Scrivimelo nel feedback"
   },
+  privacy: {
+    title: "Privacy",
+    lead: "Cosa tiene il sito, dove e per quanto. In breve: pochissimo.",
+    browserTitle: "Nel tuo browser",
+    browserText: "Il sito salva due cose nel localStorage del browser: un codice anonimo, generato a caso, che ti fa tenere nome e colore quando rientri in una stanza, e il tema che hai scelto. Niente cookie, niente statistiche, niente pubblicità, niente script di altri siti: anche i font arrivano dal sito stesso. Puoi cancellare tutto quando vuoi dalle impostazioni del browser.",
+    serverTitle: "Sul server",
+    serverText: "Le stanze vivono solo nella memoria del server: la griglia, le mosse, le note, i nomi di animale e i colori. Una stanza vuota sparisce dopo dieci minuti, e tutte spariscono quando il server si riavvia. L'indirizzo IP serve solo a contare le connessioni aperte, per tenere lontano chi vuole sovraccaricare il gioco: resta in memoria e non finisce nei log del gioco.",
+    hostingTitle: "Chi ospita il sito",
+    hostingText: "Il sito è ospitato da Vercel e il server da Render. Per sapere come trattano i dati, leggi le loro privacy policy:",
+    feedbackTitle: "Il modulo di feedback",
+    feedbackText: "Il modulo è ancora spento e non invia niente. Quando lo collegherò, questa pagina dirà cosa arriva, dove e per quanto tempo, prima che si possa usare.",
+    updated: "Ultimo aggiornamento: 20 novembre 2026"
+  },
   diary: {
     title: "Diario",
     lead: "Cosa sta arrivando, cosa è appena uscito e qualche pagina dietro le quinte.",
@@ -256,7 +270,7 @@ export const it: Translations = {
     aboutTitle: "Chi c'è dietro",
     about1: "Ciao, sono Aidhen.",
     about2: "(non)BinaryGames è nato cercando un modo leggero per passare il tempo con una persona lontana. Non sempre si hanno le energie per qualcosa di impegnativo: un sudoku fatto insieme è bastato.",
-    about3: "Da lì l'idea: giochi semplici, fianco a fianco, dove conta la connessione e non la competizione."
+    about3: "Da lì l'idea: giochi semplici da fare insieme, anche a distanza, dove conta la connessione e non la competizione."
   },
   feedback: {
     title: "Feedback",

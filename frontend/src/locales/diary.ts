@@ -28,18 +28,39 @@ export interface DiaryEntry {
 
 export const DIARY: readonly DiaryEntry[] = [
   {
+    id: 'tarot-memory',
+    type: 'upcoming',
+    date: '2026-11-20',
+    en: {
+      title: 'A Memory game with tarot cards',
+      summary: 'A new game, with cards inspired by the tarot.',
+      body: ['The next game: a Memory where the pairs to find are tarot cards, drawn in the style of the site.'],
+    },
+    it: {
+      title: 'Un Memory con i tarocchi',
+      summary: 'Un nuovo gioco, con carte ispirate ai tarocchi.',
+      body: [
+        'Il prossimo gioco: un Memory in cui le coppie da ritrovare sono carte dei tarocchi, disegnate nello stile del sito.',
+      ],
+    },
+  },
+  {
     id: 'smoother-reconnections',
     type: 'upcoming',
     date: '2026-11-16',
     en: {
       title: 'Smoother reconnections',
       summary: 'Coming back to a room after the connection drops.',
-      body: ['When the connection drops, coming back to the room should feel natural: same seat at the table, same game, without noticing.'],
+      body: [
+        'Already today, when the connection drops, the page joins the room again by itself and you keep your name and color. One step is missing: a short drop should not make you disappear from the table or lose your vote.',
+      ],
     },
     it: {
       title: 'Riconnessioni più fluide',
       summary: 'Tornare in una stanza dopo un calo di connessione.',
-      body: ['Se la connessione cade, rientrare nella stanza dovrebbe essere naturale: stesso posto al tavolo, stessa partita, senza accorgersene.'],
+      body: [
+        'Già oggi, se la connessione cade, la pagina rientra da sola nella stanza e tieni nome e colore. Manca l\'ultimo passo: un calo breve non dovrebbe farti sparire dal tavolo né farti perdere il voto.',
+      ],
     },
   },
   {
@@ -49,12 +70,16 @@ export const DIARY: readonly DiaryEntry[] = [
     en: {
       title: 'Playing with the keyboard',
       summary: 'Arrow keys to move around the grid.',
-      body: ['Moving around the grid with the arrow keys, and better support for screen readers, so that more people can play.'],
+      body: [
+        'In every game: one Tab to reach the grid, the arrow keys to move around it, and the keys of the game to play, so that you can play without touching the mouse.',
+      ],
     },
     it: {
       title: 'Giocare da tastiera',
       summary: 'Frecce per muoversi nella griglia.',
-      body: ['Muoversi nella griglia con le frecce e un supporto migliore per i lettori di schermo, per far giocare più persone.'],
+      body: [
+        'In tutti i giochi: un Tab per arrivare alla griglia, le frecce per muoversi e i tasti del gioco per giocare, così si gioca senza toccare il mouse.',
+      ],
     },
   },
   {
@@ -75,67 +100,37 @@ export const DIARY: readonly DiaryEntry[] = [
   {
     id: 'a-home-and-drawn-emotes',
     type: 'released',
-    date: '2026-11-16',
+    date: '2026-11-20',
     version: '0.6.0-alpha',
     en: {
       title: 'A home, and emotes with a face',
       summary: 'The site now has a front door, and the reactions are drawn.',
       body: [
-        'Opening the site used to drop you straight into a room. Now there is a home that says what this place is, a page with the games and their rules, and this diary.',
-        'The reactions are no longer plain emoji: each one is a little tile with a face, in the same style as the logo.',
+        'The site now has a home with the games and their rules, this diary, a note on privacy, and the Rooms and Feedback pages, still being built. The reactions are tiles with a face, and the game boards are made of tiles too, in the same style as the logo.',
       ],
     },
     it: {
       title: 'Una home, e le emote con la faccia',
       summary: 'Il sito ha una porta d\'ingresso, e le reazioni sono disegnate.',
       body: [
-        'Aprire il sito portava dritti in una stanza. Ora c\'è una home che spiega cos\'è questo posto, una pagina con i giochi e le loro regole, e questo diario.',
-        'Le reazioni non sono più semplici emoji: ognuna è una tessera con la faccia, nello stesso stile del logo.',
+        'Ora il sito ha una home con i giochi e le loro regole, questo diario, una nota sulla privacy e le pagine Stanze e Feedback, ancora in costruzione. Le reazioni sono tessere con la faccia, e anche le griglie dei giochi sono fatte di tessere, nello stesso stile del logo.',
       ],
     },
   },
   {
-    id: 'word-search',
+    id: 'the-table-and-three-more-games',
     type: 'released',
     date: '2026-11-15',
     version: '0.5.0-alpha',
     en: {
-      title: 'Word Search, the fourth game',
-      summary: 'Hidden words to find together.',
-      body: [
-        'Drag along a line or tap the first and the last letter. Every word stays marked in the color of whoever found it.',
-        'The words can be in English or in Italian, and the room can switch between the two. The emote bar also got a second side.',
-      ],
+      title: 'The table, and three more games',
+      summary: 'Rooms start at a table with boxes, with Takuzu, Flower Field and Word Search.',
+      body: ['Every game is a box on the table, and it opens when more than half of the room wants it. Takuzu, Flower Field and Word Search join the Sudoku, and in Word Search every word stays marked in the color of whoever found it, in English or in Italian. Every player gets a name and a color.'],
     },
     it: {
-      title: 'Crucipuzzle, il quarto gioco',
-      summary: 'Parole nascoste da trovare insieme.',
-      body: [
-        'Trascina lungo una linea o tocca la prima e l\'ultima lettera. Ogni parola resta segnata nel colore di chi l\'ha trovata.',
-        'Le parole possono essere in italiano o in inglese, e la stanza può passare dall\'una all\'altra. Anche la barra delle emote ha guadagnato un secondo lato.',
-      ],
-    },
-  },
-  {
-    id: 'the-table-and-two-more-games',
-    type: 'released',
-    date: '2026-11-15',
-    version: '0.3.0-alpha',
-    en: {
-      title: 'The table, Takuzu and Flower Field',
-      summary: 'Rooms start at a table with boxes, and two more games arrive.',
-      body: [
-        'Every game is a box. Each player picks one, and the box opens when more than half of the room wants it.',
-        'Two new boxes joined the Sudoku: Takuzu and Flower Field. Every puzzle has five levels and can be solved without guessing, and every player gets a name and a color of their own.',
-      ],
-    },
-    it: {
-      title: 'Il tavolo, Takuzu e Flower Field',
-      summary: 'Le stanze partono da un tavolo con le scatole, e arrivano due giochi.',
-      body: [
-        'Ogni gioco è una scatola. Ciascuno sceglie la sua, e la scatola si apre quando più di metà della stanza la vuole.',
-        'Al Sudoku si sono aggiunte due scatole: Takuzu e Flower Field. Ogni puzzle ha cinque livelli e si risolve senza indovinare, e ogni persona riceve un nome e un colore tutti suoi.',
-      ],
+      title: 'Il tavolo, e tre giochi in più',
+      summary: 'Le stanze partono da un tavolo con le scatole, con Takuzu, Flower Field e Crucipuzzle.',
+      body: ['Ogni gioco è una scatola sul tavolo, e si apre quando la vuole più di metà della stanza. Al Sudoku si aggiungono Takuzu, Flower Field e Crucipuzzle, dove ogni parola resta segnata nel colore di chi l\'ha trovata, in italiano o in inglese. Ogni persona riceve un nome e un colore.'],
     },
   },
   {
@@ -146,12 +141,144 @@ export const DIARY: readonly DiaryEntry[] = [
     en: {
       title: 'Rooms you share with a link',
       summary: 'The Sudoku goes online, with notes and the first emotes.',
-      body: ['A room has its own address: send it, and whoever opens it plays with you. Shared notes, a win screen and the first reactions came with it.'],
+      body: [
+        'A room has its own address: send it, and whoever opens it plays with you. Shared notes, a win screen and the first reactions came with it.',
+      ],
     },
     it: {
       title: 'Stanze da condividere con un link',
       summary: 'Il Sudoku va online, con le note e le prime emote.',
-      body: ['Una stanza ha il suo indirizzo: mandalo, e chi lo apre gioca con te. Insieme sono arrivate le note condivise, la schermata di vittoria e le prime reazioni.'],
+      body: [
+        'Una stanza ha il suo indirizzo: mandalo, e chi lo apre gioca con te. Insieme sono arrivate le note condivise, la schermata di vittoria e le prime reazioni.',
+      ],
+    },
+  },
+  {
+    id: 'how-it-is-made',
+    type: 'behind-the-scenes',
+    date: '2026-11-20',
+    en: {
+      title: 'How it is made',
+      summary: 'Who works on it, and what the artificial intelligence does.',
+      body: [
+        'There are two of us behind (non)BinaryGames: me and my partner. I take care of the technical side and of the repository; my partner helps me with the decisions, about the look and everything else. Then there is an artificial intelligence (Claude), which I work with like a colleague.',
+        'The ideas and the choices are ours: which games to make, the rules they must follow (never guessing, no race), what the site should look like, what must stay safe for the people who play. I decide what goes into the code, I review every change, and I run the tests and try the game before every version.',
+        'Claude writes much of the code following my directions, helps me put the drawings and the translations down, and points out the weak spots. The parts I want to learn from I write myself: this project is also where I practise.',
+        'I do not hide it, because I think it is right to know. Behind every choice there is a person, and the time I put into it is real.',
+      ],
+    },
+    it: {
+      title: 'Come è fatto',
+      summary: 'Chi ci lavora, e cosa fa l\'intelligenza artificiale.',
+      body: [
+        'Dietro (non)BinaryGames siamo in due: io e la mia persona. Io curo la parte tecnica e il repository; la mia persona mi aiuta nelle decisioni, estetiche e non. Poi c\'è un\'intelligenza artificiale (Claude), con cui lavoro come con una collega.',
+        'Le idee e le scelte sono nostre: quali giochi fare, le regole che devono rispettare (mai tirare a indovinare, nessuna gara), come deve essere il sito, cosa deve restare sicuro per chi gioca. Decido io cosa entra nel codice, rivedo ogni modifica, lancio i test e provo il gioco prima di ogni versione.',
+        'Claude scrive gran parte del codice seguendo le mie indicazioni, mi aiuta a mettere giù i disegni e le traduzioni, e mi segnala i punti deboli. Le parti da cui voglio imparare le scrivo io: questo progetto è anche la mia palestra.',
+        'Non lo nascondo perché credo sia giusto saperlo. Dietro ogni scelta c\'è una persona, e il tempo che ci metto è vero.',
+      ],
+    },
+  },
+  {
+    id: 'why-you-wait',
+    type: 'behind-the-scenes',
+    date: '2026-11-20',
+    en: {
+      title: 'Why you sometimes wait',
+      summary: 'The free server falls asleep, and for now that is fine.',
+      body: [
+        'The game runs on a free server that falls asleep when nobody is playing. The first person who arrives wakes it up, and it takes about a minute: in the meantime you can look around the site, and the table is already there.',
+        'For now I have no money to invest in the project, and I do not want to put ads on it to pay for it.',
+        'The idea, later on, is to grow a small, kind community and, with the donations of whoever wants to give, to make the service better for everyone who plays.',
+      ],
+    },
+    it: {
+      title: 'Perché a volte si aspetta',
+      summary: 'Il server gratuito si addormenta, e per ora va bene così.',
+      body: [
+        'Il gioco gira su un server gratuito che si addormenta quando nessuno gioca. La prima persona che arriva lo sveglia, e ci vuole circa un minuto: intanto puoi girare per il sito, e il tavolo è già lì.',
+        'Per ora non ho soldi da investire nel progetto, e non voglio metterci la pubblicità per pagarlo.',
+        'L\'idea, più avanti, è far crescere una piccola community carina e, con le donazioni di chi vorrà, migliorare il servizio per tutte le persone che giocano.',
+      ],
+    },
+  },
+  {
+    id: 'no-guessing',
+    type: 'behind-the-scenes',
+    date: '2026-11-20',
+    en: {
+      title: 'Puzzles that never ask you to guess',
+      summary: 'The reason I started this project.',
+      body: [
+        'It is one of the reasons I started. The apps I had tried did not always make sudokus you could solve by reasoning: at some point you had to try a number and hope.',
+        'That made me too sad: I love reasoning and getting there by following the rules of the game. So here every puzzle has one solution and can always be solved by deduction, and the same goes for the other games.',
+      ],
+    },
+    it: {
+      title: 'Puzzle che non chiedono di indovinare',
+      summary: 'Il motivo per cui ho iniziato questo progetto.',
+      body: [
+        'È uno dei motivi per cui ho iniziato. Le app che avevo provato non generavano sempre sudoku risolvibili ragionando: a un certo punto bisognava provare un numero e sperare.',
+        'Mi dispiaceva troppo: a me piace ragionare e farcela seguendo le regole del gioco. Così qui ogni puzzle ha una sola soluzione e si risolve sempre per deduzione, e lo stesso vale per gli altri giochi.',
+      ],
+    },
+  },
+  {
+    id: 'together-no-race',
+    type: 'behind-the-scenes',
+    date: '2026-11-20',
+    en: {
+      title: 'Together, with no race',
+      summary: 'No scores to beat: everyone plays on the same side.',
+      body: [
+        'Here too I wanted something different from the alternatives I had found. There is no leaderboard and nobody wins over the others: everyone plays on the same side, and the board is finished together, at your own pace.',
+      ],
+    },
+    it: {
+      title: 'Insieme, senza gara',
+      summary: 'Niente punteggi da battere: si gioca dalla stessa parte.',
+      body: [
+        'Anche qui volevo qualcosa di diverso dalle alternative che avevo trovato. Non c\'è una classifica e nessuno vince sugli altri: si gioca dalla stessa parte, e la griglia si finisce insieme, con i propri tempi.',
+      ],
+    },
+  },
+  {
+    id: 'animal-names-and-colors',
+    type: 'behind-the-scenes',
+    date: '2026-11-20',
+    en: {
+      title: 'Animal names and colors',
+      summary: 'How you are recognized in a room, without an account.',
+      body: [
+        'When you enter a room you get an animal name, like Red Panda, and a color, both drawn at random. At the table you can pick another color: it is the color of your notes, your words and your cursor. No account is needed: your browser remembers you, so if the connection drops you keep your name and color.',
+      ],
+    },
+    it: {
+      title: 'Nomi di animali e colori',
+      summary: 'Come ti riconosci in una stanza, senza account.',
+      body: [
+        'Quando entri in una stanza ricevi un nome di animale, come Panda Rosso, e un colore, entrambi sorteggiati a caso. Al tavolo puoi sceglierne un altro: è il colore delle tue note, delle tue parole e del tuo cursore. Non serve un account: il browser si ricorda di te, così se la connessione cade tieni nome e colore.',
+      ],
+    },
+  },
+  {
+    id: 'why-the-license-changed',
+    type: 'behind-the-scenes',
+    date: '2026-11-20',
+    en: {
+      title: 'Why I changed the license',
+      summary: 'Free to use, but not to resell.',
+      body: [
+        'The project was born to be calm and noncommercial, and I am putting a lot of time and care into it.',
+        'With the old license anyone could take everything and resell it. Now the code stays open: it can be read, used and changed, but not to make money from it. Seeing it resold would ruin the idea it was born from.',
+      ],
+    },
+    it: {
+      title: 'Perché ho cambiato licenza',
+      summary: 'Libero da usare, ma non da rivendere.',
+      body: [
+        'Il progetto è nato per essere tranquillo e non commerciale, e ci sto mettendo tanto tempo e tanto impegno.',
+        'Con la licenza di prima chiunque poteva prendere tutto e rivenderlo. Ora il codice resta aperto: si può leggere, usare e modificare, ma non per guadagnarci. Vederlo rivenduto rovinerebbe l\'idea per cui è nato.',
+      ],
     },
   },
   {
@@ -163,7 +290,7 @@ export const DIARY: readonly DiaryEntry[] = [
       summary: 'From plain emoji to tiles with a face.',
       body: [
         'The logo is two tiles leaning on each other. The emotes started from there: the same tile, the same outline, a different face for each feeling.',
-        'The first sketches went back and forth with an artist, who corrected them one by one: fewer tears, rounder eyes, clouds that look like clouds. The duck stayed a duck.',
+        'The idea and the style are mine; to put the drawings down I worked with an artificial intelligence (Claude).',
       ],
     },
     it: {
@@ -171,7 +298,7 @@ export const DIARY: readonly DiaryEntry[] = [
       summary: 'Dalle emoji alle tessere con la faccia.',
       body: [
         'Il logo è fatto di due tessere appoggiate l\'una all\'altra. Le emote sono partite da lì: la stessa tessera, lo stesso contorno, una faccia diversa per ogni stato d\'animo.',
-        'Le prime bozze sono andate avanti e indietro con una persona che disegna, che le ha corrette una per una: meno lacrime, occhi più tondi, nuvole che sembrano nuvole. La papera è rimasta una papera.',
+        'L\'idea e lo stile sono miei; per mettere giù i disegni ho lavorato con un\'intelligenza artificiale (Claude).',
       ],
     },
   },

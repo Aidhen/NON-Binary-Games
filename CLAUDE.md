@@ -1,8 +1,8 @@
 # (non)BinaryGames
 
-Casual games to play together in real time (today: collaborative Sudoku). People open a room, share the link and play. No accounts, no scores, no timers. The audience includes queer couples and friend groups who are here for a calm, safe space, so player safety and privacy weigh more than features.
+Casual games to play together in real time (today: Sudoku, Takuzu, Flower Field and Word Search, chosen by vote at the table of a room). People open a room, share the link and play. No accounts, no scores, no timers. The audience includes queer couples and friend groups who are here for a calm, safe space, so player safety and privacy weigh more than features.
 
-This is a personal project with a single owner, who also uses it to learn Node.js. It is not a portfolio piece: keep the README and docs about the game, not about the engineering.
+This is a personal project with a single owner, who also uses it to learn Node.js. It is not a portfolio piece. The README is for developers: how the project works, how to run it and what comes next, in technical language but without showcasing. Everything meant for players (games, pages, news) lives on the site and in the Diary, not in the README.
 
 ## Layout
 
@@ -15,11 +15,12 @@ npm workspaces monorepo, TypeScript everywhere.
 
 Where things are, so nobody has to explore the repo to find them (tests sit next to their file as `*.test.ts(x)`):
 
-- Contract: `shared/src/schemas.ts` (zod schemas, event types), `shared/src/emotes.ts`, `shared/src/players.ts`.
-- Sudoku engine: `shared/src/games/sudoku/` (`generator.ts`, `validator.ts`, `types.ts`).
-- Server: `backend/src/server.ts` (HTTP, CORS, health check, shutdown), `backend/src/sockets/event.ts` (every socket handler), `safeHandler.ts`, `rateLimiter.ts`, `connectionLimits.ts` in the same folder, `backend/src/rooms/roomStore.ts`, `backend/src/logger.ts`.
-- Pages: `frontend/src/app/page.tsx` (home), `frontend/src/app/play/[roomId]/page.tsx` (room), and `rooms/`, `diary/`, `feedback/` next to them.
-- Components, under `frontend/src/app/components/`: `sudoku/`, `players/`, `emotes/`, `loader/`, `minigames/`, `ui/`.
+- Contract: `shared/src/schemas.ts` (zod schemas, event types), `shared/src/games.ts` (the closed list of game ids), `shared/src/emotes.ts`, `shared/src/players.ts`.
+- Game engines: one folder per game in `shared/src/games/` (`sudoku/`, `takuzu/`, `flower-field/`, `word-search/`), each with its generator, validator and types.
+- Server: `backend/src/server.ts` (HTTP, CORS, health check, shutdown), `backend/src/sockets/event.ts` (every socket handler), `safeHandler.ts`, `rateLimiter.ts`, `connectionLimits.ts` in the same folder, `backend/src/rooms/roomStore.ts` (with the per-game room state next to it: `lobby.ts`, `profiles.ts`, `flowerField.ts`, `wordSearch.ts`), `backend/src/logger.ts`. Hosting: `render.yaml`.
+- Pages: `frontend/src/app/page.tsx` (home), `frontend/src/app/play/[roomId]/page.tsx` (room), and `rooms/`, `diary/`, `feedback/`, `privacy/` next to them.
+- Components, under `frontend/src/app/components/`: one folder per game (`sudoku/`, `takuzu/`, `flower-field/`, `word-search/`), `games/` (the registry, covers, previews and the board styles shared by every game), `play/` (toolbar, difficulty picker, end-of-game card), `room/` (table, lobby, wake status), `site/` (header, footer), `players/`, `emotes/`, `loader/`, `ui/`.
+- Artwork: `art/src/logo/`, `art/src/emotes/`.
 - Client plumbing, under `frontend/src/lib/`: `socket.ts`, `storage.ts`, `playerId.ts`, `securityHeaders.ts`, the `use*.ts` hooks, `i18n/`.
 - Strings: `frontend/src/locales/en.ts` and `it.ts`. Diary entries: `frontend/src/locales/diary.ts` (rules in `docs/DIARY.md`).
 
@@ -45,7 +46,7 @@ In a cloud session where the Docker daemon is not available, run the same npm co
 2. **The contract lives in `shared`.** A new or changed event means: schema, inferred type, entry in `ClientToServerEvents` / `ServerToClientEvents`, server handler, client code, tests. All in the same change, so the two sides cannot drift.
 3. **A client never names the room it acts on**, except in `join-room`. Every other event uses the room stored in `socket.data`.
 4. **No free text between players without a design review.** Today players can only exchange values from fixed enums (emotes, digits). Chat, nicknames, avatars or any user-written string change the threat model (XSS, harassment, moderation) and need the owner's decision first.
-5. **No accounts, personal data, analytics or third-party scripts without the owner's decision.** If login is ever added, it is designed with the `secops` agent before any code is written.
+5. **No accounts, personal data, analytics or third-party scripts without the owner's decision.** If login is ever added, it is designed with the `secops` agent before any code is written. The privacy page (`frontend/src/app/privacy/`) says what the site keeps: a change to what is stored in the browser, on the server or sent to a third party updates it in the same change.
 6. **Every resource has a bound**: rooms, players per room, payload sizes, event rates, timers. New state that can grow needs a limit and a cleanup path.
 7. **Tests come with the change.** Server behaviour is tested with real Socket.IO sockets (see `backend/src/sockets/event.test.ts`). A fix comes with a test written to fail without it. Who runs the tests is in Commands.
 8. **Secrets never enter the repo.** Only `.env.example` files with names and local defaults. If a secret is found in the code or in git history, stop and tell the owner: it must be rotated, not just removed.

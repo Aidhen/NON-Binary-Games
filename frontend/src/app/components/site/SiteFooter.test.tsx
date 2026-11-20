@@ -17,10 +17,11 @@ describe('SiteFooter', () => {
     expect(screen.getByText(/v1\.2\.3-test/)).toBeInTheDocument();
   });
 
-  it('leads to the feedback page and to the repository, without telling the repository where the player came from', () => {
+  it('leads to the feedback page, the privacy note and the repository, without telling the repository where the player came from', () => {
     render(<SiteFooter />);
 
     expect(screen.getByRole('link', { name: 'nav.feedback' })).toHaveAttribute('href', '/feedback');
+    expect(screen.getByRole('link', { name: 'footer.privacy' })).toHaveAttribute('href', '/privacy');
     const repository = screen.getByRole('link', { name: 'footer.github' });
     expect(repository).toHaveAttribute('href', REPOSITORY_URL);
     expect(repository.getAttribute('rel')).toContain('noreferrer');
@@ -31,6 +32,6 @@ describe('SiteFooter', () => {
     render(<SiteFooter />);
 
     expect(screen.getByRole('img', { name: 'footer.social' })).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(2);
+    expect(screen.getAllByRole('link')).toHaveLength(3);
   });
 });

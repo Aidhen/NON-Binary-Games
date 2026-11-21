@@ -7,7 +7,7 @@ import Client from 'socket.io-client';
 import type { Socket as ClientSocket } from 'socket.io-client';
 import { generateWordSearch } from '@nbg/shared';
 import type { ClientToServerEvents, LobbyState, ServerToClientEvents, WordSearchPuzzle, WordSearchStartedPayload } from '@nbg/shared';
-import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, voteLimit } from './event';
+import { setupSocketHandlers, reconnectGrace, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, clientBoardGenerationLimit, voteLimit } from './event';
 import { logger } from '../logger';
 import type { WordSearchGame } from '../rooms/roomStore';
 import { FORBIDDEN } from '../rooms/wordSearchBlocklist';
@@ -47,9 +47,11 @@ describe('a room that plays the Word Search', () => {
   /** The budgets are read when a server is set up, so a test that needs a tight one starts a server of its own. */
   const startServer = async (budgets: Budgets = {}) => {
     eventLimit.max = Number.POSITIVE_INFINITY;
+    reconnectGrace.ms = 0;
     roomCreationLimit.max = Number.POSITIVE_INFINITY;
     restartLimit.max = budgets.restart ?? Number.POSITIVE_INFINITY;
     boardGenerationLimit.max = Number.POSITIVE_INFINITY;
+    clientBoardGenerationLimit.max = Number.POSITIVE_INFINITY;
     const httpServer = createServer();
     io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
     setupSocketHandlers(io);

@@ -6,6 +6,11 @@ import type { PlayerProfile, SudokuBoard } from '@nbg/shared';
 import type { GameSettings } from './SudokuContainer';
 import { SudokuBoardUI } from './SudokuBoardUI';
 
+// The key with its placeholders, so that a test can read what the label says of each cell.
+vi.mock('@/lib/i18n/TranslationContext', () => ({
+  useTranslation: () => ({ t: (key: string) => `${key} {row}-{column} {value}` }),
+}));
+
 // `n` equal tracks: jsdom writes the zero of minmax as 0 or 0px, depending on its version.
 const TRACKS = (n: number) => new RegExp(`repeat\\(${n}, minmax\\(0(px)?, 1fr\\)\\)`);
 
@@ -72,10 +77,39 @@ describe('SudokuBoardUI', () => {
   it('renders the complete board with the correct grid dimensions', () => {
     const { container } = renderBoard();
 
-    expect(screen.getAllByRole('button')).toHaveLength(16);
-    expect(screen.getAllByRole('button', { name: 'Cell value 1' })).toHaveLength(4);
-    expect(screen.getAllByRole('button', { name: 'Empty cell' })).toHaveLength(7);
+    const labels = screen.getAllByRole('button').map((cell) => cell.getAttribute('aria-label') ?? '');
+    expect(labels).toHaveLength(16);
+    expect(labels.filter((label) => label.endsWith(' 1'))).toHaveLength(4);
+    expect(labels.filter((label) => label.startsWith('sudoku.cellEmpty '))).toHaveLength(7);
     expect(container.querySelector('[style]')?.getAttribute('style')).toMatch(TRACKS(4));
+  });
+
+  it('names each cell by row and column, and says whether its number was given', () => {
+    renderBoard();
+
+    expect(getCell(0, 0)).toHaveAccessibleName('sudoku.cellGiven 1-1 1');
+    expect(getCell(0, 1)).toHaveAccessibleName('sudoku.cell 1-2 2');
+    expect(getCell(1, 0)).toHaveAccessibleName('sudoku.cellEmpty 2-1 0');
+  });
+
+  it('is one tab stop, on the selected cell, and the arrows move the selection', () => {
+    const onCellClick = vi.fn();
+    renderBoard({ selectedCell: [1, 1], onCellClick });
+
+    expect(screen.getAllByRole('button').filter((cell) => cell.tabIndex === 0)).toEqual([getCell(1, 1)]);
+    fireEvent.keyDown(getCell(1, 1), { key: 'ArrowDown' });
+
+    expect(onCellClick).toHaveBeenCalledWith(2, 1);
+    expect(getCell(2, 1)).toHaveFocus();
+  });
+
+  it('takes no keys on a won board', () => {
+    const onCellClick = vi.fn();
+    renderBoard({ selectedCell: [1, 1], onCellClick, isGameWon: true });
+
+    fireEvent.keyDown(getCell(1, 1), { key: 'ArrowDown' });
+
+    expect(onCellClick).not.toHaveBeenCalled();
   });
 
   it('renders initial, editable and empty cells with the correct classes', () => {
@@ -249,6 +283,8 @@ describe('SudokuBoardUI', () => {
         playerGrid: wrongGrid(),
         settings: { ...defaultSettings, godMode: true, showErrors: false },
         isErrorPlacement: vi.fn(() => false),
+        // What the server said: the page has no solution to compare with.
+        wrongCells: new Set(['0-2']),
       });
 
       expect(getCell(0, 2)).toHaveClass('text-[var(--number-error)]', 'font-bold');
@@ -258,6 +294,7 @@ describe('SudokuBoardUI', () => {
       renderBoard({
         playerGrid: wrongGrid(),
         settings: { ...defaultSettings, godMode: true },
+        wrongCells: new Set(['0-2']),
       });
 
       expect(getCell(0, 1)).toHaveClass('text-[var(--number-player)]', 'font-medium');
@@ -266,7 +303,7 @@ describe('SudokuBoardUI', () => {
     });
 
     it('does not compare with the solution when disabled', () => {
-      renderBoard({ playerGrid: wrongGrid() });
+      renderBoard({ playerGrid: wrongGrid(), wrongCells: new Set(['0-2']) });
 
       expect(getCell(0, 2)).toHaveClass('text-[var(--number-player)]', 'font-medium');
       expect(getCell(0, 2)).not.toHaveClass('text-[var(--number-error)]');
@@ -280,6 +317,7 @@ describe('SudokuBoardUI', () => {
         playerGrid,
         selectedCell: [0, 2],
         settings: { ...defaultSettings, godMode: true },
+        wrongCells: new Set(['0-2', '1-0']),
       });
 
       expect(getCell(1, 0)).not.toHaveClass('bg-[var(--cell-background-selected)]');

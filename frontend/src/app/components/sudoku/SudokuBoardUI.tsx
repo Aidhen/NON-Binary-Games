@@ -1,11 +1,13 @@
 'use client';
 import { useMemo } from 'react';
-import { NotesGrid, PlayerProfile, SudokuBoard } from '@nbg/shared';
+import { NotesGrid, PlayerProfile, SudokuPuzzle } from '@nbg/shared';
 import { GameSettings } from './SudokuContainer';
 import { SudokuCell } from './SudokuCell';
 import { cn } from '@/lib/utils';
 import { UNKNOWN_PLAYER_STYLE, styleOfColor } from '@/lib/playerPalette';
 import { BOARD_TRAY } from '../games/boardStyles';
+import { useTranslation } from '@/lib/i18n/TranslationContext';
+import { useGridKeyboard } from '@/lib/useGridKeyboard';
 
 // The room between two tiles, in pixels. The lines between the boxes are exactly this wide: they fill it.
 const GAP = 3;
@@ -13,7 +15,7 @@ const GAP = 3;
 const BOX_LINE = "pointer-events-none absolute rounded-full bg-[var(--grid-border-outer)]";
 
 interface SudokuBoardUIProps {
-  board: SudokuBoard;
+  board: SudokuPuzzle;
   playerGrid: number[][];
   selectedCell: [number, number] | null;
   settings: GameSettings;
@@ -27,6 +29,8 @@ interface SudokuBoardUIProps {
   profiles?: Record<string, PlayerProfile>;
   /** The player being pointed out for a moment: their cursor and notes stand out. */
   highlightedAlias?: string | null;
+  /** For god mode: the filled cells the server says are wrong, by `r-c`. The page has no solution to compare with. */
+  wrongCells?: ReadonlySet<string>;
 }
 
 export function SudokuBoardUI({
@@ -41,8 +45,18 @@ export function SudokuBoardUI({
   notesGrid = {},
   completedNumbers = new Set<number>(),
   profiles = {},
-  highlightedAlias = null
+  highlightedAlias = null,
+  wrongCells = new Set<string>()
 }: Readonly<SudokuBoardUIProps>) {
+  const { t } = useTranslation();
+  // The arrows only move: on the Sudoku a tap selects too, and the numbers are typed on top of it.
+  const keyboard = useGridKeyboard(board.size, selectedCell, onCellClick);
+
+  const labelOf = (r: number, c: number, value: number) => {
+    let key = 'sudoku.cellEmpty';
+    if (value !== 0) key = board.initial[r][c] !== 0 ? 'sudoku.cellGiven' : 'sudoku.cell';
+    return t(key).replace('{row}', String(r + 1)).replace('{column}', String(c + 1)).replace('{value}', String(value));
+  };
 
   // A player who is not in the list (a note by somebody who left before you came) gets the color of the theme.
   // The list comes from the server and an alias is a key of it: only a key it really has counts.
@@ -55,7 +69,7 @@ export function SudokuBoardUI({
   const shouldDisplayError = (r: number, c: number, value: number): boolean => {
     if (isCellInitial(r, c)) return false;
     if (isCellEmpty(r, c)) return false;
-    if (settings.godMode && value !== board.solution[r][c]) return true;
+    if (settings.godMode && wrongCells.has(`${r}-${c}`)) return true;
     if (!settings.showErrors) return false;
     return isErrorPlacement(r, c, value);
   };
@@ -187,6 +201,8 @@ export function SudokuBoardUI({
                 notes={parsedNotes}
                 boardSize={board.size}
                 boxSize={board.boxSize}
+                label={labelOf(rIndex, cIndex, cellValue)}
+                keyboard={isGameWon ? undefined : keyboard(rIndex, cIndex)}
               />
             );
           })

@@ -1,11 +1,11 @@
-import type { SudokuBoard, Difficulty } from './games/sudoku/types';
+import type { SudokuPuzzle, Difficulty } from './games/sudoku/types';
 import type { TakuzuGrid } from './games/takuzu/types';
 import type { FlowerCellChange, FlowerGrid, FlowerStatus } from './games/flower-field/types';
 import type { WordLanguage, WordSearchGrid } from './games/word-search/types';
 import type { Emote } from './emotes';
 import type { GameId } from './games';
 import type { PlayerColor, PlayerProfile } from './players';
-import type { CellUpdatePayload, CellUpdateResult, FlowerFieldCellPayload, FlowerFieldModePayload, ToggleNotePayload, SelectCellPayload, WordSearchLanguagePayload, WordSearchSelectPayload } from './schemas';
+import type { CellUpdatePayload, CellUpdateResult, SudokuMistakesResult, FlowerFieldCellPayload, FlowerFieldModePayload, ToggleNotePayload, SelectCellPayload, WordSearchLanguagePayload, WordSearchSelectPayload } from './schemas';
 
 export * from './games/sudoku/index';
 export * from './games/takuzu/index';
@@ -44,10 +44,13 @@ export interface LobbyState {
   tableVotes: string[];
 }
 
-/** The Sudoku of a room, with everything a player needs to show it. */
+/**
+ * The Sudoku of a room, with everything a player needs to show it. The solution stays on the server, as in the
+ * other games: the mistake mode that compares with it asks the server (see `sudoku:mistakes`).
+ */
 export interface SudokuStartedPayload {
   game: 'sudoku';
-  board: SudokuBoard;
+  board: SudokuPuzzle;
   currentGrid: number[][];
   notesGrid: NotesGrid;
   difficulty: DifficultyLevel;
@@ -126,6 +129,11 @@ export interface ServerToClientEvents {
   "player-disconnected": (alias: string) => void;
   "join-error": (reason: JoinError) => void;
   "game-won": () => void;
+  /**
+   * A board could not be made: nothing changed, and the players can try again. Sent to the room when it was
+   * opening the game it voted for, and to the player who asked for a new board (restart, language).
+   */
+  "board-failed": () => void;
   "note-toggled": (data: { r: number; c: number; v: number; alias: string | null }) => void;
   /** Cells of the Flower Field that opened or were marked, to everybody in the room, the player who asked included. */
   "flower-field:updated": (data: { cells: FlowerCellChange[] }) => void;
@@ -156,6 +164,8 @@ export interface ClientToServerEvents {
   /** Whether this player wants the room to leave its game and go back to the table. Ignored while no game is open. */
   "vote-table": (wantsTable: boolean) => void;
   "cell-update": (data: CellUpdatePayload, acknowledge?: (result: CellUpdateResult) => void) => void;
+  /** Which filled cells of the Sudoku are wrong, for the mode that shows it. Answered to the player who asked only. */
+  "sudoku:mistakes": (acknowledge: (result: SudokuMistakesResult) => void) => void;
   "select-cell": (payload: SelectCellPayload) => void;
   "restart-game": (difficulty: DifficultyLevel) => void;
   "toggle-note": (data: ToggleNotePayload) => void;

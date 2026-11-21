@@ -1,12 +1,13 @@
 /**
  * Fixed-window rate limit: at most `limit` calls every `windowMs`.
- * Returns a function that says whether the current call is allowed.
+ * Returns a function that says whether the current call is allowed. `refund` gives back the last call that was
+ * counted in the current window, for work that was allowed and then could not be done.
  */
 export const createRateLimiter = (limit: number, windowMs: number, now: () => number = Date.now) => {
   let windowStart = now();
   let count = 0;
 
-  return (): boolean => {
+  const allow = (): boolean => {
     const current = now();
 
     if (current - windowStart >= windowMs) {
@@ -17,6 +18,10 @@ export const createRateLimiter = (limit: number, windowMs: number, now: () => nu
     count++;
     return count <= limit;
   };
+
+  return Object.assign(allow, {
+    refund: () => { if (count > 0) count--; },
+  });
 };
 
 /**
@@ -36,7 +41,7 @@ export const createKeyedRateLimiter = (limit: number, windowMs: number, now: () 
     }
   };
 
-  return (key: string): boolean => {
+  const allow = (key: string): boolean => {
     const current = now();
     let window = windows.get(key);
 
@@ -56,4 +61,12 @@ export const createKeyedRateLimiter = (limit: number, windowMs: number, now: () 
     window.count++;
     return window.count <= limit;
   };
+
+  return Object.assign(allow, {
+    /** Gives back the last call counted for `key` in its current window (see createRateLimiter). */
+    refund: (key: string) => {
+      const window = windows.get(key);
+      if (window && window.count > 0) window.count--;
+    },
+  });
 };

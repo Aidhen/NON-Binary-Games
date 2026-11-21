@@ -8,6 +8,7 @@ import { Lobby } from './Lobby';
 import { RoomHeader } from './RoomHeader';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { joinErrorMessages } from '@/lib/joinErrors';
+import { useBoardFailed } from '@/lib/useBoardFailed';
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
 import { useFocusModeWhile } from '@/lib/focusMode';
 import { usePlayers } from '@/lib/usePlayers';
@@ -29,6 +30,12 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
   const { self, players, setColor } = usePlayers(roomId);
   const { lobby, joinError, vote, voteTable } = useRoom(roomId);
   const playing = Boolean(lobby?.game) && !joinError;
+  const boardFailed = useBoardFailed();
+  const boardFailedNotice = boardFailed && (
+    <output className="mb-4 w-full max-w-[500px] rounded-[var(--radius-paper)] bg-[var(--paper)] px-4 py-3 text-center text-sm font-bold text-[var(--title-text)] shadow-[var(--shadow-paper-sm)]">
+      {t('lobby.boardFailed')}
+    </output>
+  );
 
   useFocusModeWhile(playing);
 
@@ -55,17 +62,20 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
   // The table is there from the first moment, also while the server is still waking up: only the vote waits.
   if (!lobby?.game) {
     return (
-      <Lobby
-        roomId={roomId}
-        games={games}
-        players={players}
-        self={self}
-        votes={lobby?.votes ?? null}
-        status={status}
-        onRetry={retry}
-        onVote={vote}
-        onPickColor={setColor}
-      />
+      <>
+        {boardFailedNotice}
+        <Lobby
+          roomId={roomId}
+          games={games}
+          players={players}
+          self={self}
+          votes={lobby?.votes ?? null}
+          status={status}
+          onRetry={retry}
+          onVote={vote}
+          onPickColor={setColor}
+        />
+      </>
     );
   }
 
@@ -85,6 +95,16 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
         wantsTable={self !== null && lobby.tableVotes.includes(self)}
         onVoteTable={voteTable}
       />
+      {boardFailedNotice}
+      {/* The game stays on screen while the page reconnects: the room keeps the player for a while (see reconnectGrace). */}
+      {status !== 'connected' && (
+        <output className="mb-4 flex w-full max-w-[500px] flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-[var(--radius-paper)] bg-[var(--paper)] px-4 py-3 text-center text-sm font-bold text-[var(--title-text)] shadow-[var(--shadow-paper-sm)]">
+          {status === 'failed' ? t('lobby.connectionLost') : t('lobby.reconnecting')}
+          {status === 'failed' && (
+            <button type="button" onClick={retry} className="cursor-pointer underline">{t('lobby.retry')}</button>
+          )}
+        </output>
+      )}
       <Suspense fallback={<ServerLoader status={status} onRetry={retry} />}>
         <game.Game roomId={roomId} />
       </Suspense>

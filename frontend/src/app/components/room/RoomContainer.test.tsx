@@ -2,6 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameId, LobbyState } from '@nbg/shared';
 import { RoomContainer } from './RoomContainer';
+import { BOARD_FAILED_NOTICE_MS } from '@/lib/useBoardFailed';
+import { FAILED_AFTER_MS } from '@/lib/useConnectionStatus';
 import type { GameEntry } from '../games/types';
 import { getRoomEmoji } from '@/lib/roomEmoji';
 
@@ -147,6 +149,62 @@ describe('RoomContainer', () => {
     serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
 
     expect(scrollTo).toHaveBeenCalledWith({ top: 0 });
+  });
+
+  it('says when a board could not be made, at the table and in a game, and the notice goes away by itself', () => {
+    vi.useFakeTimers();
+    try {
+      render(<RoomContainer roomId={ROOM} games={games} />);
+      serverSays({ game: null, votes: [], tableVotes: [] });
+
+      act(() => { mocks.dispatch('board-failed'); });
+      expect(screen.getByText('lobby.boardFailed')).toBeInTheDocument();
+
+      act(() => { vi.advanceTimersByTime(BOARD_FAILED_NOTICE_MS); });
+      expect(screen.queryByText('lobby.boardFailed')).not.toBeInTheDocument();
+
+      serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
+      act(() => { mocks.dispatch('board-failed'); });
+      expect(screen.getByText('lobby.boardFailed')).toBeInTheDocument();
+      expect(screen.getByTestId('game')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps the game on screen while the page reconnects, and says so', () => {
+    vi.useFakeTimers();
+    try {
+      render(<RoomContainer roomId={ROOM} games={games} />);
+      serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
+      expect(screen.queryByText('lobby.reconnecting')).not.toBeInTheDocument();
+
+      act(() => { mocks.socket.connected = false; mocks.dispatch('disconnect'); });
+      expect(screen.getByText('lobby.reconnecting')).toBeInTheDocument();
+      expect(screen.getByTestId('game')).toBeInTheDocument();
+
+      act(() => { mocks.socket.connected = true; mocks.dispatch('connect'); });
+      expect(screen.queryByText('lobby.reconnecting')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('offers to try again when the server cannot be reached for a long time', () => {
+    vi.useFakeTimers();
+    try {
+      render(<RoomContainer roomId={ROOM} games={games} />);
+      serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
+
+      act(() => { mocks.socket.connected = false; mocks.dispatch('disconnect'); });
+      act(() => { vi.advanceTimersByTime(FAILED_AFTER_MS); });
+
+      expect(screen.getByText('lobby.connectionLost')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'lobby.retry' }));
+      expect(mocks.socket.connect).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('goes back to the table when the server says so', () => {

@@ -6,6 +6,7 @@ import type { PlayerProfile } from '@nbg/shared';
 import { cn } from '@/lib/utils';
 import { BOARD_TILE, BOARD_TRAY, gapOf } from '../games/boardStyles';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
+import { useGridKeyboard } from '@/lib/useGridKeyboard';
 import { UNKNOWN_PLAYER_STYLE, styleOfColor } from '@/lib/playerPalette';
 
 interface FlowerFieldBoardUIProps {
@@ -21,6 +22,8 @@ interface FlowerFieldBoardUIProps {
   /** Won or lost: the field takes no more clicks. */
   isOver: boolean;
   onCellClick: (r: number, c: number) => void;
+  /** The arrows select a cell without playing it, which a tap does (see useGridKeyboard). */
+  onMove?: (r: number, c: number) => void;
   othersSelections?: Record<string, [number, number]>;
   /** Every player the page has seen in the room, by alias: the color of a flag or a cursor comes from here. */
   profiles?: Record<string, PlayerProfile>;
@@ -70,8 +73,11 @@ const contentOf = (value: number, isMine: boolean, isFlagged: boolean): string |
   return value > 0 ? value : '';
 };
 
-export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selectedCell, isOver, onCellClick, othersSelections = {}, profiles = {}, highlightedAlias = null, bloom = null }: Readonly<FlowerFieldBoardUIProps>) {
+const noMove = () => {};
+
+export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selectedCell, isOver, onCellClick, onMove, othersSelections = {}, profiles = {}, highlightedAlias = null, bloom = null }: Readonly<FlowerFieldBoardUIProps>) {
   const { t } = useTranslation();
+  const keyboard = useGridKeyboard(size, selectedCell, onMove ?? noMove);
 
   // The list comes from the server and an alias is a key of it: only a key it really has counts.
   const styleOf = (alias: string) => (Object.hasOwn(profiles, alias) ? styleOfColor(profiles[alias].color) : UNKNOWN_PLAYER_STYLE);
@@ -128,6 +134,7 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
               type="button"
               aria-label={labelOf(r, c, value)}
               onClick={() => !isOver && onCellClick(r, c)}
+              {...(!isOver && onMove ? keyboard(r, c) : {})}
               className={cn(
                 "relative flex items-center justify-center font-display leading-none",
                 sizeClass,

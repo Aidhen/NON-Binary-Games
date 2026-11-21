@@ -159,4 +159,40 @@ describe('TakuzuBoardUI', () => {
 
     expect(screen.getByRole('button', { name: 'R1 C3: empty' }).className).toContain('ring-[var(--number-player)]');
   });
+
+  describe('with the keyboard', () => {
+    it('is one tab stop, on the selected cell, and the arrows select without playing', () => {
+      const onCellClick = vi.fn();
+      const onMove = vi.fn();
+      render(<TakuzuBoardUI {...baseProps} selectedCell={[0, 1]} onCellClick={onCellClick} onMove={onMove} />);
+      const cells = screen.getAllByRole('button');
+
+      expect(cells.filter((cell) => cell.tabIndex === 0)).toEqual([cells[1]]);
+      fireEvent.keyDown(cells[1], { key: 'ArrowRight' });
+
+      expect(onMove).toHaveBeenCalledWith(0, 2);
+      expect(onCellClick).not.toHaveBeenCalled();
+      expect(cells[2]).toHaveFocus();
+    });
+
+    it('stays inside the grid at the edges', () => {
+      const onMove = vi.fn();
+      render(<TakuzuBoardUI {...baseProps} selectedCell={[0, 0]} onMove={onMove} />);
+      const cells = screen.getAllByRole('button');
+
+      fireEvent.keyDown(cells[0], { key: 'ArrowUp' });
+      fireEvent.keyDown(cells[0], { key: 'ArrowLeft' });
+
+      expect(onMove.mock.calls).toEqual([[0, 0], [0, 0]]);
+    });
+
+    it('takes no keys once the game is over', () => {
+      const onMove = vi.fn();
+      render(<TakuzuBoardUI {...baseProps} isGameWon selectedCell={[0, 0]} onMove={onMove} />);
+
+      fireEvent.keyDown(screen.getAllByRole('button')[0], { key: 'ArrowRight' });
+
+      expect(onMove).not.toHaveBeenCalled();
+    });
+  });
 });

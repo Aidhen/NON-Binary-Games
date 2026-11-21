@@ -6,6 +6,7 @@ import { TakuzuContainer } from './TakuzuContainer';
 
 type BoardMockProps = {
   onCellClick: (r: number, c: number) => void;
+  onMove?: (r: number, c: number) => void;
   grid: number[][];
   selectedCell: [number, number] | null;
   conflicts: Set<string>;
@@ -84,6 +85,7 @@ vi.mock('./TakuzuBoardUI', () => ({
     <div data-testid="board-ui">
       <button data-testid="tap-empty" onClick={() => props.onCellClick(0, 1)}>Tap an empty cell</button>
       <button data-testid="tap-given" onClick={() => props.onCellClick(0, 0)}>Tap a given cell</button>
+      <button data-testid="move-empty" onClick={() => props.onMove?.(0, 1)}>Move to an empty cell</button>
       <output data-testid="board-state">
         {JSON.stringify({
           grid: props.grid,
@@ -194,6 +196,15 @@ describe('TakuzuContainer', () => {
 
     expect(mocks.emitted).toContainEqual({ event: 'select-cell', args: [{ r: 0, c: 1 }] });
     expect(boardState().selectedCell).toEqual([0, 1]);
+  });
+
+  it('moves with the arrows without changing the cell, and tells the others where the player is', async () => {
+    await renderGame();
+
+    fireEvent.click(screen.getByTestId('move-empty'));
+
+    expect(mocks.emitted).toContainEqual({ event: 'select-cell', args: [{ r: 0, c: 1 }] });
+    expect(mocks.emitted.some(({ event }) => event === 'cell-update')).toBe(false);
   });
 
   it('selects a cell the puzzle gave, but does not try to change it', async () => {

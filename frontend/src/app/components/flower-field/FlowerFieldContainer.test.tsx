@@ -6,6 +6,7 @@ import { FlowerFieldContainer } from './FlowerFieldContainer';
 
 type BoardMockProps = {
   onCellClick: (r: number, c: number) => void;
+  onMove?: (r: number, c: number) => void;
   grid: number[][];
   flags: Record<string, string>;
   mines: [number, number][];
@@ -90,6 +91,7 @@ vi.mock('./FlowerFieldBoardUI', () => ({
     <div data-testid="board-ui">
       <button data-testid="tap-closed" onClick={() => props.onCellClick(0, 0)}>Tap a closed cell</button>
       <button data-testid="tap-open" onClick={() => props.onCellClick(0, 1)}>Tap an open cell</button>
+      <button data-testid="move-closed" onClick={() => props.onMove?.(0, 0)}>Move to a closed cell</button>
       <output data-testid="board-state">
         {JSON.stringify({
           grid: props.grid,
@@ -207,6 +209,28 @@ describe('FlowerFieldContainer', () => {
 
     expect(sent('flower-field:flag')).toEqual([{ r: 0, c: 0 }]);
     expect(sent('flower-field:reveal')).toEqual([]);
+  });
+
+  it('moves with the arrows without opening anything, and F flags the selected cell', async () => {
+    await renderGame();
+
+    fireEvent.click(screen.getByTestId('move-closed'));
+    expect(sent('select-cell')).toEqual([{ r: 0, c: 0 }]);
+    expect(sent('flower-field:reveal')).toEqual([]);
+
+    fireEvent.keyDown(window, { key: 'f' });
+    expect(sent('flower-field:flag')).toEqual([{ r: 0, c: 0 }]);
+  });
+
+  it('flags nothing with F on an open cell, or with a modifier', async () => {
+    await renderGame();
+    fireEvent.click(screen.getByTestId('tap-open'));
+    fireEvent.keyDown(window, { key: 'f' });
+
+    fireEvent.click(screen.getByTestId('move-closed'));
+    fireEvent.keyDown(window, { key: 'f', ctrlKey: true });
+
+    expect(sent('flower-field:flag')).toEqual([]);
   });
 
   it('does not ask anything for a cell that is already open', async () => {

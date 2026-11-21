@@ -10,9 +10,9 @@ I had this idea while looking for ways to pass the time with my long-distance pa
 
 ## How it works
 
-- **Rooms.** A room lives in the memory of a single Node.js server and is reached through its link. Players talk to it over Socket.IO: after joining, every event acts on the room stored on the socket, never on one named by the client. An empty room is kept for ten minutes, so that a page that lost its connection can join again.
-- **The server is the authority.** Every client payload is parsed by a [zod](https://zod.dev) schema before it is used, and the bounds that depend on the game (board size, fixed cells) are checked in the handler. Events are rate limited, connections are limited per address, and the number of rooms is capped.
-- **Game engines.** Generators and validators are pure TypeScript in a shared package, used by both server and client. Every puzzle has exactly one solution and can be solved by deduction alone.
+- **Rooms.** A room lives in the memory of a single Node.js server and is reached through its link. Players talk to it over Socket.IO: after joining, every event acts on the room stored on the socket, never on one named by the client. A player whose connection drops keeps their place, and their votes, for thirty seconds; an empty room is kept for ten minutes, so that a page that lost its connection can join again.
+- **The server is the authority.** Every client payload is parsed by a [zod](https://zod.dev) schema before it is used, and the bounds that depend on the game (board size, fixed cells) are checked in the handler. Events are rate limited, connections are limited per address, the number of rooms is capped, and the boards a client can have generated are limited on their own, behind a limit for the whole server.
+- **Game engines.** Generators and validators are pure TypeScript in a shared package, used by both server and client. Every puzzle has exactly one solution and can be solved by deduction alone, and the solution never leaves the server: the Sudoku mode that compares with it asks the server which cells are wrong.
 - **Pluggable games.** The server accepts a closed list of game ids, and the frontend has a registry of games. A room starts at a table where the players vote, and the game opens when more than half of the room wants it. Going back to the table to pick another game is voted the same way.
 - **No accounts.** A browser is identified by an anonymous id kept in `localStorage`, which lets players keep their name and color when they reconnect. Players can only exchange values from fixed sets (digits, emotes): there is no free text between them.
 - **Interface.** Next.js and React, Tailwind with the themes as CSS variables, translations in plain TypeScript dictionaries (English and Italian), drawings as inline SVG components.
@@ -39,24 +39,17 @@ Tooling: **Vitest** for unit, component and integration tests (the server tests 
 
 ---
 
-## Current status: v0.6.0-alpha
+## Current status: v0.7.0-alpha
 
 Four games are playable online. What changed in each version is in the [releases](https://github.com/Aidhen/NON-Binary-Games/releases); news for the players is in the Diary on the site.
 
 ### Next
 
-**Before telling more people about the game**
-- [ ] Sudoku: check mistakes on the server, so that the solution is no longer sent to the clients, as in the other games.
-- [ ] Board generation budget per client, so that one client cannot use up the shared one ([#67](https://github.com/Aidhen/NON-Binary-Games/issues/67)).
-- [ ] Tell the room when a board could not be generated ([#64](https://github.com/Aidhen/NON-Binary-Games/issues/64)), and send `game-won` only once in Sudoku and Takuzu ([#68](https://github.com/Aidhen/NON-Binary-Games/issues/68)).
+**For 1.0** ([milestone](https://github.com/Aidhen/NON-Binary-Games/milestone/1))
+- [ ] Feedback form connected to a private issue tracker ([#112](https://github.com/Aidhen/NON-Binary-Games/issues/112)).
 
 **Rooms**
-- [ ] Reconnections: a grace period before a dropped player is removed (no "left" message, votes kept) and a reconnecting state in the game screen.
-- [ ] Feedback form connected to a private issue tracker.
 - [ ] Ask the room before a new game or a language change discards a Word Search in progress ([#86](https://github.com/Aidhen/NON-Binary-Games/issues/86)).
-
-**Accessibility**
-- [ ] Keyboard play in every game: one Tab stop per grid (roving tabindex), arrow keys to move, the keys of each game to play ([#71](https://github.com/Aidhen/NON-Binary-Games/issues/71) for the Takuzu).
 
 **Games**
 - [ ] A Memory game with tarot cards.

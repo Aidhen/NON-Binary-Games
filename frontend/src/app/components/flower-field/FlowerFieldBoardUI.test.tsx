@@ -4,6 +4,9 @@ import type { PlayerProfile } from '@nbg/shared';
 import { BLOOM_SPREAD_MS, FlowerFieldBoardUI, bloomDelayOf, flowerOf } from './FlowerFieldBoardUI';
 import { FLOWER_COLORS, FLOWER_KINDS } from '@nbg/art';
 
+// `n` equal tracks: jsdom writes the zero of minmax as 0 or 0px, depending on its version.
+const TRACKS = (n: number) => new RegExp(`repeat\\(${n}, minmax\\(0(px)?, 1fr\\)\\)`);
+
 vi.mock('@/lib/i18n/TranslationContext', () => ({
   useTranslation: () => ({
     t: (key: string) => ({
@@ -42,7 +45,7 @@ describe('FlowerFieldBoardUI', () => {
     render(<FlowerFieldBoardUI {...baseProps} />);
 
     const board = screen.getAllByRole('button')[0].parentElement as HTMLElement;
-    expect(board.style.gridTemplateRows).toBe('repeat(3, minmax(0, 1fr))');
+    expect(board.style.gridTemplateRows).toMatch(TRACKS(3));
   });
 
   it('shows a flag in the color of the player who put it', () => {

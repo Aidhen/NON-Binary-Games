@@ -2,6 +2,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SudokuCell } from './SudokuCell';
 
+// `n` equal tracks: jsdom writes the zero of minmax as 0 or 0px, depending on its version.
+const TRACKS = (n: number) => new RegExp(`repeat\\(${n}, minmax\\(0(px)?, 1fr\\)\\)`);
+
 describe('SudokuCell', () => {
   it('renders the given value with the correct accessible label and classes', () => {
     render(<SudokuCell value={5} bgClass="bg-white" textClass="text-black" onClick={vi.fn()} />);
@@ -39,8 +42,8 @@ describe('SudokuCell', () => {
     const notesGrid = cell.querySelector<HTMLDivElement>('div[style]');
 
     expect(notesGrid).not.toBeNull();
-    expect(notesGrid?.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
-    expect(notesGrid?.style.gridTemplateRows).toBe('repeat(2, minmax(0, 1fr))');
+    expect(notesGrid?.style.gridTemplateColumns).toMatch(TRACKS(2));
+    expect(notesGrid?.style.gridTemplateRows).toMatch(TRACKS(2));
 
     const noteCells = Array.from(notesGrid?.children ?? []);
 

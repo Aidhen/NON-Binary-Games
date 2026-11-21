@@ -6,6 +6,9 @@ import type { PlayerProfile, SudokuBoard } from '@nbg/shared';
 import type { GameSettings } from './SudokuContainer';
 import { SudokuBoardUI } from './SudokuBoardUI';
 
+// `n` equal tracks: jsdom writes the zero of minmax as 0 or 0px, depending on its version.
+const TRACKS = (n: number) => new RegExp(`repeat\\(${n}, minmax\\(0(px)?, 1fr\\)\\)`);
+
 const testBoard: SudokuBoard = {
   size: 4,
   boxSize: 2,
@@ -72,7 +75,7 @@ describe('SudokuBoardUI', () => {
     expect(screen.getAllByRole('button')).toHaveLength(16);
     expect(screen.getAllByRole('button', { name: 'Cell value 1' })).toHaveLength(4);
     expect(screen.getAllByRole('button', { name: 'Empty cell' })).toHaveLength(7);
-    expect(container.querySelector('[style]')?.getAttribute('style')).toContain('repeat(4, minmax(0, 1fr))');
+    expect(container.querySelector('[style]')?.getAttribute('style')).toMatch(TRACKS(4));
   });
 
   it('renders initial, editable and empty cells with the correct classes', () => {
@@ -96,8 +99,8 @@ describe('SudokuBoardUI', () => {
     const rows = container.querySelectorAll<HTMLElement>('[data-box-line="row"]');
     expect(columns).toHaveLength(1);
     expect(rows).toHaveLength(1);
-    // The same calc, written two ways: jsdom may simplify it, depending on its version.
-    const lineAt = ['calc(2 * (100% + 3px) / 4 - 3px)', 'calc(-3px + 0.5 * (100% + 3px))'];
+    // The same calc, written three ways: jsdom simplifies it more or less, depending on its version.
+    const lineAt = ['calc(2 * (100% + 3px) / 4 - 3px)', 'calc(-3px + 0.5 * (100% + 3px))', 'calc(50% - 1.5px)'];
     expect(lineAt).toContain(columns[0].style.left);
     expect(lineAt).toContain(rows[0].style.top);
     expect(columns[0]).toHaveAttribute('aria-hidden', 'true');
@@ -333,14 +336,12 @@ describe('SudokuBoardUI', () => {
       },
     });
 
-    const notesGrid = getCell(0, 2).querySelector('div[style]');
+    const notesGrid = getCell(0, 2).querySelector<HTMLElement>('div[style]');
     const noteCells = Array.from(notesGrid?.children ?? []);
 
     expect(notesGrid).not.toBeNull();
-    expect(notesGrid).toHaveStyle({
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-      gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
-    });
+    expect(notesGrid?.style.gridTemplateColumns).toMatch(TRACKS(2));
+    expect(notesGrid?.style.gridTemplateRows).toMatch(TRACKS(2));
     expect(noteCells).toHaveLength(4);
     expect(noteCells[0]).toHaveClass('text-transparent');
     expect(noteCells[1]).toHaveTextContent('2');

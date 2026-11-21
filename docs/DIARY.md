@@ -33,7 +33,7 @@ How to add and maintain the entries of the **Diary** page. Written for whoever u
 |-----------|---------------------|-----------------------------------------------------------------------|
 | `id`      | yes                 | Lowercase words and hyphens, in English, never reused                 |
 | `type`    | yes                 | Decides the label and the filter: Coming, Released, Behind the scenes |
-| `date`    | yes                 | Sort key. For `upcoming`, the day the entry was written               |
+| `date`    | yes                 | Sort key. For `upcoming`, the day the entry was written; the page does not show it |
 | `version` | only for `released` | The version in `frontend/package.json` when the change shipped        |
 | `title`   | yes                 | About 50 characters at most. Shown on the closed entry                |
 | `summary` | yes                 | One line, about 80 characters at most. Shown on the closed entry      |

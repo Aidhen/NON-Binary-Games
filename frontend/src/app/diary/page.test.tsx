@@ -51,6 +51,17 @@ describe('DiaryPage', () => {
     expect(screen.queryByText(newestFirst[0].en.body[0])).not.toBeInTheDocument();
   });
 
+  it('shows the date of what happened, never of what is coming', () => {
+    const { container } = render(<DiaryPage />);
+    const shown = new Set([...container.querySelectorAll('time')].map((time) => time.getAttribute('datetime')));
+
+    for (const entry of DIARY) {
+      if (entry.type === 'upcoming') continue;
+      expect(shown.has(entry.date), entry.id).toBe(true);
+    }
+    expect(container.querySelectorAll('time')).toHaveLength(DIARY.filter((entry) => entry.type !== 'upcoming').length);
+  });
+
   it('opens one entry at a time, and closes it when it is picked again', () => {
     language.current = 'en';
     render(<DiaryPage />);

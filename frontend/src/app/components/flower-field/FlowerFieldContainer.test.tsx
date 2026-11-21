@@ -13,6 +13,7 @@ type BoardMockProps = {
   selectedCell: [number, number] | null;
   isOver: boolean;
   othersSelections?: Record<string, [number, number]>;
+  bloom?: { grow: boolean } | null;
 };
 
 type SettingsMockProps = {
@@ -21,6 +22,8 @@ type SettingsMockProps = {
   onToggleExplosive: () => void;
   currentDifficulty: DifficultyLevel;
   onDifficultyChange: (level: DifficultyLevel) => void;
+  bloomGrows: boolean;
+  onToggleBloom: () => void;
 };
 
 const mocks = vi.hoisted(() => {
@@ -96,6 +99,7 @@ vi.mock('./FlowerFieldBoardUI', () => ({
           selectedCell: props.selectedCell,
           isOver: props.isOver,
           othersSelections: props.othersSelections,
+          bloom: props.bloom,
         })}
       </output>
     </div>
@@ -103,10 +107,11 @@ vi.mock('./FlowerFieldBoardUI', () => ({
 }));
 
 vi.mock('./FlowerFieldSettingsPanel', () => ({
-  FlowerFieldSettingsPanel: ({ explosive, canChangeExplosive, onToggleExplosive, currentDifficulty, onDifficultyChange }: SettingsMockProps) => (
+  FlowerFieldSettingsPanel: ({ explosive, canChangeExplosive, onToggleExplosive, currentDifficulty, onDifficultyChange, bloomGrows, onToggleBloom }: SettingsMockProps) => (
     <div data-testid="settings-panel">
-      <output data-testid="settings-state">{JSON.stringify({ explosive, canChangeExplosive, currentDifficulty })}</output>
+      <output data-testid="settings-state">{JSON.stringify({ explosive, canChangeExplosive, currentDifficulty, bloomGrows })}</output>
       <button onClick={onToggleExplosive}>Toggle lose</button>
+      <button onClick={onToggleBloom}>Toggle bloom</button>
       <button data-testid="set-hard" onClick={() => onDifficultyChange('hard')}>Set hard</button>
     </div>
   ),
@@ -137,7 +142,7 @@ const boardState = () => JSON.parse(screen.getByTestId('board-state').textConten
 const settingsState = () => JSON.parse(screen.getByTestId('settings-state').textContent ?? '{}');
 const sent = (event: string) => mocks.emitted.filter((entry) => entry.event === event).map(({ args }) => args[0]);
 
-beforeEach(() => { mocks.reset(); });
+beforeEach(() => { mocks.reset(); localStorage.clear(); });
 
 describe('FlowerFieldContainer', () => {
   it('joins the room, and shows no field until the server sends it', () => {
@@ -253,13 +258,36 @@ describe('FlowerFieldContainer', () => {
     expect(mocks.emitted).toContainEqual({ event: 'restart-game', args: ['easy'] });
   });
 
-  it('shows the win when the server says so', async () => {
+  it('shows the win when the server says so, with the field in bloom and the card under it', async () => {
     await renderGame();
+    expect(boardState().bloom).toBeNull();
 
     await act(async () => { mocks.dispatch('game-won'); });
 
     expect(screen.getByText('flowerField.cleared')).toBeInTheDocument();
-    expect(boardState().isOver).toBe(true);
+    expect(boardState()).toMatchObject({ isOver: true, bloom: { grow: true } });
+    // The card follows the field instead of covering it.
+    const board = screen.getByTestId('board-ui');
+    expect(board.compareDocumentPosition(screen.getByText('flowerField.cleared')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('grows no flower on a lost field', async () => {
+    await renderGame({ status: 'lost', mines: [[0, 0]] });
+
+    expect(boardState().bloom).toBeNull();
+  });
+
+  it('lets a player turn the growing off, and remembers it in this browser', async () => {
+    await renderGame();
+    fireEvent.click(screen.getByText('sudoku.settings'));
+    expect(settingsState().bloomGrows).toBe(true);
+
+    fireEvent.click(screen.getByText('Toggle bloom'));
+    await act(async () => { mocks.dispatch('game-won'); });
+
+    expect(settingsState().bloomGrows).toBe(false);
+    expect(boardState().bloom).toEqual({ grow: false });
+    expect(localStorage.getItem('nbg-flower-bloom')).toBe('off');
   });
 
   it('asks nothing once the game is over', async () => {

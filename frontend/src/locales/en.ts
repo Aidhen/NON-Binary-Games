@@ -47,6 +47,8 @@ export const en = {
     ruleMineLoses: "If you open a mine, the game is lost for everybody.",
     flagMode: "Flags",
     explosive: "Lose when a mine is opened",
+    bloom: "Flowers that grow at the end",
+    bloomHint: "Off, the flowers show up still: lighter for slower phones.",
     explosiveLocked: "It can change before the first cell is opened, or with a new game.",
     cell: "Row {row}, column {column}: {state}",
     closed: "closed",
@@ -246,14 +248,14 @@ export const en = {
     title: "Privacy",
     lead: "What the site keeps, where and for how long. In short: very little.",
     browserTitle: "In your browser",
-    browserText: "The site saves two things in your browser's localStorage: an anonymous code, made up at random, that lets you keep your name and color when you come back to a room, and the theme you picked. No cookies, no statistics, no ads, no scripts from other sites: even the fonts come from the site itself. You can delete everything at any time from your browser settings.",
+    browserText: "The site saves up to three things in your browser's localStorage: an anonymous code, made up at random, that lets you keep your name and color when you come back to a room, the theme you picked, and whether the flowers of the Flower Field grow at the end. No cookies, no statistics, no ads, no scripts from other sites: even the fonts come from the site itself. You can delete everything at any time from your browser settings.",
     serverTitle: "On the server",
     serverText: "Rooms live only in the memory of the server: the board, the moves, the notes, the animal names and the colors. An empty room disappears after ten minutes, and all of them disappear when the server restarts. Your IP address is only used to count open connections, to keep away whoever wants to overload the game: it stays in memory and does not end up in the logs of the game.",
     hostingTitle: "Who hosts the site",
     hostingText: "The site is hosted by Vercel and the server by Render. To know how they handle data, read their privacy policies:",
     feedbackTitle: "The feedback form",
     feedbackText: "The form is still switched off and sends nothing. When I connect it, this page will say what arrives, where and for how long, before it can be used.",
-    updated: "Last updated: 20 November 2026"
+    updated: "Last updated: 21 November 2026"
   },
   diary: {
     title: "Diary",

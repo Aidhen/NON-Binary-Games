@@ -1,6 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import { FLOWER_HIDDEN, FLOWER_MARKED } from '@nbg/shared';
+import { FLOWER_COLORS, FLOWER_KINDS, FlowerArt } from '@nbg/art';
 import type { PlayerProfile } from '@nbg/shared';
 import { cn } from '@/lib/utils';
 import { BOARD_TILE, BOARD_TRAY, gapOf } from '../games/boardStyles';
@@ -25,12 +26,34 @@ interface FlowerFieldBoardUIProps {
   profiles?: Record<string, PlayerProfile>;
   /** The player being pointed out for a moment: their flags and cursor stand out. */
   highlightedAlias?: string | null;
+  /** Once the field is cleared a flower grows on every cell; `grow: false` shows them still, for phones that struggle. */
+  bloom?: { grow: boolean } | null;
 }
 
 const MINE = '✸';
 const FLAG = '⚑';
 
 const isAt = (cell: [number, number] | null, r: number, c: number): boolean => cell?.[0] === r && cell?.[1] === c;
+
+/** How long the flowers take to reach the corners, from the middle of the field. */
+export const BLOOM_SPREAD_MS = 1200;
+
+/**
+ * The flower of a cell. It comes from where the cell is, not from chance: every player in the room sees the
+ * same field in bloom, and it stays the same through a re-render.
+ */
+export const flowerOf = (r: number, c: number) => {
+  const seed = (r * 73 + c * 151 + r * c * 17) >>> 0;
+  return { kind: FLOWER_KINDS[seed % FLOWER_KINDS.length], color: FLOWER_COLORS[(seed >> 3) % FLOWER_COLORS.length] };
+};
+
+/** The flowers open in a wave from the middle of the field, with a little give so that it does not look drawn with a compass. */
+export const bloomDelayOf = (size: number, r: number, c: number): number => {
+  const middle = (size - 1) / 2;
+  const farthest = Math.hypot(middle, middle) || 1;
+  const give = ((r * 37 + c * 61) % 7) * 20;
+  return Math.round((Math.hypot(r - middle, c - middle) / farthest) * BLOOM_SPREAD_MS) + give;
+};
 
 /** The mine that lost the game comes first, then the cell the player is on, then whether the cell shows what it holds. */
 const backgroundClass = (isExploded: boolean, isSelected: boolean, isShown: boolean): string => {
@@ -47,7 +70,7 @@ const contentOf = (value: number, isMine: boolean, isFlagged: boolean): string |
   return value > 0 ? value : '';
 };
 
-export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selectedCell, isOver, onCellClick, othersSelections = {}, profiles = {}, highlightedAlias = null }: Readonly<FlowerFieldBoardUIProps>) {
+export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selectedCell, isOver, onCellClick, othersSelections = {}, profiles = {}, highlightedAlias = null, bloom = null }: Readonly<FlowerFieldBoardUIProps>) {
   const { t } = useTranslation();
 
   // The list comes from the server and an alias is a key of it: only a key it really has counts.
@@ -86,7 +109,7 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
     t('flowerField.cell').replace('{row}', String(r + 1)).replace('{column}', String(c + 1)).replace('{state}', stateOf(r, c, value));
 
   return (
-    <div className={cn("relative aspect-square", BOARD_TRAY)}>
+    <div className={cn("relative aspect-square", BOARD_TRAY)} data-blooming={bloom?.grow || undefined}>
       <div
         className={cn("grid h-full w-full", gapOf(size))}
         style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${size}, minmax(0, 1fr))` }}
@@ -119,6 +142,13 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
               )}
             >
               {contentOf(value, isMine, flagger !== null)}
+              {bloom && (
+                <FlowerArt
+                  {...flowerOf(r, c)}
+                  className={cn("absolute inset-[6%] size-[88%] origin-bottom", bloom.grow && "motion-safe:animate-bloom")}
+                  style={bloom.grow ? { animationDelay: `${bloomDelayOf(size, r, c)}ms` } : undefined}
+                />
+              )}
             </button>
           );
         }))}

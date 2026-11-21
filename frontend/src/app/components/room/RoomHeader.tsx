@@ -40,9 +40,9 @@ export function RoomHeader({ roomId, tableVotes, playerCount, wantsTable, onVote
         >
           {wantsTable ? t('lobby.stayHere') : t('lobby.backToTable')}
         </button>
-        <p role="status" className="text-sm font-bold text-[var(--subtitle-text)]">
+        <output className="text-sm font-bold text-[var(--subtitle-text)]">
           {tableVotes > 0 && t('lobby.backProgress').replace('{count}', String(tableVotes)).replace('{total}', String(playerCount))}
-        </p>
+        </output>
       </div>
     </header>
   );

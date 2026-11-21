@@ -44,7 +44,7 @@ export function EmoteShowcase() {
 
   return (
     <>
-      <div role="group" aria-label={t('emotes.title')} data-testid="emote-showcase" className="grid max-w-md grid-cols-6 gap-2">
+      <fieldset aria-label={t('emotes.title')} data-testid="emote-showcase" className="m-0 grid min-w-0 max-w-md grid-cols-6 gap-2 border-0 p-0">
         {SHOWN_EMOTES.map((emote) => (
           <button
             key={emote}
@@ -56,7 +56,7 @@ export function EmoteShowcase() {
             <EmoteArt emote={emote} size={36} className="h-auto w-3/4" />
           </button>
         ))}
-      </div>
+      </fieldset>
       <EmoteOverlay emotes={emotes} />
     </>
   );

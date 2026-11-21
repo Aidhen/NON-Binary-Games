@@ -1,5 +1,5 @@
 'use client';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { ServerLoader } from '../loader/ServerLoader';
 import { GAMES, findGame } from '../games/registry';
@@ -9,6 +9,7 @@ import { RoomHeader } from './RoomHeader';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { joinErrorMessages } from '@/lib/joinErrors';
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
+import { useFocusModeWhile } from '@/lib/focusMode';
 import { usePlayers } from '@/lib/usePlayers';
 import { useRoom } from '@/lib/useRoom';
 
@@ -26,7 +27,17 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
   const { status, retry } = useConnectionStatus();
   // Before the hook that joins the room: the server answers the join with who is in it.
   const { self, players, setColor } = usePlayers(roomId);
-  const { lobby, joinError, vote } = useRoom(roomId);
+  const { lobby, joinError, vote, voteTable } = useRoom(roomId);
+  const playing = Boolean(lobby?.game) && !joinError;
+
+  useFocusModeWhile(playing);
+
+  // When a game opens the page starts from the top, where the board is: the vote was cast lower down the table,
+  // and the game would otherwise open with the page still scrolled there. The board is not there yet at this
+  // moment (it waits for the server), so the page cannot scroll to it; the top is where it will be.
+  useEffect(() => {
+    if (playing) window.scrollTo?.({ top: 0 });
+  }, [playing]);
 
   if (joinError) {
     return (
@@ -67,7 +78,13 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
 
   return (
     <div className="flex w-full flex-col items-center">
-      <RoomHeader roomId={roomId} />
+      <RoomHeader
+        roomId={roomId}
+        tableVotes={lobby.tableVotes.length}
+        playerCount={players.length}
+        wantsTable={self !== null && lobby.tableVotes.includes(self)}
+        onVoteTable={voteTable}
+      />
       <Suspense fallback={<ServerLoader status={status} onRetry={retry} />}>
         <game.Game roomId={roomId} />
       </Suspense>

@@ -10,6 +10,10 @@ export const it: Translations = {
     playAgain: "Gioca ancora",
     mode: "Modalità",
     settings: "Impostazioni",
+    rules: "Come funziona",
+    ruleNumbers: "Ogni riga, ogni colonna e ogni riquadro 3×3 contiene i numeri da 1 a 9, senza ripetizioni.",
+    ruleNotes: "Le note sono condivise e colorate come chi le ha scritte.",
+    tapHint: "Tocca una cella, poi un numero. Con le note attive, il numero diventa una nota.",
     closeSettings: "Chiudi",
     newGame: "Nuova partita",
     beginner: "Principiante",
@@ -33,8 +37,8 @@ export const it: Translations = {
     backHome: "Torna alla home"
   },
   flowerField: {
-    cleared: "Campo fiorito!",
-    compliment: "Ogni cella sicura è aperta, e nessuno ha dovuto tirare a caso.",
+    cleared: "Tutto fiorito!",
+    compliment: "Ottimo lavoro!",
     lost: "Una mina!",
     lostHint: "Hai scelto di perdere quando si apre una mina. Riproviamo?",
     rules: "Come funziona",
@@ -45,6 +49,8 @@ export const it: Translations = {
     ruleMineLoses: "Se apri una mina la partita è persa per tutti.",
     flagMode: "Bandierine",
     explosive: "Perdi quando si apre una mina",
+    bloom: "Fiori che crescono alla fine",
+    bloomHint: "Spenti, i fiori compaiono fermi: più leggero per i telefoni meno veloci.",
     explosiveLocked: "Si può cambiare prima di aprire la prima cella, o con una nuova partita.",
     cell: "Riga {row}, colonna {column}: {state}",
     closed: "chiusa",
@@ -128,6 +134,9 @@ export const it: Translations = {
     games: "Giochi",
     open: "Apri la scatola",
     takeBack: "Ritiro il mio voto",
+    backToTable: "Torna al tavolo",
+    stayHere: "Preferisco restare",
+    backProgress: "{count} su {total} vogliono tornare al tavolo",
     progress: "{count} su {total} vogliono {game}",
     votes: "{count} voti su {total}",
     players: "{min}–{max} giocatori",
@@ -191,7 +200,7 @@ export const it: Translations = {
     step3Title: "Scegliete la scatola",
     step3Text: "Ogni gioco è una scatola. Si apre quando più di metà della stanza la vuole.",
     emotesTitle: "Dillo con una faccina",
-    emotesText: "Reazioni veloci che volano sopra il tavolo, per dire qualcosa senza scrivere.",
+    emotesText: "Reazioni veloci che volano sopra il tavolo, per dire qualcosa senza scrivere. Toccane una per provarla.",
     gamesTitle: "I giochi sul tavolo",
     gamesHint: "Scegli un gioco per vedere com'è fatto e come si gioca."
   },
@@ -199,17 +208,11 @@ export const it: Translations = {
     preview: "Anteprima",
     howToPlay: "Come si gioca",
     soonText: "Altri giochi in arrivo",
-    noTimer: "Niente timer",
-    levels: "5 livelli",
-    sizes: "Da 6×6 a 12×12",
     sudoku: {
       tagline: "Il classico, in compagnia",
       description: "Riempite la griglia insieme: ogni riga, colonna e riquadro contiene i numeri da 1 a 9 una volta sola.",
-      rule1: "Ogni riga, ogni colonna e ogni riquadro 3×3 contiene i numeri da 1 a 9, senza ripetizioni.",
       rule2: "Cinque livelli di difficoltà, tutti risolvibili con la sola logica: non serve mai tirare a indovinare.",
-      rule3: "Le note sono condivise e colorate come chi le ha scritte.",
-      rule4: "Quando siete pronti, tutta la stanza può iniziare una nuova partita.",
-      fact: "Note condivise"
+      rule4: "Quando siete pronti, tutta la stanza può iniziare una nuova partita."
     },
     takuzu: {
       tagline: "Zeri e uni in equilibrio",
@@ -218,16 +221,13 @@ export const it: Translations = {
     },
     flowerField: {
       tagline: "Un prato da esplorare insieme",
-      description: "Aprite tutte le celle che non nascondono una mina, usando i numeri per capire dove sono.",
-      fact1: "Bandierine del tuo colore",
-      fact2: "Prima cella sempre sicura"
+      description: "Aprite tutte le celle che non nascondono una mina, usando i numeri per capire dove sono."
     },
     wordSearch: {
       tagline: "Parole nascoste, trovate insieme",
       description: "Trovate le parole nascoste nella griglia. Ogni parola trovata resta segnata nel tuo colore.",
       rule3: "Cinque livelli, dalla griglia 6×6 alla 12×12, con più direzioni man mano che crescono.",
-      rule4: "Parole in italiano o in inglese: la stanza può passare dall'una all'altra.",
-      fact: "Italiano e inglese"
+      rule4: "Parole in italiano o in inglese: la stanza può passare dall'una all'altra."
     }
   },
   rooms: {
@@ -250,14 +250,14 @@ export const it: Translations = {
     title: "Privacy",
     lead: "Cosa tiene il sito, dove e per quanto. In breve: pochissimo.",
     browserTitle: "Nel tuo browser",
-    browserText: "Il sito salva due cose nel localStorage del browser: un codice anonimo, generato a caso, che ti fa tenere nome e colore quando rientri in una stanza, e il tema che hai scelto. Niente cookie, niente statistiche, niente pubblicità, niente script di altri siti: anche i font arrivano dal sito stesso. Puoi cancellare tutto quando vuoi dalle impostazioni del browser.",
+    browserText: "Il sito salva al massimo tre cose nel localStorage del browser: un codice anonimo, generato a caso, che ti fa tenere nome e colore quando rientri in una stanza, il tema che hai scelto e se i fiori del Campo fiorito crescono alla fine. Niente cookie, niente statistiche, niente pubblicità, niente script di altri siti: anche i font arrivano dal sito stesso. Puoi cancellare tutto quando vuoi dalle impostazioni del browser.",
     serverTitle: "Sul server",
     serverText: "Le stanze vivono solo nella memoria del server: la griglia, le mosse, le note, i nomi di animale e i colori. Una stanza vuota sparisce dopo dieci minuti, e tutte spariscono quando il server si riavvia. L'indirizzo IP serve solo a contare le connessioni aperte, per tenere lontano chi vuole sovraccaricare il gioco: resta in memoria e non finisce nei log del gioco.",
     hostingTitle: "Chi ospita il sito",
     hostingText: "Il sito è ospitato da Vercel e il server da Render. Per sapere come trattano i dati, leggi le loro privacy policy:",
     feedbackTitle: "Il modulo di feedback",
     feedbackText: "Il modulo è ancora spento e non invia niente. Quando lo collegherò, questa pagina dirà cosa arriva, dove e per quanto tempo, prima che si possa usare.",
-    updated: "Ultimo aggiornamento: 20 novembre 2026"
+    updated: "Ultimo aggiornamento: 21 novembre 2026"
   },
   diary: {
     title: "Diario",

@@ -12,9 +12,12 @@ interface FlowerFieldSettingsPanelProps {
   onToggleExplosive: () => void;
   currentDifficulty: DifficultyLevel;
   onDifficultyChange: (level: DifficultyLevel) => void;
+  /** Whether the flowers grow when the field is cleared: off, they show up still. Kept in this browser. */
+  bloomGrows: boolean;
+  onToggleBloom: () => void;
 }
 
-export function FlowerFieldSettingsPanel({ explosive, canChangeExplosive, onToggleExplosive, currentDifficulty, onDifficultyChange }: Readonly<FlowerFieldSettingsPanelProps>) {
+export function FlowerFieldSettingsPanel({ explosive, canChangeExplosive, onToggleExplosive, currentDifficulty, onDifficultyChange, bloomGrows, onToggleBloom }: Readonly<FlowerFieldSettingsPanelProps>) {
   const { t } = useTranslation();
 
   return (
@@ -26,6 +29,11 @@ export function FlowerFieldSettingsPanel({ explosive, canChangeExplosive, onTogg
       <div className="flex flex-col gap-1">
         <SettingToggle label={t('flowerField.explosive')} checked={explosive} onChange={onToggleExplosive} disabled={!canChangeExplosive} />
         {!canChangeExplosive && <p className="text-xs text-[var(--subtitle-text)]">{t('flowerField.explosiveLocked')}</p>}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <SettingToggle label={t('flowerField.bloom')} checked={bloomGrows} onChange={onToggleBloom} />
+        <p className="text-xs text-[var(--subtitle-text)]">{t('flowerField.bloomHint')}</p>
       </div>
     </div>
   );

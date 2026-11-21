@@ -291,11 +291,13 @@
   --title-text: #ab6fde; 
   --subtitle-text: #fcf434;
   
-  --grid-border-outer: #ffffff;
-  --grid-border-inner: #ffffff; 
+  /* The tray is the purple of the flag and the lines between the boxes its yellow: with both white the lines vanished. */
+  --grid-border-outer: #fcf434;
+  --grid-border-inner: #5b3a7e;
   
   --cell-background: #2c2c2c;
-  --cell-background-initial: #383838;
+  /* Clearly lighter than an empty cell: it is how an open cell of the Flower Field and a given number of the Sudoku show. */
+  --cell-background-initial: #4a4a4a;
   --cell-background-selected: #5b3a7e;
   --cell-background-highlight: #2f2438;
   
@@ -311,13 +313,13 @@
   --player-red: #f87171;
   --player-red-text: #fca5a5;
   --player-orange: #f97316;
-  --player-orange-text: #fb923c;
+  --player-orange-text: #fdba74;
   --player-green: #22c55e;
-  --player-green-text: #22c55e;
+  --player-green-text: #4ade80;
   --player-teal: #14b8a6;
-  --player-teal-text: #14b8a6;
+  --player-teal-text: #2dd4bf;
   --player-blue: #60a5fa;
-  --player-blue-text: #60a5fa;
+  --player-blue-text: #93c5fd;
   --player-purple: #c084fc;
   --player-purple-text: #d8b4fe;
   --player-pink: #f472b6;
@@ -351,6 +353,14 @@
 /* Animations (used with Tailwind's motion-safe: variant) */
 @theme {
   --animate-float: float 2.5s ease-out forwards;
+  /* The flowers of a cleared Flower Field. Only transform and opacity move, which a phone animates cheaply. */
+  --animate-bloom: bloom 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  @keyframes bloom {
+    0% { transform: scale(0); opacity: 0; }
+    40% { opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
 
   @keyframes float {
     0% { transform: translateY(0) scale(0.5); opacity: 0; }
@@ -405,5 +415,35 @@ body::after {
   :focus-visible {
     outline: 3px solid var(--focus-ring, var(--accent));
     outline-offset: 3px;
+  }
+}
+
+/*
+ * The head of a growing flower, with the same delay as the flower: a round head turns on itself around its heart,
+ * fast as it comes out and slowing down to a stop; a tulip, which is not round, opens up from its base in the
+ * same time. Outside @theme, as no utility uses these.
+ */
+@keyframes flower-spin {
+  0% { transform: rotate(-540deg); }
+  100% { transform: rotate(0); }
+}
+
+@keyframes flower-open {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-blooming] [data-flower-head] {
+    transform-box: view-box;
+    animation: flower-spin 1100ms cubic-bezier(0.1, 0.8, 0.3, 1) both;
+    animation-delay: inherit;
+  }
+
+  [data-blooming] [data-flower-head="spin"] { transform-origin: 20px 16px; }
+
+  [data-blooming] [data-flower-head="grow"] {
+    transform-origin: 20px 25px;
+    animation-name: flower-open;
   }
 }

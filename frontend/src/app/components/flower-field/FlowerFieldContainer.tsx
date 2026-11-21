@@ -15,6 +15,7 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from '@/lib/socket';
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
 import { useEmotes } from '@/lib/useEmotes';
+import { useFlowerBloom } from '@/lib/useFlowerBloom';
 import { useHighlight } from '@/lib/useHighlight';
 import { usePlayers } from '@/lib/usePlayers';
 
@@ -46,6 +47,7 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
   const [othersSelections, setOthersSelections] = useState<Record<string, [number, number]>>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [bloomGrows, setBloomGrows] = useFlowerBloom();
   const [isFlagMode, setIsFlagMode] = useState(false);
 
   const { t } = useTranslation();
@@ -160,12 +162,14 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
           onToggleExplosive={() => getSocket().emit('flower-field:set-mode', { explosive: !field.explosive })}
           currentDifficulty={field.difficulty}
           onDifficultyChange={handleDifficultyChange}
+          bloomGrows={bloomGrows}
+          onToggleBloom={() => setBloomGrows(!bloomGrows)}
         />
       )}
 
       <div className="relative w-full">
-        {isOver && (
-          <GameOverCard title={field.status === 'won' ? t('flowerField.cleared') : t('flowerField.lost')} message={field.status === 'won' ? t('flowerField.compliment') : t('flowerField.lostHint')} onPlayAgain={() => getSocket().emit('restart-game', field.difficulty)} />
+        {field.status === 'lost' && (
+          <GameOverCard title={t('flowerField.lost')} message={t('flowerField.lostHint')} onPlayAgain={() => getSocket().emit('restart-game', field.difficulty)} />
         )}
 
         <FlowerFieldBoardUI
@@ -180,8 +184,14 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
           othersSelections={othersSelections}
           profiles={profiles}
           highlightedAlias={highlighted}
+          bloom={field.status === 'won' ? { grow: bloomGrows } : null}
         />
       </div>
+
+      {/* Under the field, not over it: the field in bloom is the reward. */}
+      {field.status === 'won' && (
+        <GameOverCard overlay={false} title={t('flowerField.cleared')} message={t('flowerField.compliment')} onPlayAgain={() => getSocket().emit('restart-game', field.difficulty)} />
+      )}
 
       <div className="w-full flex flex-col gap-3 mt-2">
         <div className="flex justify-center w-full">

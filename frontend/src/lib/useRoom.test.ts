@@ -42,8 +42,8 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('@/lib/socket', () => ({ getSocket: () => mocks.socket }));
 
-const choosing: LobbyState = { game: null, votes: [{ alias: 'aaaaaaaaaaaa', game: 'sudoku' }] };
-const playing: LobbyState = { game: 'sudoku', votes: [] };
+const choosing: LobbyState = { game: null, votes: [{ alias: 'aaaaaaaaaaaa', game: 'sudoku' }], tableVotes: [] };
+const playing: LobbyState = { game: 'sudoku', votes: [], tableVotes: [] };
 
 beforeEach(() => { mocks.reset(); });
 

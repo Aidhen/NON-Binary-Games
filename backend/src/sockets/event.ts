@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, playerIdSchema, wordSearchLanguageArgsSchema, wordSearchSelectArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, playerIdSchema, wordSearchLanguageArgsSchema, wordSearchSelectArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema, voteTableArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, DifficultyLevel, GameId, GameStartedPayload, ServerToClientEvents, SocketData, SudokuStartedPayload } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
@@ -10,7 +10,7 @@ import type { GridGame, RoomGame, RoomState, SudokuGame, TakuzuGame, ValueGridGa
 import { createFlowerField, flowerFieldStarted, isRevealable, minesOf, revealCell, setExplosive, toggleFlag } from "../rooms/flowerField";
 import { createWordSearch, selectWord, wordSearchStarted } from "../rooms/wordSearch";
 import { assignProfile, colorIsFree, snapshotPlayers } from "../rooms/profiles";
-import { chosenGame, snapshotLobby } from "../rooms/lobby";
+import { chosenGame, snapshotLobby, wantsTable } from "../rooms/lobby";
 
 export type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 export type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
@@ -150,7 +150,7 @@ export const boardGenerationLimit = { max: 2, windowMs: 1000 };
  * Used both when the socket moves to another room and when it disconnects.
  * `onPlayerLeft` is called when a player (not just one of their tabs) left a room where somebody remains.
  */
-const leaveCurrentRoom = (socket: GameSocket, onPlayerLeft: (roomId: string, room: RoomState) => void) => {
+const leaveCurrentRoom = (socket: GameSocket, onPlayerLeft: (roomId: string, room: RoomState, tableVoteGone: boolean) => void) => {
   const roomId = socket.data.roomId;
   if (!roomId) return;
 
@@ -168,9 +168,10 @@ const leaveCurrentRoom = (socket: GameSocket, onPlayerLeft: (roomId: string, roo
   if (!sockets?.size) {
     room.players.delete(playerId);
     room.votes.delete(playerId);
+    const tableVoteGone = room.tableVotes.delete(playerId);
     if (alias) socket.to(channelOf(roomId)).emit("player-disconnected", alias);
     socket.to(channelOf(roomId)).emit("players-updated", { players: snapshotPlayers(room) });
-    if (room.players.size > 0) onPlayerLeft(roomId, room);
+    if (room.players.size > 0) onPlayerLeft(roomId, room, tableVoteGone);
   }
 
   if (room.players.size === 0) {
@@ -257,14 +258,30 @@ export const setupSocketHandlers = (io: GameServer) => {
 
     room.game = createGame[chosen](FIRST_DIFFICULTY);
     room.votes.clear();
+    room.tableVotes.clear();
     io.to(channelOf(roomId)).emit("lobby-updated", snapshotLobby(room));
     io.to(channelOf(roomId)).emit("game-started", gameStarted(room.game));
     return true;
   };
 
-  /** After a vote changed or a player left: the room either opens its game or tells everybody where the votes are. */
-  const settleLobby = (roomId: string, room: RoomState) => {
-    if (room.game || openChosenGame(roomId, room)) return;
+  /**
+   * After a vote changed or a player left: the room opens its game, goes back to the table, or tells everybody
+   * where the votes are. Going back drops the game: the boxes on the table are the only way to open another one.
+   * During a game a player who leaves changes something only if they had asked to go back, or if their going
+   * turns the votes that are left into a majority; otherwise there is nothing new to tell.
+   */
+  const settleLobby = (roomId: string, room: RoomState, tableVoteGone = true) => {
+    if (room.game) {
+      if (wantsTable(room)) {
+        room.game = null;
+        room.votes.clear();
+        room.tableVotes.clear();
+      } else if (!tableVoteGone) {
+        return;
+      }
+    } else if (openChosenGame(roomId, room)) {
+      return;
+    }
     io.to(channelOf(roomId)).emit("lobby-updated", snapshotLobby(room));
   };
 
@@ -305,6 +322,7 @@ export const setupSocketHandlers = (io: GameServer) => {
         room = {
           game: null,
           votes: new Map(),
+          tableVotes: new Set(),
           players: new Map(),
           aliases: new Map(),
           profiles: new Map(),
@@ -360,6 +378,29 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       if (game === null) room.votes.delete(socket.data.playerId);
       else room.votes.set(socket.data.playerId, game);
+
+      settleLobby(roomId, room);
+    }, allowEvent));
+
+    socket.on("vote-table", safeHandler(voteTableArgsSchema, (wants) => {
+      const current = getCurrentRoom(socket);
+      if (!current) return;
+      const { roomId, room } = current;
+
+      // Only a room that is playing can go back. A vote that comes after is from a page that has not caught up yet.
+      if (!room.game) return;
+
+      // The same cooldown as the votes for a game: one player tapping fast should not flood the room with updates.
+      const now = Date.now();
+      const lastVoteAt = socket.data.lastVoteAt;
+      if (lastVoteAt !== undefined && now - lastVoteAt < voteLimit.cooldownMs) return;
+      socket.data.lastVoteAt = now;
+
+      // The same vote again tells the others nothing new.
+      if (room.tableVotes.has(socket.data.playerId) === wants) return;
+
+      if (wants) room.tableVotes.add(socket.data.playerId);
+      else room.tableVotes.delete(socket.data.playerId);
 
       settleLobby(roomId, room);
     }, allowEvent));
@@ -432,7 +473,7 @@ export const setupSocketHandlers = (io: GameServer) => {
     });
 
     socket.on("restart-game", safeHandler(restartGameArgsSchema, (difficulty) => {
-      // The same game again: choosing another one is done at the table, and the table is only for rooms that have not chosen.
+      // The same game again: choosing another one is done at the table, after the room has voted to go back to it.
       const current = getCurrentGridGame(socket);
       if (!current) return;
       const { roomId, room, game: playing } = current;

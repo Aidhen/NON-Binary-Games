@@ -19,8 +19,8 @@ const lookUp = (dictionary: unknown, key: string) => key.split('.').reduce<unkno
 
 describe('the guides of the games', () => {
   it.each(GAME_IDS)('%s has every sentence of its guide, in both languages', (id) => {
-    const { taglineKey, descriptionKey, ruleKeys, factKeys } = GAME_GUIDES[id];
-    for (const key of [taglineKey, descriptionKey, ...ruleKeys, ...factKeys]) {
+    const { taglineKey, descriptionKey, ruleKeys } = GAME_GUIDES[id];
+    for (const key of [taglineKey, descriptionKey, ...ruleKeys]) {
       expect(lookUp(en, key), `${key} in English`).toEqual(expect.any(String));
       expect(lookUp(italian, key), `${key} in Italian`).toEqual(expect.any(String));
     }

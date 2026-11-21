@@ -1,16 +1,28 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The version is read when the module loads, like the build does: it has to be there before the import.
 vi.hoisted(() => { process.env.NEXT_PUBLIC_APP_VERSION = '1.2.3-test'; });
 
 import { REPOSITORY_URL, SiteFooter } from './SiteFooter';
 
+const { focused } = vi.hoisted(() => ({ focused: { current: false } }));
+vi.mock('@/lib/focusMode', () => ({ useFocusMode: () => focused.current }));
+
 vi.mock('@/lib/i18n/TranslationContext', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
 describe('SiteFooter', () => {
+  beforeEach(() => { focused.current = false; });
+
+  it('is not there while a game is open', () => {
+    focused.current = true;
+    const { container } = render(<SiteFooter />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('says which version of the site this is', () => {
     render(<SiteFooter />);
 

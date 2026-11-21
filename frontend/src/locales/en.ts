@@ -8,6 +8,10 @@ export const en = {
     playAgain: "Play again",
     mode: "Mode",
     settings: "Settings",
+    rules: "How it works",
+    ruleNumbers: "Every row, every column and every 3×3 box holds the numbers from 1 to 9, with no repeats.",
+    ruleNotes: "Notes are shared, and colored after whoever wrote them.",
+    tapHint: "Tap a cell, then a number. With notes on, the number becomes a note.",
     closeSettings: "Close settings",
     newGame: "New game",
     beginner: "Beginner",
@@ -31,8 +35,8 @@ export const en = {
     backHome: "Back to the home page"
   },
   flowerField: {
-    cleared: "Field cleared!",
-    compliment: "Every safe cell is open, and nobody had to guess.",
+    cleared: "All in bloom!",
+    compliment: "Great work!",
     lost: "A mine!",
     lostHint: "You chose to lose when a mine is opened. Try again?",
     rules: "How it works",
@@ -43,6 +47,8 @@ export const en = {
     ruleMineLoses: "If you open a mine, the game is lost for everybody.",
     flagMode: "Flags",
     explosive: "Lose when a mine is opened",
+    bloom: "Flowers that grow at the end",
+    bloomHint: "Off, the flowers show up still: lighter for slower phones.",
     explosiveLocked: "It can change before the first cell is opened, or with a new game.",
     cell: "Row {row}, column {column}: {state}",
     closed: "closed",
@@ -126,6 +132,9 @@ export const en = {
     games: "Games",
     open: "Open the box",
     takeBack: "Take my vote back",
+    backToTable: "Back to the table",
+    stayHere: "I'd rather stay",
+    backProgress: "{count} of {total} want to go back to the table",
     progress: "{count} of {total} want {game}",
     votes: "{count} of {total} votes",
     players: "{min}–{max} players",
@@ -189,7 +198,7 @@ export const en = {
     step3Title: "Pick the box",
     step3Text: "Every game is a box. It opens when more than half of the room wants it.",
     emotesTitle: "Say it with a face",
-    emotesText: "Quick reactions that float over the table, to say something without typing.",
+    emotesText: "Quick reactions that float over the table, to say something without typing. Tap one to try it.",
     gamesTitle: "The games on the table",
     gamesHint: "Pick a game to see what it looks like and how to play."
   },
@@ -197,17 +206,11 @@ export const en = {
     preview: "Preview",
     howToPlay: "How to play",
     soonText: "More games on the way",
-    noTimer: "No timer",
-    levels: "5 levels",
-    sizes: "From 6×6 to 12×12",
     sudoku: {
       tagline: "The classic, in company",
       description: "Fill the grid together: every row, column and box holds the numbers from 1 to 9 once.",
-      rule1: "Every row, every column and every 3×3 box holds the numbers from 1 to 9, with no repeats.",
       rule2: "Five difficulty levels, all solvable by logic alone: you never have to guess.",
-      rule3: "Notes are shared, and colored after whoever wrote them.",
-      rule4: "When you are ready, the whole room can start a new game.",
-      fact: "Shared notes"
+      rule4: "When you are ready, the whole room can start a new game."
     },
     takuzu: {
       tagline: "Zeros and ones in balance",
@@ -216,16 +219,13 @@ export const en = {
     },
     flowerField: {
       tagline: "A meadow to explore together",
-      description: "Open every cell that does not hide a mine, using the numbers to work out where the mines are.",
-      fact1: "Flags in your color",
-      fact2: "First cell always safe"
+      description: "Open every cell that does not hide a mine, using the numbers to work out where the mines are."
     },
     wordSearch: {
       tagline: "Hidden words, found together",
       description: "Find the words hidden in the grid. Every word you find is marked in your color.",
       rule3: "Five levels, from 6×6 to 12×12, with more directions as they grow.",
-      rule4: "Words in English or Italian: the room can switch between the two.",
-      fact: "English and Italian"
+      rule4: "Words in English or Italian: the room can switch between the two."
     }
   },
   rooms: {
@@ -248,14 +248,14 @@ export const en = {
     title: "Privacy",
     lead: "What the site keeps, where and for how long. In short: very little.",
     browserTitle: "In your browser",
-    browserText: "The site saves two things in your browser's localStorage: an anonymous code, made up at random, that lets you keep your name and color when you come back to a room, and the theme you picked. No cookies, no statistics, no ads, no scripts from other sites: even the fonts come from the site itself. You can delete everything at any time from your browser settings.",
+    browserText: "The site saves up to three things in your browser's localStorage: an anonymous code, made up at random, that lets you keep your name and color when you come back to a room, the theme you picked, and whether the flowers of the Flower Field grow at the end. No cookies, no statistics, no ads, no scripts from other sites: even the fonts come from the site itself. You can delete everything at any time from your browser settings.",
     serverTitle: "On the server",
     serverText: "Rooms live only in the memory of the server: the board, the moves, the notes, the animal names and the colors. An empty room disappears after ten minutes, and all of them disappear when the server restarts. Your IP address is only used to count open connections, to keep away whoever wants to overload the game: it stays in memory and does not end up in the logs of the game.",
     hostingTitle: "Who hosts the site",
     hostingText: "The site is hosted by Vercel and the server by Render. To know how they handle data, read their privacy policies:",
     feedbackTitle: "The feedback form",
     feedbackText: "The form is still switched off and sends nothing. When I connect it, this page will say what arrives, where and for how long, before it can be used.",
-    updated: "Last updated: 20 November 2026"
+    updated: "Last updated: 21 November 2026"
   },
   diary: {
     title: "Diary",

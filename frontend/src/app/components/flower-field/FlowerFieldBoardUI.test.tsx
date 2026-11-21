@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { PlayerProfile } from '@nbg/shared';
-import { FlowerFieldBoardUI } from './FlowerFieldBoardUI';
+import { BLOOM_SPREAD_MS, FlowerFieldBoardUI, bloomDelayOf, flowerOf } from './FlowerFieldBoardUI';
+import { FLOWER_COLORS, FLOWER_KINDS } from '@nbg/art';
 
 vi.mock('@/lib/i18n/TranslationContext', () => ({
   useTranslation: () => ({
@@ -182,5 +183,59 @@ describe('FlowerFieldBoardUI', () => {
 
     expect(screen.getByRole('button', { name: 'R1 C1: closed' }).className).toContain('--player-teal');
     expect(screen.getByRole('button', { name: 'R3 C3: closed' }).className).toContain('ring-[var(--number-player)]');
+  });
+
+  describe('the field in bloom', () => {
+    it('grows no flower while the game is on', () => {
+      const { container } = render(<FlowerFieldBoardUI {...baseProps} />);
+
+      expect(container.querySelectorAll('svg[data-flower]')).toHaveLength(0);
+    });
+
+    it('grows a flower on every cell once the field is cleared, each with its own delay', () => {
+      const { container } = render(<FlowerFieldBoardUI {...baseProps} isOver bloom={{ grow: true }} />);
+      const flowers = [...container.querySelectorAll<SVGElement>('svg[data-flower]')];
+
+      expect(flowers).toHaveLength(9);
+      for (const flower of flowers) {
+        expect(flower.getAttribute('class')).toContain('motion-safe:animate-bloom');
+        expect(flower.style.animationDelay).toMatch(/^\d+ms$/);
+      }
+      // The flowers are decoration: the cells keep saying what they hold.
+      expect(screen.getByRole('button', { name: 'R1 C2: 2' })).toBeInTheDocument();
+    });
+
+    it('shows the flowers still when growing is turned off', () => {
+      const { container } = render(<FlowerFieldBoardUI {...baseProps} isOver bloom={{ grow: false }} />);
+      const flowers = [...container.querySelectorAll<SVGElement>('svg[data-flower]')];
+
+      expect(flowers).toHaveLength(9);
+      for (const flower of flowers) {
+        expect(flower.getAttribute('class')).not.toContain('animate-bloom');
+        expect(flower.style.animationDelay).toBe('');
+      }
+    });
+
+    it('gives every cell the same flower on every page, and uses every kind on a full field', () => {
+      expect(flowerOf(3, 5)).toEqual(flowerOf(3, 5));
+      const kinds = new Set<string>();
+      const colors = new Set<string>();
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { kinds.add(flowerOf(r, c).kind); colors.add(flowerOf(r, c).color); }
+
+      expect([...kinds].sort()).toEqual([...FLOWER_KINDS].sort());
+      expect(colors.size).toBe(FLOWER_COLORS.length);
+    });
+
+    it('opens from the middle outwards, and is done in about the time it is given', () => {
+      const size = 14;
+      const middle = bloomDelayOf(size, 6, 7);
+      const corner = bloomDelayOf(size, 0, 0);
+
+      expect(middle).toBeLessThan(corner);
+      for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+        expect(bloomDelayOf(size, r, c)).toBeGreaterThanOrEqual(0);
+        expect(bloomDelayOf(size, r, c)).toBeLessThanOrEqual(BLOOM_SPREAD_MS + 200);
+      }
+    });
   });
 });

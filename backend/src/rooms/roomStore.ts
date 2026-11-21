@@ -67,10 +67,12 @@ export type GridGame = ValueGridGame | FlowerFieldGame | WordSearchGame;
 export type RoomGame = GridGame;
 
 export interface RoomState {
-  /** Null while the players are still choosing (see `votes`). Once chosen, the game of a room does not change. */
+  /** Null while the players are still choosing (see `votes`). Once chosen it stays until the room votes to go back to the table (see `tableVotes`). */
   game: RoomGame | null;
   /** The game each player in the room wants (by player id). At most one per player, gone when they leave or the game opens. */
   votes: Map<string, GameId>;
+  /** The players (by player id) who want to leave the game and go back to the table. Gone when they leave, or when a game opens or closes. */
+  tableVotes: Set<string>;
   /** Sockets of each player: the same player can have more than one open (two tabs). */
   players: Map<string, Set<string>>;
   /** The alias of each player (by player id) in this room: what the other players see instead of the id. */

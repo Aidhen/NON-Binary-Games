@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { TranslationProvider } from "@/lib/i18n/TranslationContext";
+import { FocusModeProvider } from "@/lib/focusMode";
 import { SiteHeader } from "./components/site/SiteHeader";
 import { SiteFooter } from "./components/site/SiteFooter";
 
@@ -46,11 +47,13 @@ export default function RootLayout({
       )}>
         <TranslationProvider>
           <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem themes={['light', 'dark', 'retro', 'oled', 'non-binary']}>
-            <SiteHeader />
-            <main className="flex-grow flex flex-col items-center justify-center w-full">
-              {children}
-            </main>
-            <SiteFooter />
+            <FocusModeProvider>
+              <SiteHeader />
+              <main className="flex-grow flex flex-col items-center justify-center w-full">
+                {children}
+              </main>
+              <SiteFooter />
+            </FocusModeProvider>
           </ThemeProvider>
         </TranslationProvider>
       </body>

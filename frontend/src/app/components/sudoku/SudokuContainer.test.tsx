@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SudokuContainer } from './SudokuContainer';
@@ -771,7 +771,7 @@ describe('SudokuContainer', () => {
       await tellPlayers();
 
       expect(screen.getByRole('list', { name: 'players.title' })).toBeInTheDocument();
-      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+      expect(within(screen.getByRole('list', { name: 'players.title' })).getAllByRole('listitem')).toHaveLength(2);
     });
 
     it('asks the server for the color the player picks', async () => {
@@ -788,7 +788,7 @@ describe('SudokuContainer', () => {
       vi.useFakeTimers();
       await renderGame();
       await tellPlayers();
-      const chip = () => screen.getAllByRole('listitem')[1].querySelector('button')!;
+      const chip = () => within(screen.getByRole('list', { name: 'players.title' })).getAllByRole('listitem')[1].querySelector('button')!;
 
       fireEvent.click(chip());
       expect(chip()).toHaveAttribute('data-highlighted', 'true');
@@ -805,7 +805,7 @@ describe('SudokuContainer', () => {
       expect(getBoardState().profiles).toEqual({ [panda.alias]: panda, [fox.alias]: fox });
       expect(getBoardState().highlightedAlias).toBeNull();
 
-      fireEvent.click(screen.getAllByRole('listitem')[1].querySelector('button')!);
+      fireEvent.click(within(screen.getByRole('list', { name: 'players.title' })).getAllByRole('listitem')[1].querySelector('button')!);
       expect(getBoardState().highlightedAlias).toBe(fox.alias);
 
       act(() => { vi.advanceTimersByTime(HIGHLIGHT_MS); });
@@ -816,11 +816,12 @@ describe('SudokuContainer', () => {
       const { rerender } = render(<SudokuContainer roomId="room-1" />);
       await act(async () => { mocks.dispatch('game-started', { game: 'sudoku', board: testBoard, currentGrid, notesGrid: {}, difficulty: 'easy' }); });
       await tellPlayers();
-      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+      expect(within(screen.getByRole('list', { name: 'players.title' })).getAllByRole('listitem')).toHaveLength(2);
 
       rerender(<SudokuContainer roomId="room-2" />);
 
-      expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
+      const players = screen.queryByRole('list', { name: 'players.title' });
+      expect(players ? within(players).queryAllByRole('listitem') : []).toHaveLength(0);
     });
   });
 

@@ -100,13 +100,14 @@ export const DIARY: readonly DiaryEntry[] = [
   {
     id: 'a-home-and-drawn-emotes',
     type: 'released',
-    date: '2026-11-20',
+    date: '2026-11-21',
     version: '0.6.0-alpha',
     en: {
       title: 'A home, and emotes with a face',
       summary: 'The site now has a front door, and the reactions are drawn.',
       body: [
         'The site now has a home with the games and their rules, this diary, a note on privacy, and the Rooms and Feedback pages, still being built. The reactions are tiles with a face, and the game boards are made of tiles too, in the same style as the logo.',
+        'During a game the site steps aside and leaves room for the board, and a button takes everyone back to the table when more than half of the room wants it. The emotes on the home can be tried out, the Sudoku has its rules at hand like the other games, and the Non-Binary theme has clearer colors.',
       ],
     },
     it: {
@@ -114,6 +115,7 @@ export const DIARY: readonly DiaryEntry[] = [
       summary: 'Il sito ha una porta d\'ingresso, e le reazioni sono disegnate.',
       body: [
         'Ora il sito ha una home con i giochi e le loro regole, questo diario, una nota sulla privacy e le pagine Stanze e Feedback, ancora in costruzione. Le reazioni sono tessere con la faccia, e anche le griglie dei giochi sono fatte di tessere, nello stesso stile del logo.',
+        'In partita il sito si fa da parte e lascia spazio alla griglia, e un pulsante riporta tutti al tavolo quando lo vuole più di metà della stanza. Le emote della home si possono provare, il Sudoku ha le sue regole a portata di mano come gli altri giochi, e il tema Non-Binary ha colori più leggibili.',
       ],
     },
   },

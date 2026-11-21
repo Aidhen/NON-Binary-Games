@@ -18,11 +18,23 @@ export const chosenGame = (room: RoomState): GameId | null => {
   return null;
 };
 
+/** Whether more than half of the players in the room want to go back to the table, with the same count as `chosenGame`. */
+export const wantsTable = (room: RoomState): boolean => {
+  let count = 0;
+  // A vote only counts while its player is in the room.
+  for (const playerId of room.tableVotes) if (room.players.has(playerId)) count += 1;
+  return count * 2 > room.players.size;
+};
+
 /** What everybody in the room is told about the choice of the game: votes go out by alias, never by player id. */
 export const snapshotLobby = (room: RoomState): LobbyState => ({
   game: room.game?.id ?? null,
   votes: [...room.votes].flatMap(([playerId, game]) => {
     const alias = room.aliases.get(playerId);
     return alias && room.players.has(playerId) ? [{ alias, game }] : [];
+  }),
+  tableVotes: [...room.tableVotes].flatMap((playerId) => {
+    const alias = room.aliases.get(playerId);
+    return alias && room.players.has(playerId) ? [alias] : [];
   }),
 });

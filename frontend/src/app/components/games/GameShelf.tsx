@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { GameId } from '@nbg/shared';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { cn } from '@/lib/utils';
-import { BODY, CARD, HEADING, PILL } from '../site/styles';
+import { BODY, CARD, HEADING } from '../site/styles';
 import { GameCoverThumb } from './GameCoverThumb';
 import { GamePreview } from './GamePreview';
 import { GAME_GUIDES } from './guides';
@@ -58,12 +58,9 @@ export function GameShelf() {
               <h3 id="game-guide-title" className={cn(HEADING, "text-3xl sm:text-4xl")}>{t(game.titleKey)}</h3>
               <p className={cn(BODY, "text-base")}>{t(guide.descriptionKey)}</p>
             </div>
-            <ul className="flex flex-wrap gap-2">
-              {guide.factKeys.map((key) => <li key={key} className={PILL}>{t(key)}</li>)}
-            </ul>
             <div className="grid gap-6 md:grid-cols-2">
-              <section className="flex min-w-0 flex-col gap-2">
-                <h4 className={cn(HEADING, "text-xl")}>{t('gamesPage.preview')}</h4>
+              <section className="flex min-w-0 flex-col items-center gap-2">
+                <h4 className={cn(HEADING, "self-start text-xl")}>{t('gamesPage.preview')}</h4>
                 <GamePreview game={game.id} />
               </section>
               <section className="flex min-w-0 flex-col gap-2">

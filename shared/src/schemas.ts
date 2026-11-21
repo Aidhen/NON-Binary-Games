@@ -117,6 +117,8 @@ export type WordSearchLanguagePayload = z.infer<typeof wordSearchLanguagePayload
 export const joinRoomArgsSchema = z.tuple([roomIdSchema]);
 /** `null` takes the vote back. */
 export const voteGameArgsSchema = z.tuple([gameIdSchema.nullable()]);
+/** `false` takes the vote back. */
+export const voteTableArgsSchema = z.tuple([z.boolean()]);
 /** Socket.IO appends the acknowledgement callback to the arguments when the client asks for one. */
 const acknowledgementSchema = z.custom<(result: CellUpdateResult) => void>((value) => typeof value === 'function');
 

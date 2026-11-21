@@ -2,9 +2,10 @@ import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NAV_LINKS, SiteHeader } from './SiteHeader';
 
-const { pathname } = vi.hoisted(() => ({ pathname: { current: '/' } }));
+const { pathname, focused } = vi.hoisted(() => ({ pathname: { current: '/' }, focused: { current: false } }));
 
 vi.mock('next/navigation', () => ({ usePathname: () => pathname.current }));
+vi.mock('@/lib/focusMode', () => ({ useFocusMode: () => focused.current }));
 
 vi.mock('@/lib/i18n/TranslationContext', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -14,7 +15,17 @@ vi.mock('../ui/ThemeSelector', () => ({ ThemeSelector: () => <div data-testid="t
 vi.mock('../ui/LanguageSelector', () => ({ LanguageSelector: () => <div data-testid="language-selector" /> }));
 
 describe('SiteHeader', () => {
-  beforeEach(() => { pathname.current = '/'; });
+  beforeEach(() => { pathname.current = '/'; focused.current = false; });
+
+  it('leaves the pages out while a game is open, and keeps the logo, the theme and the language', () => {
+    focused.current = true;
+    render(<SiteHeader />);
+
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'nav.home' })).toBeInTheDocument();
+    expect(screen.getByTestId('theme-selector')).toBeInTheDocument();
+    expect(screen.getByTestId('language-selector')).toBeInTheDocument();
+  });
 
   it('leads home from the logo, which is named after the site', () => {
     render(<SiteHeader />);

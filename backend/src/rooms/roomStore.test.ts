@@ -6,6 +6,7 @@ const createRoom = (): RoomState => {
   return {
     game: null,
     votes: new Map(),
+    tableVotes: new Set(),
     players: new Map(),
     aliases: new Map(),
     profiles: new Map(),

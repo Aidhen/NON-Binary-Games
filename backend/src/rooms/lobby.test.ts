@@ -7,6 +7,7 @@ import { chosenGame, snapshotLobby } from './lobby';
 const createRoom = (...playerIds: string[]): RoomState => ({
   game: null,
   votes: new Map(),
+  tableVotes: new Set(),
   players: new Map(playerIds.map((id) => [id, new Set([`socket-of-${id}`])])),
   aliases: new Map(playerIds.map((id) => [id, `alias-of-${id}`])),
   profiles: new Map(),
@@ -58,7 +59,7 @@ describe('snapshotLobby', () => {
     const room = createRoom('a', 'b');
     room.votes.set('b', 'sudoku');
 
-    expect(snapshotLobby(room)).toEqual({ game: null, votes: [{ alias: 'alias-of-b', game: 'sudoku' }] });
+    expect(snapshotLobby(room)).toEqual({ game: null, votes: [{ alias: 'alias-of-b', game: 'sudoku' }], tableVotes: [] });
   });
 
   it('leaves out a vote without a player in the room or without an alias', () => {

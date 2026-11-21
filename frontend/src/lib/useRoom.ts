@@ -4,7 +4,8 @@ import type { GameId, JoinError, LobbyState } from '@nbg/shared';
 import { getSocket } from '@/lib/socket';
 
 /**
- * Joins the room and follows what it is doing: still choosing a game (and who voted for what), or playing one.
+ * Joins the room and follows what it is doing: still choosing a game (and who voted for what), or playing one
+ * (and who wants to go back to the table).
  * `lobby` stays null until the server has answered. The server decides when a game opens, the page only shows it.
  */
 export function useRoom(roomId: string) {
@@ -47,5 +48,12 @@ export function useRoom(roomId: string) {
     socket.emit('vote-game', game);
   }, []);
 
-  return { lobby, joinError, vote };
+  const voteTable = useCallback((wantsTable: boolean) => {
+    const socket = getSocket();
+    // Like a vote for a game: one sent after a reconnection would no longer mean anything.
+    if (!socket.connected) return;
+    socket.emit('vote-table', wantsTable);
+  }, []);
+
+  return { lobby, joinError, vote, voteTable };
 }

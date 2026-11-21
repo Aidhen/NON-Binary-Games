@@ -18,6 +18,9 @@ interface GameCarouselProps {
  * The boxes on the table, side by side. They scroll sideways when they do not fit and are centered when
  * they do, so the row looks right with one game as with eight. The layout knows nothing about a single
  * game: a box is its registry entry and its cover.
+ *
+ * `contain: paint` keeps what the boxes draw (shadows, the lid of the chosen box) inside the row. Without it a
+ * phone measured the whole row as part of the page, made the page wider than the screen, and let it slide sideways.
  */
 export function GameCarousel({ games, selectedId, onSelect, votes, players, enabled }: Readonly<GameCarouselProps>) {
   const { t } = useTranslation();
@@ -25,7 +28,7 @@ export function GameCarousel({ games, selectedId, onSelect, votes, players, enab
   return (
     <ul
       aria-label={t('lobby.games')}
-      className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-5 [justify-content:safe_center]"
+      className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-5 [contain:paint] [justify-content:safe_center]"
     >
       {games.map((game, index) => (
         <li key={game.id} className="shrink-0 snap-center">

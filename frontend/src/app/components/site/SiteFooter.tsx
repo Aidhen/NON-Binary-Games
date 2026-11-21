@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useFocusMode } from '@/lib/focusMode';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { BODY } from './styles';
 
@@ -17,6 +18,10 @@ const SOCIALS = [
 
 export function SiteFooter() {
   const { t } = useTranslation();
+  const focused = useFocusMode();
+
+  // Out of the way while a game is open.
+  if (focused) return null;
 
   return (
     <footer className="mt-10 w-full bg-[var(--paper-well)]">

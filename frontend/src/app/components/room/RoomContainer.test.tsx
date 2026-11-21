@@ -61,7 +61,13 @@ const ROOM = '3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c';
 
 const serverSays = (state: LobbyState) => act(() => { mocks.dispatch('lobby-updated', state); });
 
-beforeEach(() => { mocks.reset(); });
+// jsdom has no layout to scroll: the page asks for the top when a game opens.
+const scrollTo = vi.fn();
+beforeEach(() => {
+  mocks.reset();
+  scrollTo.mockClear();
+  window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+});
 
 describe('RoomContainer', () => {
   it('joins the room and shows the table at once, with nothing to vote until the server answers', () => {
@@ -79,7 +85,7 @@ describe('RoomContainer', () => {
     render(<RoomContainer roomId={ROOM} games={games} />);
 
     expect(screen.getByText(label)).toBeInTheDocument();
-    serverSays({ game: 'sudoku', votes: [] });
+    serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
 
     expect(screen.getByText(label)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sudoku.copyLink/ })).toBeInTheDocument();
@@ -88,7 +94,7 @@ describe('RoomContainer', () => {
 
   it('shows the table while the room has no game, and sends the vote of the player', () => {
     render(<RoomContainer roomId={ROOM} games={games} />);
-    serverSays({ game: null, votes: [] });
+    serverSays({ game: null, votes: [], tableVotes: [] });
 
     expect(screen.getByText('lobby.title')).toBeInTheDocument();
     expect(screen.queryByTestId('game')).not.toBeInTheDocument();
@@ -100,7 +106,7 @@ describe('RoomContainer', () => {
 
   it('does not open the game by itself after a vote: it waits for the server', () => {
     render(<RoomContainer roomId={ROOM} games={games} />);
-    serverSays({ game: null, votes: [] });
+    serverSays({ game: null, votes: [], tableVotes: [] });
 
     fireEvent.click(screen.getByRole('button', { name: 'lobby.open' }));
 
@@ -109,23 +115,59 @@ describe('RoomContainer', () => {
 
   it('opens the game the server chose, in this room', () => {
     render(<RoomContainer roomId={ROOM} games={games} />);
-    serverSays({ game: null, votes: [] });
-    serverSays({ game: 'sudoku', votes: [] });
+    serverSays({ game: null, votes: [], tableVotes: [] });
+    serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
 
     expect(screen.getByTestId('game')).toHaveAttribute('data-room-id', ROOM);
     expect(screen.queryByText('lobby.title')).not.toBeInTheDocument();
   });
 
+  it('asks to go back to the table, says how many want to, and takes the vote back', () => {
+    render(<RoomContainer roomId={ROOM} games={games} />);
+    act(() => { mocks.dispatch('joined-as', 'self-alias'); });
+    serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
+
+    fireEvent.click(screen.getByRole('button', { name: 'lobby.backToTable' }));
+    expect(mocks.socket.emit).toHaveBeenLastCalledWith('vote-table', true);
+    // The page waits for the server: the game stays until the room has a majority.
+    expect(screen.getByTestId('game')).toBeInTheDocument();
+
+    serverSays({ game: 'sudoku', votes: [], tableVotes: ['self-alias'] });
+    expect(screen.getByRole('status')).toHaveTextContent('lobby.backProgress');
+
+    fireEvent.click(screen.getByRole('button', { name: 'lobby.stayHere' }));
+    expect(mocks.socket.emit).toHaveBeenLastCalledWith('vote-table', false);
+  });
+
+  it('starts the game from the top of the page, where the board is', () => {
+    render(<RoomContainer roomId={ROOM} games={games} />);
+    serverSays({ game: null, votes: [], tableVotes: [] });
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0 });
+  });
+
+  it('goes back to the table when the server says so', () => {
+    render(<RoomContainer roomId={ROOM} games={games} />);
+    serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
+    serverSays({ game: null, votes: [], tableVotes: [] });
+
+    expect(screen.getByText('lobby.title')).toBeInTheDocument();
+    expect(screen.queryByTestId('game')).not.toBeInTheDocument();
+  });
+
   it('puts a player who comes after the choice straight into the game', () => {
     render(<RoomContainer roomId={ROOM} games={games} />);
-    serverSays({ game: 'sudoku', votes: [] });
+    serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
 
     expect(screen.getByTestId('game')).toBeInTheDocument();
   });
 
   it('says so when the server opened a game this page does not know', () => {
     render(<RoomContainer roomId={ROOM} games={games} />);
-    serverSays({ game: 'newer-game' as GameId, votes: [] });
+    serverSays({ game: 'newer-game' as GameId, votes: [], tableVotes: [] });
 
     expect(screen.getByRole('alert')).toHaveTextContent('lobby.unknownGame');
     expect(screen.queryByTestId('game')).not.toBeInTheDocument();

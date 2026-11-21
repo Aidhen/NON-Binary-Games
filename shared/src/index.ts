@@ -35,11 +35,13 @@ export interface LobbyVote {
 
 /**
  * What a room is doing. `game` is null while the players are still at the table choosing, and `votes` says who
- * wants what. Once a game is open it stays the game of the room, and there are no votes left to tell.
+ * wants what. While a game is open, `tableVotes` says who wants to go back to the table (by alias): the room goes
+ * back when more than half of it wants to, like it opens a game.
  */
 export interface LobbyState {
   game: GameId | null;
   votes: LobbyVote[];
+  tableVotes: string[];
 }
 
 /** The Sudoku of a room, with everything a player needs to show it. */
@@ -151,6 +153,8 @@ export interface ClientToServerEvents {
   "join-room": (roomId: string) => void;
   /** The game this player wants the room to open, or `null` to take the vote back. Ignored once a game is open. */
   "vote-game": (game: GameId | null) => void;
+  /** Whether this player wants the room to leave its game and go back to the table. Ignored while no game is open. */
+  "vote-table": (wantsTable: boolean) => void;
   "cell-update": (data: CellUpdatePayload, acknowledge?: (result: CellUpdateResult) => void) => void;
   "select-cell": (payload: SelectCellPayload) => void;
   "restart-game": (difficulty: DifficultyLevel) => void;

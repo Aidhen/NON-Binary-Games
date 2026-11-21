@@ -241,7 +241,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       await flushSocketEvents();
 
       const room = rooms.get(testRoomId)!;
-      expect(lobby).toEqual({ game: null, votes: [] });
+      expect(lobby).toEqual({ game: null, votes: [], tableVotes: [] });
       expect(room.game).toBeNull();
       expect(room.players.has(clientSocket.id!)).toBe(true);
       expect(started).not.toHaveBeenCalled();
@@ -326,7 +326,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       await openSudoku(clientSocket);
 
-      await expect(lobby).resolves.toEqual({ game: 'sudoku', votes: [] });
+      await expect(lobby).resolves.toEqual({ game: 'sudoku', votes: [], tableVotes: [] });
       expect(rooms.get(testRoomId)!.game?.id).toBe('sudoku');
       expect(rooms.get(testRoomId)!.votes.size).toBe(0);
     });
@@ -342,7 +342,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const seenBySecond = nextLobby(second);
       clientSocket.emit('vote-game', 'sudoku');
 
-      const expected = { game: null, votes: [{ alias: firstAlias, game: 'sudoku' }] };
+      const expected = { game: null, votes: [{ alias: firstAlias, game: 'sudoku' }], tableVotes: [] };
       await expect(seenByFirst).resolves.toEqual(expected);
       await expect(seenBySecond).resolves.toEqual(expected);
       expect(started).not.toHaveBeenCalled();
@@ -379,7 +379,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       lobby = nextLobby(second);
       clientSocket.emit('vote-game', null);
 
-      await expect(lobby).resolves.toEqual({ game: null, votes: [] });
+      await expect(lobby).resolves.toEqual({ game: null, votes: [], tableVotes: [] });
       expect(rooms.get(testRoomId)!.votes.size).toBe(0);
     });
 
@@ -415,7 +415,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       const withoutVote = nextLobby(clientSocket);
       second.disconnect();
 
-      await expect(withoutVote).resolves.toEqual({ game: null, votes: [] });
+      await expect(withoutVote).resolves.toEqual({ game: null, votes: [], tableVotes: [] });
       expect(rooms.get(testRoomId)!.votes.size).toBe(0);
     });
 
@@ -443,7 +443,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         const started = new Promise<GameStartedPayload>((resolve) => { late.once('game-started', resolve); });
         const lobby = await enterRoom(late, testRoomId);
 
-        expect(lobby).toEqual({ game: 'sudoku', votes: [] });
+        expect(lobby).toEqual({ game: 'sudoku', votes: [], tableVotes: [] });
         expect((await started).board).toEqual(room.board);
       }
     });
@@ -544,6 +544,148 @@ describe('Socket Events Security & Bounds Checking', () => {
       visitor.disconnect();
 
       await vi.waitFor(() => expect(rooms.has(idOf('only-looking'))).toBe(false));
+    });
+
+    describe('going back to the table', () => {
+      /** Two players in the same room, playing the Sudoku. */
+      const twoPlaying = async () => {
+        const second = await connectExtra('second-player-id');
+        const firstAlias = await enterAs(clientSocket);
+        const secondAlias = await enterAs(second);
+        const started = new Promise<void>((resolve) => { second.once('game-started', () => resolve()); });
+        clientSocket.emit('vote-game', 'sudoku');
+        second.emit('vote-game', 'sudoku');
+        await started;
+        return { second, firstAlias, secondAlias };
+      };
+
+      it('takes a player who is alone back to the table at once, and the game is gone', async () => {
+        await enterRoom(clientSocket, testRoomId);
+        await openSudoku(clientSocket);
+
+        const lobby = nextLobby(clientSocket);
+        clientSocket.emit('vote-table', true);
+
+        await expect(lobby).resolves.toEqual({ game: null, votes: [], tableVotes: [] });
+        expect(rooms.get(testRoomId)!.game).toBeNull();
+      });
+
+      it('waits for more than half of the room, and shows each vote to everybody by alias', async () => {
+        const { second, firstAlias } = await twoPlaying();
+
+        const seenBySecond = nextLobby(second);
+        clientSocket.emit('vote-table', true);
+
+        await expect(seenBySecond).resolves.toEqual({ game: 'sudoku', votes: [], tableVotes: [firstAlias] });
+        expect(rooms.get(testRoomId)!.game?.id).toBe('sudoku');
+        expect(rooms.get(testRoomId)!.tableVotes.size).toBe(1);
+
+        const back = nextLobby(clientSocket);
+        second.emit('vote-table', true);
+
+        await expect(back).resolves.toEqual({ game: null, votes: [], tableVotes: [] });
+        expect(rooms.get(testRoomId)!.game).toBeNull();
+        expect(rooms.get(testRoomId)!.tableVotes.size).toBe(0);
+      });
+
+      it('never tells the id of a player with their vote', async () => {
+        const { second } = await twoPlaying();
+
+        const lobby = nextLobby(clientSocket);
+        second.emit('vote-table', true);
+
+        expect(JSON.stringify(await lobby)).not.toContain('second-player-id');
+      });
+
+      it('lets a player take their vote back', async () => {
+        const { second } = await twoPlaying();
+
+        let lobby = nextLobby(second);
+        clientSocket.emit('vote-table', true);
+        expect((await lobby).tableVotes).toHaveLength(1);
+
+        lobby = nextLobby(second);
+        clientSocket.emit('vote-table', false);
+
+        await expect(lobby).resolves.toEqual({ game: 'sudoku', votes: [], tableVotes: [] });
+        expect(rooms.get(testRoomId)!.game?.id).toBe('sudoku');
+      });
+
+      it('goes back when a player leaving makes the votes that are left a majority', async () => {
+        const { second } = await twoPlaying();
+
+        let lobby = nextLobby(second);
+        clientSocket.emit('vote-table', true);
+        await lobby;
+
+        lobby = nextLobby(clientSocket);
+        second.disconnect();
+
+        await expect(lobby).resolves.toEqual({ game: null, votes: [], tableVotes: [] });
+        expect(rooms.get(testRoomId)!.game).toBeNull();
+      });
+
+      it('lets the room open another game from the table, with nobody wanting to leave it', async () => {
+        await enterRoom(clientSocket, testRoomId);
+        await openSudoku(clientSocket);
+        const back = nextLobby(clientSocket);
+        clientSocket.emit('vote-table', true);
+        await back;
+
+        const opened = new Promise<GameStartedPayload>((resolve) => { clientSocket.once('game-started', resolve); });
+        clientSocket.emit('vote-game', 'takuzu');
+
+        expect((await opened).game).toBe('takuzu');
+        expect(rooms.get(testRoomId)!.tableVotes.size).toBe(0);
+      });
+
+      it('ignores a vote while the room is at the table, or from a socket that is not in a room', async () => {
+        const lobby = vi.fn();
+        clientSocket.on('lobby-updated', lobby);
+        clientSocket.emit('vote-table', true);
+        await flushSocketEvents();
+        expect(lobby).not.toHaveBeenCalled();
+
+        await enterRoom(clientSocket, testRoomId);
+        lobby.mockClear();
+        clientSocket.emit('vote-table', true);
+        await flushSocketEvents();
+
+        expect(lobby).not.toHaveBeenCalled();
+        expect(rooms.get(testRoomId)!.tableVotes.size).toBe(0);
+      });
+
+      it('refuses anything but true or false', async () => {
+        const { second } = await twoPlaying();
+        const lobby = vi.fn();
+        second.on('lobby-updated', lobby);
+
+        for (const value of ['true', 1, 0, null, {}, [true]]) rawEmit(clientSocket, 'vote-table', value);
+        await flushSocketEvents();
+        await flushSocketEvents(second);
+
+        expect(lobby).not.toHaveBeenCalled();
+        expect(rooms.get(testRoomId)!.tableVotes.size).toBe(0);
+        expect(rooms.get(testRoomId)!.game?.id).toBe('sudoku');
+      });
+
+      it('drops the votes a socket sends faster than the cooldown', async () => {
+        const { second } = await twoPlaying();
+        // A third player who joins after the choice: the cooldown is kept on the socket, and the other two have voted.
+        const voter = await connectExtra();
+        await enterRoom(voter, testRoomId);
+        voteLimit.cooldownMs = 60_000;
+        const lobby = vi.fn();
+        second.on('lobby-updated', lobby);
+
+        voter.emit('vote-table', true);
+        voter.emit('vote-table', false);
+        voter.emit('vote-table', true);
+        await flushSocketEvents(voter);
+        await flushSocketEvents(second);
+
+        expect(lobby).toHaveBeenCalledTimes(1);
+      });
     });
   });
 

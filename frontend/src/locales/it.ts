@@ -264,10 +264,10 @@ export const it: Translations = {
     serverTitle: "Sul server",
     serverText: "Le stanze vivono solo nella memoria del server: la griglia, le mosse, le note, i nomi di animale e i colori. Una stanza vuota sparisce dopo dieci minuti, e tutte spariscono quando il server si riavvia. L'indirizzo IP serve solo a contare le connessioni aperte, per tenere lontano chi vuole sovraccaricare il gioco: resta in memoria e non finisce nei log del gioco.",
     hostingTitle: "Chi ospita il sito",
-    hostingText: "Il sito è ospitato da Vercel e il server da Render. Per sapere come trattano i dati, leggi le loro privacy policy:",
+    hostingText: "Il sito è ospitato da Vercel, il server da Render e le risposte del modulo di feedback sono conservate su GitHub. Per sapere come trattano i dati, leggi le loro privacy policy:",
     feedbackTitle: "Il modulo di feedback",
-    feedbackText: "Il modulo è ancora spento e non invia niente. Quando lo collegherò, questa pagina dirà cosa arriva, dove e per quanto tempo, prima che si possa usare.",
-    updated: "Ultimo aggiornamento: 21 novembre 2026"
+    feedbackText: "Il modulo invia solo le risposte che scegli da elenchi: niente testo libero, niente contatti, niente che riguardi te. Vengono salvate come segnalazioni in un repository privato su GitHub che può aprire solo chi sviluppa, e restano lì per aiutare a migliorare il gioco: non dicono niente di chi le ha mandate. L'indirizzo IP viene usato solo nella memoria del server per limitare quante segnalazioni si possono inviare, e non viene mai salvato, scritto nei log né inviato a GitHub.",
+    updated: "Ultimo aggiornamento: 26 novembre 2026"
   },
   diary: {
     title: "Diario",
@@ -284,30 +284,82 @@ export const it: Translations = {
   },
   feedback: {
     title: "Feedback",
-    lead: "Il sito è in alpha: dimmi cosa non funziona, cosa ti manca o cosa ti è piaciuto.",
-    wip: "Lavori in corso",
-    wipText: "Questo modulo non è ancora attivo: non si può compilare né inviare. Aprirà presto.",
+    lead: "Il sito è in alpha: dimmi cosa non funziona, cosa ti manca o cosa ne pensi. Bastano pochi tocchi, non c'è niente da scrivere.",
     kind: "Di cosa si tratta?",
     kindBug: "Qualcosa non va",
-    kindIdea: "Ho un'idea",
-    kindOther: "Altro",
-    about: "Riguarda",
-    aboutAll: "Tutto il sito",
-    aboutRooms: "Stanze e inviti",
-    headline: "In una riga",
-    headlinePlaceholder: "Es. Le note spariscono quando rientro",
-    details: "Racconta",
-    detailsPlaceholder: "Cosa stavi facendo, cosa ti aspettavi e cosa è successo.",
-    contact: "Un contatto, se vuoi una risposta",
+    kindOpinion: "Dimmi cosa ne pensi",
+    where: "Dove?",
+    wherePlaceholder: "Scegli un posto",
+    what: "Cosa è successo?",
+    device: "Su che dispositivo?",
+    frequency: "Quanto spesso?",
+    rating: "Ti piace?",
+    wishes: "Cosa vorresti vedere? Scegline quanti vuoi.",
+    emote: "Una emote per accompagnarlo",
     optional: "facoltativo",
-    contactPlaceholder: "nome@esempio.it",
     send: "Invia il feedback",
+    sending: "Invio...",
+    waking: "Il server si sta svegliando",
+    wakingDetails: "Gira su un hosting gratuito e ci mette circa un minuto a svegliarsi. Tieni aperta questa pagina: le risposte partono appena è pronto.",
+    sentTitle: "Grazie!",
+    sentText: "Le tue risposte sono arrivate e verranno lette. Non c'è una risposta privata: nessuno ti scriverà.",
+    sendAnother: "Inviane un altro",
+    tooMany: "Hai già inviato qualche segnalazione da poco. Riprova tra qualche minuto.",
+    dayFull: "Per oggi sono arrivate tante segnalazioni e il modulo si è fermato. Riprova domani.",
+    unavailable: "Non è stato possibile inviare il feedback in questo momento. Le risposte sono ancora qui: riprova tra poco.",
+    diaryNote: "Alcune richieste potrebbero essere realizzate o ricevere risposta nel Diario, tra le novità. Non c'è una risposta privata: il modulo non conserva nessun contatto.",
     afterTitle: "Cosa succederà dopo",
-    after1Title: "Arriva a chi sviluppa",
-    after1Text: "Il messaggio diventa una segnalazione privata: non è pubblico.",
+    after1Title: "Arriva in un posto privato",
+    after1Text: "Le risposte diventano una nota in un tracker privato che può aprire solo chi sviluppa. Contengono solo le scelte che hai fatto.",
     after2Title: "Viene letto",
-    after2Text: "Ogni segnalazione viene letta. Non sempre c'è una risposta diretta.",
-    after3Title: "Finisce nel diario",
-    after3Text: "Se diventa una modifica, la trovi tra le novità."
+    after2Text: "Ogni segnalazione viene letta. Non c'è una risposta privata.",
+    after3Title: "Può finire nel diario",
+    after3Text: "Se diventa una modifica, o riceve una risposta, la trovi tra le novità.",
+    options: {
+      where: {
+        "sudoku": "Sudoku",
+        "takuzu": "Takuzu",
+        "flower-field": "Campo fiorito",
+        "word-search": "Crucipuzzle",
+        "table": "Il tavolo, dove si sceglie il gioco",
+        "room-and-invite": "Stanze e inviti",
+        "rest-of-site": "Il resto del sito",
+        "whole-site": "Tutto il sito"
+      },
+      what: {
+        "not-loading": "Non si carica",
+        "moves-not-shared": "Le mosse non arrivano agli altri",
+        "connection-drops": "La connessione cade",
+        "looks-wrong": "Si vede male",
+        "controls-not-responding": "I comandi non rispondono",
+        "rules-or-win-wrong": "Le regole o la vittoria sono sbagliate",
+        "text-or-translation": "Un testo o una traduzione",
+        "other": "Altro"
+      },
+      device: {
+        "phone": "Telefono",
+        "tablet": "Tablet",
+        "computer": "Computer"
+      },
+      frequency: {
+        "once": "Una volta",
+        "sometimes": "A volte",
+        "always": "Ogni volta"
+      },
+      rating: {
+        "1": "Non mi piace",
+        "2": "Così così",
+        "3": "Mi piace",
+        "4": "Lo adoro"
+      },
+      wish: {
+        "more-games": "Più giochi",
+        "more-levels": "Più livelli",
+        "more-languages": "Più lingue",
+        "themes-and-colors": "Temi e colori",
+        "public-rooms": "Stanze pubbliche",
+        "fine-as-is": "Va bene così"
+      }
+    }
   }
 };

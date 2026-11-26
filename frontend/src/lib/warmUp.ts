@@ -1,3 +1,5 @@
+import { backendUrl } from "./backendUrl";
+
 let warmedUp = false;
 
 // On a free hosting plan the server sleeps after a while. Any request wakes it up, so the home page
@@ -7,6 +9,6 @@ export const warmUpServer = () => {
   if (warmedUp) return;
   warmedUp = true;
 
-  const url = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
+  const url = backendUrl();
   fetch(`${url}/healthz`, { mode: "no-cors", cache: "no-store" }).catch(() => {});
 };

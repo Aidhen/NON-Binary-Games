@@ -79,6 +79,12 @@ describe('createHttpServer', () => {
 
     expect(response.status).toBe(404);
   });
+
+  it('has no /feedback without a handler for it', async () => {
+    const response = await fetch(`${await start()}/feedback`, { method: 'POST' });
+
+    expect(response.status).toBe(404);
+  });
 });
 
 describe('shutdown', () => {

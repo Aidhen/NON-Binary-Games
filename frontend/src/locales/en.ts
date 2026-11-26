@@ -262,10 +262,10 @@ export const en = {
     serverTitle: "On the server",
     serverText: "Rooms live only in the memory of the server: the board, the moves, the notes, the animal names and the colors. An empty room disappears after ten minutes, and all of them disappear when the server restarts. Your IP address is only used to count open connections, to keep away whoever wants to overload the game: it stays in memory and does not end up in the logs of the game.",
     hostingTitle: "Who hosts the site",
-    hostingText: "The site is hosted by Vercel and the server by Render. To know how they handle data, read their privacy policies:",
+    hostingText: "The site is hosted by Vercel, the server by Render, and the answers of the feedback form are kept on GitHub. To know how they handle data, read their privacy policies:",
     feedbackTitle: "The feedback form",
-    feedbackText: "The form is still switched off and sends nothing. When I connect it, this page will say what arrives, where and for how long, before it can be used.",
-    updated: "Last updated: 21 November 2026"
+    feedbackText: "The form only sends the answers you choose from the lists: no free text, no contact, nothing about you. They are stored as issues in a private GitHub repository that only the developer can open, and they stay there to help improve the game: they say nothing about who sent them. Your IP address is used only in the memory of the server to limit how many reports can be sent, and it is never stored, written to the logs or sent to GitHub.",
+    updated: "Last updated: 26 November 2026"
   },
   diary: {
     title: "Diary",
@@ -282,31 +282,83 @@ export const en = {
   },
   feedback: {
     title: "Feedback",
-    lead: "The site is in alpha: tell me what does not work, what is missing or what you liked.",
-    wip: "Work in progress",
-    wipText: "This form is not active yet: it cannot be filled in or sent. It will open soon.",
+    lead: "The site is in alpha: tell me what does not work, what is missing or what you think. A few taps, nothing to write.",
     kind: "What is it about?",
     kindBug: "Something is wrong",
-    kindIdea: "I have an idea",
-    kindOther: "Something else",
-    about: "It concerns",
-    aboutAll: "The whole site",
-    aboutRooms: "Rooms and invitations",
-    headline: "In one line",
-    headlinePlaceholder: "E.g. Notes disappear when I come back",
-    details: "Tell me more",
-    detailsPlaceholder: "What you were doing, what you expected and what happened.",
-    contact: "A contact, if you want an answer",
+    kindOpinion: "Tell me what you think",
+    where: "Where?",
+    wherePlaceholder: "Choose a place",
+    what: "What happened?",
+    device: "On which device?",
+    frequency: "How often?",
+    rating: "How do you like it?",
+    wishes: "What would you like to see? Choose as many as you want.",
+    emote: "An emote to go with it",
     optional: "optional",
-    contactPlaceholder: "name@example.com",
     send: "Send feedback",
+    sending: "Sending...",
+    waking: "The server is waking up",
+    wakingDetails: "It runs on a free hosting plan and takes about a minute to wake up. Keep this page open: your answers are sent as soon as it is ready.",
+    sentTitle: "Thank you!",
+    sentText: "Your answers have arrived and will be read. There is no private reply: you will not be written back.",
+    sendAnother: "Send another",
+    tooMany: "You have sent a few reports already. Please try again in a few minutes.",
+    dayFull: "There have been many reports today and the form has stopped. Please try again tomorrow.",
+    unavailable: "The feedback could not be sent right now. Your answers are still here: try again in a moment.",
+    diaryNote: "Some requests may be built or answered in the Diary, among the news. There is no private reply: the form does not keep any contact.",
     afterTitle: "What will happen next",
-    after1Title: "It reaches the developer",
-    after1Text: "The message becomes a private report: it is not public.",
+    after1Title: "It lands in a private place",
+    after1Text: "Your answers become a note in a private tracker that only the developer can open. They hold only the choices you made.",
     after2Title: "It gets read",
-    after2Text: "Every report is read. There is not always a direct answer.",
-    after3Title: "It ends up in the diary",
-    after3Text: "If it becomes a change, you find it among the news."
+    after2Text: "Every report is read. There is no private reply.",
+    after3Title: "It may end up in the Diary",
+    after3Text: "If it becomes a change, or gets an answer, you find it among the news.",
+    options: {
+      where: {
+        "sudoku": "Sudoku",
+        "takuzu": "Takuzu",
+        "flower-field": "Flower Field",
+        "word-search": "Word Search",
+        "table": "The table, where a game is chosen",
+        "room-and-invite": "Rooms and invitations",
+        "rest-of-site": "The rest of the site",
+        "whole-site": "The whole site"
+      },
+      what: {
+        "not-loading": "It does not load",
+        "moves-not-shared": "Moves do not reach the others",
+        "connection-drops": "The connection drops",
+        "looks-wrong": "It looks wrong",
+        "controls-not-responding": "The controls do not respond",
+        "rules-or-win-wrong": "The rules or the win are wrong",
+        "text-or-translation": "A text or a translation",
+        "other": "Something else"
+      },
+      device: {
+        "phone": "Phone",
+        "tablet": "Tablet",
+        "computer": "Computer"
+      },
+      frequency: {
+        "once": "Once",
+        "sometimes": "Sometimes",
+        "always": "Every time"
+      },
+      rating: {
+        "1": "I don't like it",
+        "2": "So-so",
+        "3": "I like it",
+        "4": "I love it"
+      },
+      wish: {
+        "more-games": "More games",
+        "more-levels": "More levels",
+        "more-languages": "More languages",
+        "themes-and-colors": "Themes and colors",
+        "public-rooms": "Public rooms",
+        "fine-as-is": "Fine as it is"
+      }
+    }
   }
 };
 

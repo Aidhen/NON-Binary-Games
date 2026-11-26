@@ -46,17 +46,18 @@ export const DIARY: readonly DiaryEntry[] = [
   },
   {
     id: 'feedback-form',
-    type: 'upcoming',
-    date: '2026-11-16',
+    type: 'released',
+    date: '2026-11-27',
+    version: '0.8.0-alpha',
     en: {
-      title: 'A way to send feedback',
-      summary: 'The form is drawn, and still switched off.',
-      body: ['The Feedback page shows the form as it will be. It cannot be sent yet: it will open once it is connected.'],
+      title: 'You can now send feedback!',
+      summary: 'A multiple choice form, quick and easy.',
+      body: ['On the Feedback page you can tell me if something is wrong or what you think of a game, by picking from the answers. There is no free text and I cannot reply in private (for now), but every now and then I will post polls about new features :)'],
     },
     it: {
-      title: 'Un modo per mandare feedback',
-      summary: 'Il modulo è disegnato, ma ancora spento.',
-      body: ['La pagina Feedback mostra il modulo come sarà. Non si può ancora inviare: aprirà quando sarà collegato.'],
+      title: 'Ora si possono mandare feedback!',
+      summary: 'Un modulo a scelte multiple, facile e veloce.',
+      body: ['Nella pagina Feedback puoi dirmi se qualcosa non va o cosa ne pensi di un gioco, scegliendo tra le varie risposte. Non c\'è testo libero e non potrò rispondere in privato (per ora), ma ogni tanto pubblicherò dei sondaggi per nuove feature :)'],
     },
   },
   {

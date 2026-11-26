@@ -13,6 +13,7 @@ export * from './games/flower-field/index';
 export * from './games/word-search/index';
 export * from './schemas';
 export * from './emotes';
+export * from './feedback';
 export * from './games';
 export * from './players';
 

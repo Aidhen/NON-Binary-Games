@@ -381,6 +381,32 @@ export const setupSocketHandlers = (io: GameServer) => {
     io.to(channelOf(roomId)).emit("lobby-updated", snapshotLobby(room));
   };
 
+  /**
+   * True when the player can sit in the room. A player who is only being waited for gives up their seat to one who
+   * is here: otherwise joining and dropping again and again could keep a room full with nobody in it.
+   */
+  const claimSeat = (roomId: string, room: RoomState, playerId: string, settle: Parameters<typeof removePlayer>[4]): boolean => {
+    if (room.players.has(playerId) || room.players.size < MAX_PLAYERS_PER_ROOM) return true;
+
+    const awaited = [...room.players].find(([, sockets]) => sockets.size === 0)?.[0];
+    if (awaited === undefined) return false;
+
+    cancelDeparture(roomId, awaited);
+    removePlayer(io, roomId, room, awaited, settle);
+    return true;
+  };
+
+  /**
+   * After a dropped connection the old socket stays until the ping timeout. When a player is over the limit the
+   * oldest tab goes, so that a bad network does not lock them out of their own room.
+   */
+  const dropOldestTab = (ownSockets: Set<string> | undefined, socketId: string) => {
+    if (!ownSockets || ownSockets.has(socketId) || ownSockets.size < MAX_SOCKETS_PER_PLAYER) return;
+
+    const oldest = ownSockets.values().next().value;
+    if (oldest) io.sockets.sockets.get(oldest)?.disconnect(true);
+  };
+
   io.on("connection", (socket: GameSocket) => {
     socket.data.playerId = resolvePlayerId(socket);
     const allowEvent = createRateLimiter(eventLimit.max, eventLimit.windowMs);
@@ -427,16 +453,9 @@ export const setupSocketHandlers = (io: GameServer) => {
         socket.emit("join-error", "too-fast");
         return;
       }
-      if (existingRoom && !existingRoom.players.has(socket.data.playerId) && existingRoom.players.size >= MAX_PLAYERS_PER_ROOM) {
-        // A player who is only being waited for gives up their seat to one who is here: otherwise joining and
-        // dropping again and again could keep a room full with nobody in it.
-        const awaited = [...existingRoom.players].find(([, sockets]) => sockets.size === 0)?.[0];
-        if (awaited === undefined) {
-          socket.emit("join-error", "room-full");
-          return;
-        }
-        cancelDeparture(roomId, awaited);
-        removePlayer(io, roomId, existingRoom, awaited, settle);
+      if (existingRoom && !claimSeat(roomId, existingRoom, socket.data.playerId, settle)) {
+        socket.emit("join-error", "room-full");
+        return;
       }
 
       if (socket.data.roomId !== roomId) {
@@ -464,13 +483,7 @@ export const setupSocketHandlers = (io: GameServer) => {
         rooms.set(roomId, room);
       }
 
-      // After a dropped connection the old socket stays until the ping timeout. When a player is over the
-      // limit the oldest tab goes, so that a bad network does not lock them out of their own room.
-      const ownSockets = room.players.get(socket.data.playerId);
-      if (ownSockets && !ownSockets.has(socket.id) && ownSockets.size >= MAX_SOCKETS_PER_PLAYER) {
-        const oldest = ownSockets.values().next().value;
-        if (oldest) io.sockets.sockets.get(oldest)?.disconnect(true);
-      }
+      dropOldestTab(room.players.get(socket.data.playerId), socket.id);
 
       socket.data.alias = aliasOf(room, socket.data.playerId);
       const sockets = room.players.get(socket.data.playerId) ?? new Set<string>();

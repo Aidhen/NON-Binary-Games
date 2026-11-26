@@ -200,6 +200,8 @@ describe('when a board cannot be made', () => {
         const opened = new Promise<void>((resolve) => { client.once('game-started', () => resolve()); });
         client.emit('vote-game', 'sudoku');
         await opened;
+
+        expect(rooms.get(ROOM)!.game?.id).toBe('sudoku');
       });
       logged.mockRestore();
     });
@@ -215,6 +217,7 @@ describe('when a board cannot be made', () => {
         await new Promise((resolve) => { setTimeout(resolve, 1050); });
 
         const failed = new Promise<void>((resolve) => { client.once('board-failed', () => resolve()); });
+        const before = rooms.get(ROOM)!.game;
         failOnce();
         client.emit('restart-game', 'easy');
         await failed;
@@ -222,6 +225,8 @@ describe('when a board cannot be made', () => {
         const restarted = new Promise<void>((resolve) => { client.once('game-started', () => resolve()); });
         client.emit('restart-game', 'easy');
         await restarted;
+
+        expect(rooms.get(ROOM)!.game).not.toBe(before);
       });
       logged.mockRestore();
     });

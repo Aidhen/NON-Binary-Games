@@ -1,6 +1,6 @@
 'use client';
 import { FLOWER_HIDDEN } from '@nbg/shared';
-import type { GameId, PlayerProfile, SudokuBoard } from '@nbg/shared';
+import type { GameId, PlayerProfile, SudokuPuzzle } from '@nbg/shared';
 import { FlowerFieldBoardUI } from '../flower-field/FlowerFieldBoardUI';
 import { SudokuBoardUI } from '../sudoku/SudokuBoardUI';
 import { TakuzuBoardUI } from '../takuzu/TakuzuBoardUI';
@@ -15,10 +15,9 @@ const PROFILES: Record<string, PlayerProfile> = {
 const digits = (rows: readonly string[]) => rows.map((row) => row.split('').map((cell) => (cell === '.' ? 0 : Number(cell))));
 const nothing = () => {};
 
-const SUDOKU: SudokuBoard = {
+const SUDOKU: SudokuPuzzle = {
   size: 9,
   boxSize: 3,
-  solution: digits(['534678912', '672195348', '198342567', '859761423', '426853791', '713924856', '961537284', '287419635', '345286179']),
   initial: digits(['53..7....', '6..195...', '.98....6.', '8...6...3', '4..8.3..1', '7...2...6', '.6....28.', '...419..5', '....8..79']),
 };
 // The puzzle with a few numbers already written by the players.

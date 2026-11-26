@@ -2,6 +2,10 @@ import { Translations } from './en';
 
 export const it: Translations = {
   sudoku: {
+    cell: "Riga {row}, colonna {column}: {value}",
+    cellGiven: "Riga {row}, colonna {column}: {value}, di partenza",
+    cellEmpty: "Riga {row}, colonna {column}: vuota",
+    keyHint: "Da tastiera: le frecce per muoverti, i numeri per scrivere, N per le note, Canc per cancellare.",
     title: "(NON) Binary Games",
     subtitle: "Motore Sudoku",
     loading: "Caricamento motore...",
@@ -37,6 +41,7 @@ export const it: Translations = {
     backHome: "Torna alla home"
   },
   flowerField: {
+    keyHint: "Da tastiera: le frecce per muoverti, Invio per aprire una cella, F per mettere o togliere una bandierina.",
     cleared: "Tutto fiorito!",
     compliment: "Ottimo lavoro!",
     lost: "Una mina!",
@@ -81,6 +86,7 @@ export const it: Translations = {
     grid: "Griglia del crucipuzzle"
   },
   takuzu: {
+    keyHint: "Da tastiera: le frecce per muoverti, 0 e 1 per scrivere, Canc per cancellare.",
     cleared: "Puzzle risolto!",
     compliment: "Ogni riga e ogni colonna è in equilibrio.",
     rules: "Come funziona",
@@ -134,6 +140,10 @@ export const it: Translations = {
     games: "Giochi",
     open: "Apri la scatola",
     takeBack: "Ritiro il mio voto",
+    reconnecting: "Connessione persa, ci stiamo ricollegando… Il tuo posto nella stanza resta per un po’.",
+    connectionLost: "Il server non risponde.",
+    retry: "Riprova",
+    boardFailed: "La griglia non è venuta. Non è cambiato niente: riprova.",
     backToTable: "Torna al tavolo",
     stayHere: "Preferisco restare",
     backProgress: "{count} su {total} vogliono tornare al tavolo",

@@ -16,6 +16,8 @@ export interface SudokuGame {
   currentGrid: SudokuGrid;
   filledCells: number;
   notesGrid: NotesGrid;
+  /** The board has been solved once: the room is told once, and a restart makes a new game. */
+  won: boolean;
 }
 
 /** The state of a Takuzu that a room is playing. It has no notes: a cell holds a symbol or nothing. */
@@ -25,6 +27,8 @@ export interface TakuzuGame {
   difficulty: DifficultyLevel;
   currentGrid: TakuzuGrid;
   filledCells: number;
+  /** As for the Sudoku. */
+  won: boolean;
 }
 
 /** The state of a Flower Field that a room is playing. */

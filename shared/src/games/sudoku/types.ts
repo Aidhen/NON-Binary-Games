@@ -11,3 +11,6 @@ export interface SudokuBoard {
   size: number;
   boxSize: number;
 }
+
+/** What a player is sent of a board: everything but the solution, which stays on the server. */
+export type SudokuPuzzle = Omit<SudokuBoard, 'solution'>;

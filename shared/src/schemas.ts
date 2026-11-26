@@ -102,6 +102,10 @@ export type CellUpdatePayload = z.infer<typeof cellUpdatePayloadSchema>;
 export interface CellUpdateResult {
   ok: boolean;
 }
+/** The filled cells of the Sudoku whose number is not the one of the solution, as [row, column]. */
+export interface SudokuMistakesResult {
+  cells: [number, number][];
+}
 export type ToggleNotePayload = z.infer<typeof toggleNotePayloadSchema>;
 export type SelectCellPayload = z.infer<typeof selectCellPayloadSchema>;
 export type FlowerFieldCellPayload = z.infer<typeof flowerFieldCellPayloadSchema>;
@@ -123,6 +127,8 @@ export const voteTableArgsSchema = z.tuple([z.boolean()]);
 const acknowledgementSchema = z.custom<(result: CellUpdateResult) => void>((value) => typeof value === 'function');
 
 export const cellUpdateArgsSchema = z.tuple([cellUpdatePayloadSchema, acknowledgementSchema.optional()]);
+/** No payload: only the callback for the answer, which is what the question is for. */
+export const sudokuMistakesArgsSchema = z.tuple([z.custom<(result: SudokuMistakesResult) => void>((value) => typeof value === 'function')]);
 export const toggleNoteArgsSchema = z.tuple([toggleNotePayloadSchema]);
 export const selectCellArgsSchema = z.tuple([selectCellPayloadSchema]);
 export const flowerFieldCellArgsSchema = z.tuple([flowerFieldCellPayloadSchema]);

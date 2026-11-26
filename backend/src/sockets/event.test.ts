@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, onTestFinished, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Server, Socket as ServerSocket } from 'socket.io';
 import Client, { Socket as ClientSocket } from 'socket.io-client';
-import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, colorLimit, voteLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
+import { setupSocketHandlers, reconnectGrace, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, clientBoardGenerationLimit, colorLimit, voteLimit, MAX_SOCKETS_PER_PLAYER, MAX_ROOM_ALIASES } from './event';
 import { createConnectionGuard } from './connectionLimits';
 import { logger } from '../logger';
 import type { AddressOf } from './connectionLimits';
@@ -14,7 +14,7 @@ import type { RoomState, SudokuGame } from '../rooms/roomStore';
 import type { ClientToServerEvents, ServerToClientEvents, SudokuStartedPayload } from '@nbg/shared';
 
 // Read before any test changes them: a limit that is not finite protects nothing.
-const defaultLimits = { roomCreation: roomCreationLimit.max, restart: restartLimit.max, boardGeneration: boardGenerationLimit.max };
+const defaultLimits = { roomCreation: roomCreationLimit.max, restart: restartLimit.max, boardGeneration: boardGenerationLimit.max, clientBoardGeneration: clientBoardGenerationLimit.max };
 
 // Room ids are UUIDs: a readable name always gives the same valid id.
 const idOf = (name: string): string => {
@@ -77,6 +77,9 @@ describe('Socket Events Security & Bounds Checking', () => {
    * A room that is playing a Sudoku, with the state of the game next to the state of the room. The game is read
    * each time: a restart replaces it.
    */
+  /** What a player is sent of a board: all of it but the solution. */
+  const puzzleOf = ({ solution: _solution, ...puzzle }: SudokuGame['board']) => puzzle;
+
   const playing = (room: RoomState) => {
     const game = () => {
       if (room.game?.id !== 'sudoku') throw new Error('The room is not playing a Sudoku');
@@ -94,6 +97,8 @@ describe('Socket Events Security & Bounds Checking', () => {
       get filledCells() { return game().filledCells; },
       set filledCells(count: number) { game().filledCells = count; },
       get notesGrid() { return game().notesGrid; },
+      get won() { return game().won; },
+      set won(value: boolean) { game().won = value; },
     };
   };
 
@@ -182,9 +187,11 @@ describe('Socket Events Security & Bounds Checking', () => {
   beforeAll(async () => {
     // Tests send bursts of events and create many rooms: the limits have their own tests.
     eventLimit.max = Number.POSITIVE_INFINITY;
+    reconnectGrace.ms = 0;
     roomCreationLimit.max = Number.POSITIVE_INFINITY;
     restartLimit.max = Number.POSITIVE_INFINITY;
     boardGenerationLimit.max = Number.POSITIVE_INFINITY;
+    clientBoardGenerationLimit.max = Number.POSITIVE_INFINITY;
     const httpServer = createServer();
 
     io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
@@ -221,9 +228,11 @@ describe('Socket Events Security & Bounds Checking', () => {
     rooms.emptyRoomTtlMs = 0;
     rooms.maxRooms = 1000;
     eventLimit.max = Number.POSITIVE_INFINITY;
+    reconnectGrace.ms = 0;
     roomCreationLimit.max = Number.POSITIVE_INFINITY;
     restartLimit.max = Number.POSITIVE_INFINITY;
     boardGenerationLimit.max = Number.POSITIVE_INFINITY;
+    clientBoardGenerationLimit.max = Number.POSITIVE_INFINITY;
     colorLimit.cooldownMs = 0;
     voteLimit.cooldownMs = 0;
   });
@@ -281,7 +290,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         const payload = await secondGameStarted;
         const room = playing(rooms.get(testRoomId)!);
 
-        expect(payload.board).toEqual(room.board);
+        expect(payload.board).toEqual(puzzleOf(room.board));
         expect(room.difficulty).toBe('easy');
         expect(payload.difficulty).toBe('easy');
         expect(room.players.size).toBe(2);
@@ -444,7 +453,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         const lobby = await enterRoom(late, testRoomId);
 
         expect(lobby).toEqual({ game: 'sudoku', votes: [], tableVotes: [] });
-        expect((await started).board).toEqual(room.board);
+        expect((await started).board).toEqual(puzzleOf(room.board));
       }
     });
 
@@ -544,6 +553,103 @@ describe('Socket Events Security & Bounds Checking', () => {
       visitor.disconnect();
 
       await vi.waitFor(() => expect(rooms.has(idOf('only-looking'))).toBe(false));
+    });
+
+    describe('a dropped connection', () => {
+      const GRACE = 300;
+      beforeEach(() => { reconnectGrace.ms = GRACE; });
+      afterEach(() => { reconnectGrace.ms = 0; });
+
+      it('keeps the player, with their vote, for a while: coming back in time changes nothing for the others', async () => {
+        const away = await connectExtra('dropping-player-id');
+        const awayAlias = await enterAs(away);
+        await enterAs(clientSocket);
+        away.emit('vote-game', 'takuzu');
+        await vi.waitFor(() => expect(rooms.get(testRoomId)!.votes.size).toBe(1));
+
+        const left = vi.fn();
+        clientSocket.on('player-disconnected', left);
+        away.disconnect();
+        await new Promise((resolve) => { setTimeout(resolve, GRACE / 3); });
+
+        // Still in the room for everybody: in the list, with the vote.
+        expect(rooms.get(testRoomId)!.players.get('dropping-player-id')?.size).toBe(0);
+        expect(rooms.get(testRoomId)!.votes.get('dropping-player-id')).toBe('takuzu');
+
+        const back = await connectExtra('dropping-player-id');
+        expect(await enterAs(back)).toBe(awayAlias);
+        await new Promise((resolve) => { setTimeout(resolve, GRACE * 1.5); });
+
+        expect(left).not.toHaveBeenCalled();
+        expect(rooms.get(testRoomId)!.players.get('dropping-player-id')?.size).toBe(1);
+        expect(rooms.get(testRoomId)!.votes.get('dropping-player-id')).toBe('takuzu');
+        clientSocket.off('player-disconnected', left);
+      });
+
+      it('takes the player out, with their votes, once the wait is over', async () => {
+        const away = await connectExtra('gone-player-id');
+        const awayAlias = await enterAs(away);
+        await enterAs(clientSocket);
+        away.emit('vote-game', 'takuzu');
+        await vi.waitFor(() => expect(rooms.get(testRoomId)!.votes.size).toBe(1));
+
+        const left = new Promise<string>((resolve) => { clientSocket.once('player-disconnected', resolve); });
+        const startedAt = Date.now();
+        away.disconnect();
+
+        await expect(left).resolves.toBe(awayAlias);
+        expect(Date.now() - startedAt).toBeGreaterThanOrEqual(GRACE - 20);
+        expect(rooms.get(testRoomId)!.players.has('gone-player-id')).toBe(false);
+        expect(rooms.get(testRoomId)!.votes.has('gone-player-id')).toBe(false);
+      });
+
+      it('lets a room whose players all dropped wait for them, and expire only after', async () => {
+        const away = await connectExtra('alone-player-id');
+        await enterAs(away, idOf('waiting-room'));
+        away.disconnect();
+        await new Promise((resolve) => { setTimeout(resolve, GRACE / 3); });
+
+        // Nobody is connected, but the player is still awaited: the room is not on its way out yet.
+        expect(rooms.get(idOf('waiting-room'))!.players.size).toBe(1);
+
+        await vi.waitFor(() => expect(rooms.get(idOf('waiting-room'))?.players.size ?? 0).toBe(0), { timeout: GRACE * 3 });
+      });
+
+      it('gives the seat of a player who is only being waited for to one who comes, when the room is full', async () => {
+        const room = idOf('full-with-ghost');
+        const present: TestClientSocket[] = [];
+        for (let i = 0; i < MAX_PLAYERS_PER_ROOM - 1; i++) {
+          const player = await connectExtra(`present-${i}-player-id`);
+          await enterAs(player, room);
+          present.push(player);
+        }
+        const dropping = await connectExtra('ghost-seat-player-id');
+        await enterAs(dropping, room);
+        dropping.disconnect();
+        await vi.waitFor(() => expect(rooms.get(room)!.players.get('ghost-seat-player-id')?.size).toBe(0));
+
+        const newcomer = await connectExtra('newcomer-player-id');
+        await expect(joinOutcome(newcomer, room)).resolves.toBe('joined');
+
+        expect(rooms.get(room)!.players.has('ghost-seat-player-id')).toBe(false);
+        expect(rooms.get(room)!.players.size).toBe(MAX_PLAYERS_PER_ROOM);
+
+        // With nobody awaited, a full room stays full.
+        const late = await connectExtra('late-player-id');
+        await expect(joinOutcome(late, room)).resolves.toBe('room-full');
+      });
+
+      it('does not wait for a player who moved to another room', async () => {
+        const mover = await connectExtra('moving-player-id');
+        const moverAlias = await enterAs(mover);
+        await enterAs(clientSocket);
+
+        const left = new Promise<string>((resolve) => { clientSocket.once('player-disconnected', resolve); });
+        mover.emit('join-room', idOf('elsewhere'));
+
+        await expect(left).resolves.toBe(moverAlias);
+        expect(rooms.get(testRoomId)!.players.has('moving-player-id')).toBe(false);
+      });
     });
 
     describe('going back to the table', () => {
@@ -916,6 +1022,82 @@ describe('Socket Events Security & Bounds Checking', () => {
       expect(room.currentGrid).toEqual(room.board.solution);
     });
 
+    it('says the game is won once, even when a cell of the solved board is emptied and filled again', async () => {
+      const room = playing(rooms.get(testRoomId)!);
+      const size = room.board.initial.length;
+      const cell = findCell(room.board.initial, (value) => value === 0);
+      const answer = room.board.solution[cell.r][cell.c];
+
+      room.currentGrid = room.board.solution.map((row) => [...row]);
+      room.currentGrid[cell.r][cell.c] = 0;
+      room.filledCells = size * size - 1;
+
+      const won = vi.fn();
+      clientSocket.on('game-won', won);
+      const ack = () => new Promise<{ ok: boolean }>((resolve) => { clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: answer }, resolve); });
+
+      await ack();
+      await vi.waitFor(() => expect(won).toHaveBeenCalledTimes(1));
+
+      // Empty it and fill it back: the board is solved again, but the room already knows.
+      await new Promise((resolve) => { clientSocket.emit('cell-update', { r: cell.r, c: cell.c, v: 0 }, resolve); });
+      await expect(ack()).resolves.toEqual({ ok: true });
+      await flushSocketEvents();
+
+      expect(won).toHaveBeenCalledTimes(1);
+      expect(room.won).toBe(true);
+      clientSocket.off('game-won', won);
+    });
+
+    it('never sends the solution of the Sudoku to the players', async () => {
+      const room = playing(rooms.get(testRoomId)!);
+      const started = new Promise<GameStartedPayload>((resolve) => { clientSocket.once('game-started', resolve); });
+      clientSocket.emit('restart-game', 'expert');
+
+      const payload = await started;
+      expect(JSON.stringify(payload)).not.toContain('solution');
+      expect(Object.keys(room.board)).toContain('solution');
+    });
+
+    it('tells the player who asks which filled cells are wrong, and nothing about the right numbers', async () => {
+      const room = playing(rooms.get(testRoomId)!);
+      const empty = (predicate: (r: number, c: number) => boolean) => {
+        for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (room.board.initial[r][c] === 0 && predicate(r, c)) return { r, c };
+        throw new Error('no empty cell');
+      };
+      const wrong = empty(() => true);
+      const right = empty((r, c) => r !== wrong.r || c !== wrong.c);
+      room.currentGrid[wrong.r][wrong.c] = (room.board.solution[wrong.r][wrong.c] % 9) + 1;
+      room.currentGrid[right.r][right.c] = room.board.solution[right.r][right.c];
+
+      const answer = await new Promise<{ cells: [number, number][] }>((resolve) => { clientSocket.emit('sudoku:mistakes', resolve); });
+
+      expect(answer).toEqual({ cells: [[wrong.r, wrong.c]] });
+    });
+
+    it('answers no mistakes outside a Sudoku, and ignores a question without a callback', async () => {
+      const outsider = await connectTestClient();
+      const answer = await new Promise<{ cells: [number, number][] }>((resolve) => { outsider.emit('sudoku:mistakes', resolve); });
+      expect(answer).toEqual({ cells: [] });
+
+      // Without a callback there is nobody to answer: the event is dropped, and the server keeps going.
+      (outsider as unknown as { emit: (event: string, ...args: unknown[]) => void }).emit('sudoku:mistakes');
+      (outsider as unknown as { emit: (event: string, ...args: unknown[]) => void }).emit('sudoku:mistakes', { cells: [] });
+      await flushSocketEvents(outsider);
+      outsider.disconnect();
+    });
+
+    it('announces the victory again on the next game after a restart', async () => {
+      const room = playing(rooms.get(testRoomId)!);
+      room.won = true;
+
+      const started = new Promise<void>((resolve) => { clientSocket.once('game-started', () => resolve()); });
+      clientSocket.emit('restart-game', 'beginner');
+      await started;
+
+      expect(playing(rooms.get(testRoomId)!).won).toBe(false);
+    });
+
     it('does not emit game-won when the count is complete but the grid is incorrect', async () => {
       const room = playing(rooms.get(testRoomId)!);
       const size = room.board.initial.length;
@@ -1014,7 +1196,8 @@ describe('Socket Events Security & Bounds Checking', () => {
       expect(difficulty).toBe(level);
       expect(playing(rooms.get(idOf('restart-level'))!).difficulty).toBe(level);
       expect(cluesOf(board.initial)).toBeGreaterThanOrEqual(getCluesCount(level, 9));
-      expect(solveWithSingles(board.initial, board.size, board.boxSize)).toEqual(board.solution);
+      // The page does not get the solution: the one on the server is what the clues must lead to.
+      expect(solveWithSingles(board.initial, board.size, board.boxSize)).toEqual(playing(rooms.get(idOf('restart-level'))!).board.solution);
     });
 
     it.each(DIFFICULTIES)('lets a room that has just opened its game start straight at the %s level', async (level) => {
@@ -1078,7 +1261,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       expect(room.filledCells).toBe(
         room.board.initial.flat().filter((value) => value !== 0).length,
       );
-      expect(payload.board).toEqual(room.board);
+      expect(payload.board).toEqual(puzzleOf(room.board));
       expect(payload.currentGrid).toEqual(room.board.initial);
       expect(payload.notesGrid).toEqual({});
     });
@@ -1285,6 +1468,7 @@ describe('Socket Events Security & Bounds Checking', () => {
 
       try {
         eventLimit.max = Number.POSITIVE_INFINITY;
+        reconnectGrace.ms = 0;
         await joinRoom(observer, testRoomId);
         // The limit is read when a socket connects: flooder was created with max = 3.
         await joinRoom(flooder, testRoomId);
@@ -1304,7 +1488,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       }
     });
 
-    type Budgets = { roomCreation?: number; restart?: number; boardGeneration?: number };
+    type Budgets = { roomCreation?: number; restart?: number; boardGeneration?: number; clientBoardGeneration?: number };
 
     // A server that limits connections only takes them from its own frontend, so every client says it comes from there.
     const budgetOrigin = 'https://games.example.com';
@@ -1318,6 +1502,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       roomCreationLimit.max = budgets.roomCreation ?? Number.POSITIVE_INFINITY;
       restartLimit.max = budgets.restart ?? Number.POSITIVE_INFINITY;
       boardGenerationLimit.max = budgets.boardGeneration ?? Number.POSITIVE_INFINITY;
+      clientBoardGenerationLimit.max = budgets.clientBoardGeneration ?? Number.POSITIVE_INFINITY;
 
       const httpServer = createServer();
       const guard = addressOf ? createConnectionGuard(budgetOrigin, addressOf) : undefined;
@@ -1330,6 +1515,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       roomCreationLimit.max = Number.POSITIVE_INFINITY;
       restartLimit.max = Number.POSITIVE_INFINITY;
       boardGenerationLimit.max = Number.POSITIVE_INFINITY;
+      clientBoardGenerationLimit.max = Number.POSITIVE_INFINITY;
       await new Promise<void>((resolve) => { httpServer.listen(0, resolve); });
       const url = `http://127.0.0.1:${(httpServer.address() as AddressInfo).port}`;
 
@@ -1416,6 +1602,86 @@ describe('Socket Events Security & Bounds Checking', () => {
       });
     });
 
+    it('gives each client its own share of the boards, so a busy one does not stop the others', async () => {
+      await withServer({ boardGeneration: 3, clientBoardGeneration: 1 }, async (connect) => {
+        const [busy, other] = [await connect(), await connect()];
+        await expect(joinOutcome(busy, idOf('share-busy'))).resolves.toBe('joined');
+        await expect(joinOutcome(other, idOf('share-other'))).resolves.toBe('joined');
+        await openSudoku(busy);
+
+        // The busy client has used its share: its restarts are dropped, the server still has boards left.
+        const restarted = vi.fn();
+        busy.on('game-started', restarted);
+        for (let i = 0; i < 4; i++) busy.emit('restart-game', 'easy');
+        await flushSocketEvents(busy);
+        expect(restarted).not.toHaveBeenCalled();
+
+        // So the other client still opens its game.
+        await openSudoku(other);
+        expect(rooms.get(idOf('share-other'))!.game?.id).toBe('sudoku');
+      });
+    });
+
+    it('does not charge a client for a board the shared limit refused', async () => {
+      // The share of a client lasts a minute here, the shared limit a second: only a refund lets the second client play.
+      const clientWindow = clientBoardGenerationLimit.windowMs;
+      clientBoardGenerationLimit.windowMs = 60_000;
+      onTestFinished(() => { clientBoardGenerationLimit.windowMs = clientWindow; });
+
+      await withServer({ boardGeneration: 1, clientBoardGeneration: 1 }, async (connect) => {
+        const [first, second] = [await connect(), await connect()];
+        await expect(joinOutcome(first, idOf('refused-a'))).resolves.toBe('joined');
+        await expect(joinOutcome(second, idOf('refused-b'))).resolves.toBe('joined');
+        await openSudoku(first);
+
+        // The server has no board left this second: the vote of the second client stays.
+        const lobby = nextLobby(second);
+        second.emit('vote-game', 'sudoku');
+        await expect(lobby).resolves.toMatchObject({ game: null });
+
+        // In the next second of the shared limit its own share is untouched, and the same vote opens the game.
+        await new Promise((resolve) => { setTimeout(resolve, 1050); });
+        await openSudoku(second);
+        expect(rooms.get(idOf('refused-b'))!.game?.id).toBe('sudoku');
+      });
+    });
+
+    it('does not spend the budget of the boards on a Flower Field before its first cell', async () => {
+      await withServer({ boardGeneration: 1, clientBoardGeneration: 1 }, async (connect) => {
+        const player = await connect();
+        await joinOutcome(player, idOf('flower-budget'));
+        const restarted = vi.fn();
+        player.on('game-started', restarted);
+
+        // All at once: with one board per window, a charge before the first cell would drop it.
+        player.emit('vote-game', 'flower-field');
+        player.emit('restart-game', 'easy');
+        player.emit('flower-field:reveal', { r: 0, c: 0 });
+        await flushSocketEvents(player);
+
+        // The opening and the restart.
+        expect(restarted).toHaveBeenCalledTimes(2);
+        const game = rooms.get(idOf('flower-budget'))!.game;
+        expect(game?.id === 'flower-field' && game.mines).toBeTruthy();
+      });
+    });
+
+    it('keeps the restart limit on the Flower Field', async () => {
+      await withServer({ restart: 1 }, async (connect) => {
+        const player = await connect();
+        await joinOutcome(player, idOf('flower-restarts'));
+        const started = vi.fn();
+        player.on('game-started', started);
+
+        player.emit('vote-game', 'flower-field');
+        for (let i = 0; i < 3; i++) player.emit('restart-game', 'easy');
+        await flushSocketEvents(player);
+
+        // The opening and the one restart that is allowed.
+        expect(started).toHaveBeenCalledTimes(2);
+      });
+    });
+
     it('does not spend the budget of the boards on a room that is only created', async () => {
       await withServer({ boardGeneration: 1 }, async (connect) => {
         const [first, second] = [await connect(), await connect()];
@@ -1457,6 +1723,9 @@ describe('Socket Events Security & Bounds Checking', () => {
       expect(Number.isFinite(defaultLimits.roomCreation)).toBe(true);
       expect(Number.isFinite(defaultLimits.restart)).toBe(true);
       expect(Number.isFinite(defaultLimits.boardGeneration)).toBe(true);
+      expect(Number.isFinite(defaultLimits.clientBoardGeneration)).toBe(true);
+      // A client gets less than the whole server: otherwise it could use it all up.
+      expect(defaultLimits.clientBoardGeneration).toBeLessThan(defaultLimits.boardGeneration);
     });
   });
 
@@ -1562,7 +1831,7 @@ describe('Socket Events Security & Bounds Checking', () => {
         second.emit('join-room', idOf('grace-room'));
         const payload = await gameStarted;
 
-        expect(payload.board).toEqual(room.board);
+        expect(payload.board).toEqual(puzzleOf(room.board));
         expect(payload.difficulty).toBe('easy');
         expect(payload.notesGrid[`${r}-${c}`][2]).toBe(room.aliases.get(playerId));
       } finally {
@@ -2345,6 +2614,7 @@ describe('Socket Events Security & Bounds Checking', () => {
       eventLimit.max = 3;
       const flooder = await connectTestClient();
       eventLimit.max = Number.POSITIVE_INFINITY;
+      reconnectGrace.ms = 0;
       const observer = await connectTestClient();
       await joinRoom(observer);
       await joinRoom(flooder);

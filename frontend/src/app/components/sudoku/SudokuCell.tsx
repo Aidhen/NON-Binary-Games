@@ -1,5 +1,6 @@
 'use client';
 import { cn } from '@/lib/utils';
+import type { GridCellKeyboard } from '@/lib/useGridKeyboard';
 import { BOARD_TILE } from '../games/boardStyles';
 
 interface SudokuCellProps {
@@ -10,14 +11,19 @@ interface SudokuCellProps {
   notes?: Record<number, string>;
   boardSize?: number;
   boxSize?: number;
+  /** What a screen reader says of the cell: its row, column and number, from the board. */
+  label?: string;
+  /** Tab stop and arrow keys, from the board (see useGridKeyboard). */
+  keyboard?: GridCellKeyboard;
 }
 
-export function SudokuCell({ value, bgClass, textClass, onClick, notes, boardSize = 9, boxSize = 3 }: Readonly<SudokuCellProps>) {
+export function SudokuCell({ value, bgClass, textClass, onClick, notes, boardSize = 9, boxSize = 3, label, keyboard }: Readonly<SudokuCellProps>) {
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={value !== 0 ? `Cell value ${value}` : 'Empty cell'}
+      aria-label={label ?? (value !== 0 ? `Cell value ${value}` : 'Empty cell')}
+      {...keyboard}
       className={cn(
         "relative flex items-center justify-center font-display text-2xl leading-none",
         "cursor-pointer select-none overflow-hidden",

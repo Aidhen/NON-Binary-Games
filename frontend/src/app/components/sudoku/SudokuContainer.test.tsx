@@ -11,6 +11,7 @@ import type { GameSettings } from './SudokuContainer';
 
 
 type BoardMockProps = {
+  wrongCells?: ReadonlySet<string>;
   onCellClick: (r: number, c: number) => void;
   isErrorPlacement: (r: number, c: number, value: number) => boolean;
   playerGrid: number[][];
@@ -128,6 +129,7 @@ vi.mock('./SudokuBoardUI', () => ({
             completedNumbers: Array.from(props.completedNumbers ?? []),
             profiles: props.profiles,
             highlightedAlias: props.highlightedAlias,
+            wrongCells: props.wrongCells ? [...props.wrongCells] : null,
           })}
         </output>
       </div>
@@ -140,6 +142,7 @@ vi.mock('./SettingsPanel', () => ({
     <div data-testid="settings-panel">
       <output data-testid="settings-state">{JSON.stringify({ settings, currentDifficulty })}</output>
       <button onClick={() => onToggle('showErrors')}>Toggle show errors</button>
+      <button onClick={() => onToggle('godMode')}>Toggle god mode</button>
       <button data-testid="set-medium" onClick={() => onDifficultyChange('medium')}>Set medium</button>
     </div>
   ),
@@ -153,12 +156,6 @@ const testBoard = {
     [0, 4, 1, 0],
     [0, 1, 4, 0],
     [4, 0, 0, 1],
-  ],
-  solution: [
-    [1, 2, 3, 4],
-    [3, 4, 1, 2],
-    [2, 1, 4, 3],
-    [4, 3, 2, 1],
   ],
 };
 
@@ -217,6 +214,47 @@ describe('SudokuContainer', () => {
     expect(screen.getByTestId('board-ui')).toBeInTheDocument();
     expect(getBoardState().playerGrid).toEqual(currentGrid);
     expect(screen.getByRole('button', { name: 'sudoku.settings' })).toBeInTheDocument();
+  });
+
+  describe('god mode', () => {
+    const mistakeQuestions = () => mocks.emitted.filter(({ event }) => event === 'sudoku:mistakes');
+    const answer = (index: number, cells: [number, number][]) => {
+      const reply = mistakeQuestions()[index].args[0] as (result: { cells: [number, number][] }) => void;
+      act(() => { reply({ cells }); });
+    };
+
+    it('asks the server nothing while it is off', async () => {
+      await renderGame();
+
+      expect(mistakeQuestions()).toHaveLength(0);
+      expect(getBoardState().wrongCells).toBeNull();
+    });
+
+    it('asks the server which cells are wrong, and again each time the board changes', async () => {
+      await renderGame();
+      fireEvent.click(screen.getByRole('button', { name: 'sudoku.settings' }));
+      fireEvent.click(screen.getByText('Toggle god mode'));
+
+      expect(mistakeQuestions()).toHaveLength(1);
+      answer(0, [[0, 1]]);
+      expect(getBoardState().wrongCells).toEqual(['0-1']);
+
+      act(() => { mocks.dispatch('cell-updated', { r: 1, c: 0, v: 3 }); });
+      expect(mistakeQuestions()).toHaveLength(2);
+    });
+
+    it('keeps only the answer to the last question', async () => {
+      await renderGame();
+      fireEvent.click(screen.getByRole('button', { name: 'sudoku.settings' }));
+      fireEvent.click(screen.getByText('Toggle god mode'));
+      act(() => { mocks.dispatch('cell-updated', { r: 1, c: 0, v: 3 }); });
+
+      // The older answer comes last: it is about a board that has changed since.
+      answer(1, [[1, 0]]);
+      answer(0, [[0, 1]]);
+
+      expect(getBoardState().wrongCells).toEqual(['1-0']);
+    });
   });
 
   it('selects a cell and emits select-cell', async () => {
@@ -307,6 +345,19 @@ describe('SudokuContainer', () => {
 
     expect(screen.getByRole('button', { name: /^2$/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: '⌫' })).toBeDisabled();
+  });
+
+  it('switches notes on and off with the N key', async () => {
+    await renderGame();
+    fireEvent.click(screen.getByTestId('select-empty-cell'));
+
+    fireEvent.keyDown(window, { key: 'n' });
+    expect(screen.getByRole('button', { name: /sudoku.notesMode ON/ })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: '3' });
+    expect(mocks.emitted).toContainEqual({ event: 'toggle-note', args: [{ r: 0, c: 1, v: 3 }] });
+
+    fireEvent.keyDown(window, { key: 'N' });
+    expect(screen.getByRole('button', { name: /sudoku.notesMode OFF/ })).toBeInTheDocument();
   });
 
   it('emits toggle-note instead of cell-update when notes mode is enabled', async () => {

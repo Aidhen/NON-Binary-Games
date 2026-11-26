@@ -69,3 +69,34 @@ describe('createKeyedRateLimiter', () => {
     expect(allow('b')).toBe(false);
   });
 });
+
+describe('refund', () => {
+  it('gives back a call of the current window, and no more than were counted', () => {
+    let time = 0;
+    const allow = createRateLimiter(1, 1000, () => time);
+
+    expect(allow()).toBe(true);
+    allow.refund();
+    expect(allow()).toBe(true);
+    expect(allow()).toBe(false);
+
+    // A new window starts from zero: a refund before any call does not make room for a second one.
+    time = 1000;
+    allow.refund();
+    expect(allow()).toBe(true);
+    expect(allow()).toBe(false);
+  });
+
+  it('gives back a call to one key only', () => {
+    const allow = createKeyedRateLimiter(1, 1000, () => 0);
+
+    expect(allow('a')).toBe(true);
+    expect(allow('b')).toBe(true);
+    allow.refund('a');
+    allow.refund('unknown');
+
+    expect(allow('a')).toBe(true);
+    expect(allow('b')).toBe(false);
+    expect(allow('unknown')).toBe(true);
+  });
+});

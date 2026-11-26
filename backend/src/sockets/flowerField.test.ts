@@ -7,7 +7,7 @@ import Client from 'socket.io-client';
 import type { Socket as ClientSocket } from 'socket.io-client';
 import { FLOWER_MARKED, getFlowerFieldLevel } from '@nbg/shared';
 import type { ClientToServerEvents, FlowerFieldStartedPayload, LobbyState, ServerToClientEvents } from '@nbg/shared';
-import { setupSocketHandlers, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, voteLimit } from './event';
+import { setupSocketHandlers, reconnectGrace, rooms, eventLimit, roomCreationLimit, restartLimit, boardGenerationLimit, clientBoardGenerationLimit, voteLimit } from './event';
 import type { FlowerFieldGame } from '../rooms/roomStore';
 
 type TestClient = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
@@ -20,9 +20,11 @@ describe('a room that plays the Flower Field', () => {
 
   beforeAll(async () => {
     eventLimit.max = Number.POSITIVE_INFINITY;
+    reconnectGrace.ms = 0;
     roomCreationLimit.max = Number.POSITIVE_INFINITY;
     restartLimit.max = Number.POSITIVE_INFINITY;
     boardGenerationLimit.max = Number.POSITIVE_INFINITY;
+    clientBoardGenerationLimit.max = Number.POSITIVE_INFINITY;
     const httpServer = createServer();
     io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
     setupSocketHandlers(io);

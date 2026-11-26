@@ -1,5 +1,9 @@
 export const en = {
   sudoku: {
+    cell: "Row {row}, column {column}: {value}",
+    cellGiven: "Row {row}, column {column}: {value}, given",
+    cellEmpty: "Row {row}, column {column}: empty",
+    keyHint: "With the keyboard: the arrows to move, the numbers to write, N for notes, Delete to clear.",
     title: "(NON) Binary Games",
     subtitle: "Sudoku Engine",
     loading: "Loading engine...",
@@ -35,6 +39,7 @@ export const en = {
     backHome: "Back to the home page"
   },
   flowerField: {
+    keyHint: "With the keyboard: the arrows to move, Enter to open a cell, F to put or take a flag.",
     cleared: "All in bloom!",
     compliment: "Great work!",
     lost: "A mine!",
@@ -79,6 +84,7 @@ export const en = {
     grid: "Word search grid"
   },
   takuzu: {
+    keyHint: "With the keyboard: the arrows to move, 0 and 1 to write, Delete to clear.",
     cleared: "Puzzle cleared!",
     compliment: "Every row and column is in balance.",
     rules: "How it works",
@@ -132,6 +138,10 @@ export const en = {
     games: "Games",
     open: "Open the box",
     takeBack: "Take my vote back",
+    reconnecting: "Connection lost, reconnecting… Your place in the room is kept for a little while.",
+    connectionLost: "The server cannot be reached.",
+    retry: "Try again",
+    boardFailed: "The board could not be made. Nothing changed: try again.",
     backToTable: "Back to the table",
     stayHere: "I'd rather stay",
     backProgress: "{count} of {total} want to go back to the table",

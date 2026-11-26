@@ -45,44 +45,6 @@ export const DIARY: readonly DiaryEntry[] = [
     },
   },
   {
-    id: 'smoother-reconnections',
-    type: 'upcoming',
-    date: '2026-11-16',
-    en: {
-      title: 'Smoother reconnections',
-      summary: 'Coming back to a room after the connection drops.',
-      body: [
-        'Already today, when the connection drops, the page joins the room again by itself and you keep your name and color. One step is missing: a short drop should not make you disappear from the table or lose your vote.',
-      ],
-    },
-    it: {
-      title: 'Riconnessioni più fluide',
-      summary: 'Tornare in una stanza dopo un calo di connessione.',
-      body: [
-        'Già oggi, se la connessione cade, la pagina rientra da sola nella stanza e tieni nome e colore. Manca l\'ultimo passo: un calo breve non dovrebbe farti sparire dal tavolo né farti perdere il voto.',
-      ],
-    },
-  },
-  {
-    id: 'keyboard-play',
-    type: 'upcoming',
-    date: '2026-11-16',
-    en: {
-      title: 'Playing with the keyboard',
-      summary: 'Arrow keys to move around the grid.',
-      body: [
-        'In every game: one Tab to reach the grid, the arrow keys to move around it, and the keys of the game to play, so that you can play without touching the mouse.',
-      ],
-    },
-    it: {
-      title: 'Giocare da tastiera',
-      summary: 'Frecce per muoversi nella griglia.',
-      body: [
-        'In tutti i giochi: un Tab per arrivare alla griglia, le frecce per muoversi e i tasti del gioco per giocare, così si gioca senza toccare il mouse.',
-      ],
-    },
-  },
-  {
     id: 'feedback-form',
     type: 'upcoming',
     date: '2026-11-16',
@@ -95,6 +57,46 @@ export const DIARY: readonly DiaryEntry[] = [
       title: 'Un modo per mandare feedback',
       summary: 'Il modulo è disegnato, ma ancora spento.',
       body: ['La pagina Feedback mostra il modulo come sarà. Non si può ancora inviare: aprirà quando sarà collegato.'],
+    },
+  },
+  {
+    id: 'smoother-reconnections',
+    type: 'released',
+    date: '2026-11-21',
+    version: '0.7.0-alpha',
+    en: {
+      title: 'Smoother reconnections',
+      summary: 'A short drop no longer takes you out of the room.',
+      body: [
+        'When the connection drops, the room keeps your place for a little while: the others do not see you leave, and your vote stays. The game says it is reconnecting, and a board that cannot be made now says so instead of doing nothing.',
+      ],
+    },
+    it: {
+      title: 'Riconnessioni più fluide',
+      summary: 'Un calo breve non ti fa più uscire dalla stanza.',
+      body: [
+        'Quando la connessione cade, la stanza ti tiene il posto per un po\': gli altri non ti vedono uscire e il tuo voto resta. Il gioco dice che si sta ricollegando, e una griglia che non riesce a venire ora lo dice, invece di non fare niente.',
+      ],
+    },
+  },
+  {
+    id: 'keyboard-play',
+    type: 'released',
+    date: '2026-11-21',
+    version: '0.7.0-alpha',
+    en: {
+      title: 'Playing with the keyboard',
+      summary: 'Arrow keys to move around the grid, in every game.',
+      body: [
+        'One Tab reaches the grid, the arrow keys move around it, and the keys of each game play: the numbers and N for notes in the Sudoku, 0 and 1 in the Takuzu, Enter and F in the Flower Field. The answer of the Sudoku now stays on the server, as in the other games.',
+      ],
+    },
+    it: {
+      title: 'Giocare da tastiera',
+      summary: 'Frecce per muoversi nella griglia, in tutti i giochi.',
+      body: [
+        'Un Tab porta alla griglia, le frecce ci si muovono, e i tasti di ogni gioco giocano: i numeri e N per le note nel Sudoku, 0 e 1 nel Takuzu, Invio e F nel Campo fiorito. La soluzione del Sudoku ora resta sul server, come negli altri giochi.',
+      ],
     },
   },
   {

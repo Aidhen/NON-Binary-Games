@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, playerIdSchema, wordSearchLanguageArgsSchema, wordSearchSelectArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema, voteTableArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, sudokuMistakesArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, playerIdSchema, wordSearchLanguageArgsSchema, wordSearchSelectArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema, voteTableArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, DifficultyLevel, GameId, GameStartedPayload, ServerToClientEvents, SocketData, SudokuStartedPayload } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
@@ -41,6 +41,7 @@ const createSudoku = (difficulty: DifficultyLevel): SudokuGame => {
     currentGrid: board.initial.map(row => [...row]),
     filledCells: countInitialFilledCells(board.initial),
     notesGrid: {},
+    won: false,
   };
 };
 
@@ -52,6 +53,7 @@ const createTakuzu = (difficulty: DifficultyLevel): TakuzuGame => {
     difficulty,
     currentGrid: board.initial.map(row => [...row]),
     filledCells: countInitialFilledCells(board.initial),
+    won: false,
   };
 };
 
@@ -63,9 +65,10 @@ const createGame: Record<GameId, (difficulty: DifficultyLevel, previous?: RoomGa
   'word-search': createWordSearch,
 };
 
+/** The solution is not sent: see SudokuStartedPayload. */
 const sudokuStarted = (game: SudokuGame): SudokuStartedPayload => ({
   game: 'sudoku',
-  board: game.board,
+  board: { initial: game.board.initial, size: game.board.size, boxSize: game.board.boxSize },
   difficulty: game.difficulty,
   currentGrid: game.currentGrid,
   notesGrid: game.notesGrid,
@@ -142,19 +145,60 @@ export const roomCreationLimit = { max: 5, windowMs: 10 * 60 * 1000 };
 /** Per address (per socket where the address is not known): restarts of the game, each one generates a board. A few per session is what a player does. */
 export const restartLimit = { max: 6, windowMs: 60 * 1000 };
 
-/** All sockets together: boards generated per second. Generating one blocks the event loop for every room, so this is the safety net behind the limits above. */
+/**
+ * Boards generated per second. Generating one blocks the event loop for every room, so there are two limits:
+ * one per address (per socket where the address is not known), so that a single busy client cannot use up the
+ * whole budget and leave the other rooms unable to start a game, and one for all sockets together behind it,
+ * as the safety net. A board must pass both; one refused by the shared limit is not charged to the client.
+ */
 export const boardGenerationLimit = { max: 2, windowMs: 1000 };
+export const clientBoardGenerationLimit = { max: 1, windowMs: 1000 };
+
+/**
+ * How long a player whose last connection dropped is still counted in the room. A phone that changes network
+ * or locks its screen comes back within this: the others see nothing, and the votes of the player stay. Zero
+ * removes the player at once (the tests that are not about it use that).
+ */
+export const reconnectGrace = { ms: 30_000 };
+
+/** The players who dropped and are being waited for, by `roomId playerId`. At most one per player of a room, and each one ends. */
+const pendingDepartures = new Map<string, ReturnType<typeof setTimeout>>();
+const departureKey = (roomId: string, playerId: string) => `${roomId} ${playerId}`;
+
+/** A player who comes back in time: nobody has to know they were gone. */
+const cancelDeparture = (roomId: string, playerId: string) => {
+  const key = departureKey(roomId, playerId);
+  clearTimeout(pendingDepartures.get(key));
+  pendingDepartures.delete(key);
+};
+
+type PlayerLeft = (roomId: string, room: RoomState, tableVoteGone: boolean) => void;
+
+/** Takes a player with no connection left out of the room, and tells the others. */
+const removePlayer = (io: GameServer, roomId: string, room: RoomState, playerId: string, onPlayerLeft: PlayerLeft) => {
+  room.players.delete(playerId);
+  room.votes.delete(playerId);
+  const tableVoteGone = room.tableVotes.delete(playerId);
+  const alias = room.aliases.get(playerId);
+  const channel = io.to(channelOf(roomId));
+  if (alias) channel.emit("player-disconnected", alias);
+  channel.emit("players-updated", { players: snapshotPlayers(room) });
+  if (room.players.size > 0) onPlayerLeft(roomId, room, tableVoteGone);
+  else rooms.expireWhenEmpty(roomId);
+};
 
 /**
  * Removes the socket from the room it is currently in (if any).
  * Used both when the socket moves to another room and when it disconnects.
  * `onPlayerLeft` is called when a player (not just one of their tabs) left a room where somebody remains.
+ * A player whose connection dropped (`dropped`) is kept for `reconnectGrace` first; one who moved to another
+ * room is gone at once.
  */
-const leaveCurrentRoom = (socket: GameSocket, onPlayerLeft: (roomId: string, room: RoomState, tableVoteGone: boolean) => void) => {
+const leaveCurrentRoom = (io: GameServer, socket: GameSocket, onPlayerLeft: PlayerLeft, dropped = false) => {
   const roomId = socket.data.roomId;
   if (!roomId) return;
 
-  const { playerId, alias } = socket.data;
+  const { playerId } = socket.data;
   socket.data.roomId = undefined;
   socket.data.alias = undefined;
   void socket.leave(channelOf(roomId));
@@ -164,19 +208,26 @@ const leaveCurrentRoom = (socket: GameSocket, onPlayerLeft: (roomId: string, roo
 
   const sockets = room.players.get(playerId);
   sockets?.delete(socket.id);
+  if (sockets?.size) return;
 
-  if (!sockets?.size) {
-    room.players.delete(playerId);
-    room.votes.delete(playerId);
-    const tableVoteGone = room.tableVotes.delete(playerId);
-    if (alias) socket.to(channelOf(roomId)).emit("player-disconnected", alias);
-    socket.to(channelOf(roomId)).emit("players-updated", { players: snapshotPlayers(room) });
-    if (room.players.size > 0) onPlayerLeft(roomId, room, tableVoteGone);
+  // No connection left: the player stays in the list, with an empty set of sockets, until the wait is over.
+  if (dropped && reconnectGrace.ms > 0 && sockets) {
+    cancelDeparture(roomId, playerId);
+    const timer = setTimeout(() => {
+      pendingDepartures.delete(departureKey(roomId, playerId));
+      const current = rooms.get(roomId);
+      // Gone already (the room was dropped), or back with a new connection: nothing to do.
+      if (current?.players.get(playerId)?.size !== 0) return;
+      removePlayer(io, roomId, current, playerId, onPlayerLeft);
+    }, reconnectGrace.ms);
+    // A wait must not keep the process alive when the server shuts down.
+    timer.unref?.();
+    pendingDepartures.set(departureKey(roomId, playerId), timer);
+    return;
   }
 
-  if (room.players.size === 0) {
-    rooms.expireWhenEmpty(roomId);
-  }
+  cancelDeparture(roomId, playerId);
+  removePlayer(io, roomId, room, playerId, onPlayerLeft);
 };
 
 /**
@@ -208,6 +259,15 @@ const getCurrentValueGame = (socket: GameSocket) => {
   if (!current?.room.game || (current.room.game.id !== 'sudoku' && current.room.game.id !== 'takuzu')) return undefined;
 
   return { ...current, game: current.room.game };
+};
+
+/** The filled cells whose number is not the one of the solution. The given numbers are right by definition. */
+const sudokuMistakesOf = (game: SudokuGame): [number, number][] => {
+  const cells: [number, number][] = [];
+  game.currentGrid.forEach((row, r) => row.forEach((value, c) => {
+    if (game.board.initial[r][c] === 0 && value !== 0 && value !== game.board.solution[r][c]) cells.push([r, c]);
+  }));
+  return cells;
 };
 
 /** The same, for the events of the Flower Field. */
@@ -242,25 +302,67 @@ const resolvePlayerId = (socket: GameSocket): string => {
 
 export const setupSocketHandlers = (io: GameServer) => {
   const allowBoardGeneration = createRateLimiter(boardGenerationLimit.max, boardGenerationLimit.windowMs);
+  const allowClientBoardGeneration = createKeyedRateLimiter(clientBoardGenerationLimit.max, clientBoardGenerationLimit.windowMs);
   const allowRoomCreation = createKeyedRateLimiter(roomCreationLimit.max, roomCreationLimit.windowMs);
   const allowRestart = createKeyedRateLimiter(restartLimit.max, restartLimit.windowMs);
 
+  /** The Flower Field lays its mines on the first cell: opening or restarting it makes no board, so it is not charged. */
+  const makesBoardOnStart = (id: GameId): boolean => id !== 'flower-field';
+
+  /** Charges one board to `key` and to the server. False, with nothing charged, when either has none left. */
+  const chargeBoard = (key: string): boolean => {
+    if (!allowClientBoardGeneration(key)) return false;
+    if (allowBoardGeneration()) return true;
+    allowClientBoardGeneration.refund(key);
+    return false;
+  };
+
+  /** A board that was charged and could not be made is given back: trying again should not cost twice. */
+  const refundBoard = (key: string) => {
+    allowBoardGeneration.refund();
+    allowClientBoardGeneration.refund(key);
+  };
+
+  /**
+   * Makes the state of a game, or null when its generator failed. The error is logged here; telling the players
+   * is up to the caller, who knows who asked.
+   */
+  const makeGame = (make: () => RoomGame): RoomGame | null => {
+    try {
+      return make();
+    } catch (error) {
+      logger.error("[socket] a board could not be generated:", error);
+      return null;
+    }
+  };
+
   /**
    * Opens the game the room has chosen, if it has chosen one. Returns false when the room stays at the table:
-   * nobody has a majority yet, or the server is generating too many boards right now (the votes stay, and the
-   * next vote tries again).
+   * nobody has a majority yet, the server is generating too many boards right now (the votes stay, and the
+   * next vote tries again), or the board could not be made (the room is told, and the votes stay too).
+   * `key` is the budget of the player whose action decided it.
    */
-  const openChosenGame = (roomId: string, room: RoomState): boolean => {
+  const openChosenGame = (roomId: string, room: RoomState, key: string): boolean => {
     if (room.game) return false;
 
     const chosen = chosenGame(room);
-    if (!chosen || !allowBoardGeneration()) return false;
+    if (!chosen) return false;
 
-    room.game = createGame[chosen](FIRST_DIFFICULTY);
+    const charged = makesBoardOnStart(chosen);
+    if (charged && !chargeBoard(key)) return false;
+
+    const game = makeGame(() => createGame[chosen](FIRST_DIFFICULTY));
+    if (!game) {
+      if (charged) refundBoard(key);
+      io.to(channelOf(roomId)).emit("board-failed");
+      return false;
+    }
+
+    room.game = game;
     room.votes.clear();
     room.tableVotes.clear();
     io.to(channelOf(roomId)).emit("lobby-updated", snapshotLobby(room));
-    io.to(channelOf(roomId)).emit("game-started", gameStarted(room.game));
+    io.to(channelOf(roomId)).emit("game-started", gameStarted(game));
     return true;
   };
 
@@ -270,7 +372,7 @@ export const setupSocketHandlers = (io: GameServer) => {
    * During a game a player who leaves changes something only if they had asked to go back, or if their going
    * turns the votes that are left into a majority; otherwise there is nothing new to tell.
    */
-  const settleLobby = (roomId: string, room: RoomState, tableVoteGone = true) => {
+  const settleLobby = (roomId: string, room: RoomState, key: string, tableVoteGone = true) => {
     if (room.game) {
       if (wantsTable(room)) {
         room.game = null;
@@ -279,16 +381,73 @@ export const setupSocketHandlers = (io: GameServer) => {
       } else if (!tableVoteGone) {
         return;
       }
-    } else if (openChosenGame(roomId, room)) {
+    } else if (openChosenGame(roomId, room, key)) {
       return;
     }
     io.to(channelOf(roomId)).emit("lobby-updated", snapshotLobby(room));
+  };
+
+  /**
+   * True when the player can sit in the room. A player who is only being waited for gives up their seat to one who
+   * is here: otherwise joining and dropping again and again could keep a room full with nobody in it.
+   */
+  const claimSeat = (roomId: string, room: RoomState, playerId: string, settle: Parameters<typeof removePlayer>[4]): boolean => {
+    if (room.players.has(playerId) || room.players.size < MAX_PLAYERS_PER_ROOM) return true;
+
+    const awaited = [...room.players].find(([, sockets]) => sockets.size === 0)?.[0];
+    if (awaited === undefined) return false;
+
+    cancelDeparture(roomId, awaited);
+    removePlayer(io, roomId, room, awaited, settle);
+    return true;
+  };
+
+  /**
+   * After a dropped connection the old socket stays until the ping timeout. When a player is over the limit the
+   * oldest tab goes, so that a bad network does not lock them out of their own room.
+   */
+  const dropOldestTab = (ownSockets: Set<string> | undefined, socketId: string) => {
+    if (!ownSockets || ownSockets.has(socketId) || ownSockets.size < MAX_SOCKETS_PER_PLAYER) return;
+
+    const oldest = ownSockets.values().next().value;
+    if (oldest) io.sockets.sockets.get(oldest)?.disconnect(true);
   };
 
   io.on("connection", (socket: GameSocket) => {
     socket.data.playerId = resolvePlayerId(socket);
     const allowEvent = createRateLimiter(eventLimit.max, eventLimit.windowMs);
     const budgetKey = () => socket.data.address ?? socket.id;
+    // The lobby settled after something this socket did is paid from its budget.
+    const settle = (roomId: string, room: RoomState, tableVoteGone?: boolean) => settleLobby(roomId, room, budgetKey(), tableVoteGone);
+
+    /**
+     * A new board for the game the room is playing, asked by this socket (restart, language). Paid like a
+     * restart; dropped without an answer when a budget is used up, since an error screen here would replace the
+     * game of everybody who is playing. When the board cannot be made, nothing is charged and only the player
+     * who asked is told.
+     */
+    const replaceBoard = (roomId: string, room: RoomState, make: () => RoomGame) => {
+      const key = budgetKey();
+      if (!allowRestart(key)) return;
+      // Only the game the room is playing is made again, so its id says whether this costs a board.
+      const charged = !!room.game && makesBoardOnStart(room.game.id);
+      if (charged && !chargeBoard(key)) {
+        allowRestart.refund(key);
+        return;
+      }
+
+      const game = makeGame(make);
+      if (!game) {
+        if (charged) refundBoard(key);
+        allowRestart.refund(key);
+        socket.emit("board-failed");
+        return;
+      }
+
+      room.game = game;
+      room.played = false;
+      io.to(channelOf(roomId)).emit("game-started", gameStarted(game));
+    };
 
     socket.on("join-room", safeHandler(joinRoomArgsSchema, (roomId) => {
       const existingRoom = rooms.get(roomId);
@@ -302,13 +461,13 @@ export const setupSocketHandlers = (io: GameServer) => {
         socket.emit("join-error", "too-fast");
         return;
       }
-      if (existingRoom && !existingRoom.players.has(socket.data.playerId) && existingRoom.players.size >= MAX_PLAYERS_PER_ROOM) {
+      if (existingRoom && !claimSeat(roomId, existingRoom, socket.data.playerId, settle)) {
         socket.emit("join-error", "room-full");
         return;
       }
 
       if (socket.data.roomId !== roomId) {
-        leaveCurrentRoom(socket, settleLobby);
+        leaveCurrentRoom(io, socket, settle);
       }
 
       void socket.join(channelOf(roomId));
@@ -316,6 +475,7 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       let room = rooms.get(roomId);
       rooms.cancelExpiry(roomId);
+      cancelDeparture(roomId, socket.data.playerId);
 
       if (!room) {
         // No game yet: the players choose it at the table, and only then a board is generated.
@@ -331,13 +491,7 @@ export const setupSocketHandlers = (io: GameServer) => {
         rooms.set(roomId, room);
       }
 
-      // After a dropped connection the old socket stays until the ping timeout. When a player is over the
-      // limit the oldest tab goes, so that a bad network does not lock them out of their own room.
-      const ownSockets = room.players.get(socket.data.playerId);
-      if (ownSockets && !ownSockets.has(socket.id) && ownSockets.size >= MAX_SOCKETS_PER_PLAYER) {
-        const oldest = ownSockets.values().next().value;
-        if (oldest) io.sockets.sockets.get(oldest)?.disconnect(true);
-      }
+      dropOldestTab(room.players.get(socket.data.playerId), socket.id);
 
       socket.data.alias = aliasOf(room, socket.data.playerId);
       const sockets = room.players.get(socket.data.playerId) ?? new Set<string>();
@@ -372,14 +526,14 @@ export const setupSocketHandlers = (io: GameServer) => {
       // The same vote again tells the others nothing new. It still gets a chance to open the game: that is the
       // way out for a room that had its votes but found the server too busy to generate a board.
       if ((room.votes.get(socket.data.playerId) ?? null) === game) {
-        openChosenGame(roomId, room);
+        openChosenGame(roomId, room, budgetKey());
         return;
       }
 
       if (game === null) room.votes.delete(socket.data.playerId);
       else room.votes.set(socket.data.playerId, game);
 
-      settleLobby(roomId, room);
+      settle(roomId, room);
     }, allowEvent));
 
     socket.on("vote-table", safeHandler(voteTableArgsSchema, (wants) => {
@@ -402,7 +556,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (wants) room.tableVotes.add(socket.data.playerId);
       else room.tableVotes.delete(socket.data.playerId);
 
-      settleLobby(roomId, room);
+      settle(roomId, room);
     }, allowEvent));
 
     socket.on("cell-update", safeHandler(cellUpdateArgsSchema, ({ r, c, v }, acknowledge?) => {
@@ -443,12 +597,20 @@ export const setupSocketHandlers = (io: GameServer) => {
       socket.to(channelOf(roomId)).emit("cell-updated", { r, c, v });
       acknowledge?.({ ok: true });
 
+      // Once per game. A cell changed on a solved board is still shared (it is the board of the room), but the
+      // victory is not announced again: emptying a cell and filling it back would show it to everybody each time.
       const totalCells = size * size;
-      if (game.filledCells === totalCells) {
-        if (checkWinCondition(game.currentGrid, game.board.solution)) {
-          io.to(channelOf(roomId)).emit("game-won");
-        }
+      if (!game.won && game.filledCells === totalCells && checkWinCondition(game.currentGrid, game.board.solution)) {
+        game.won = true;
+        io.to(channelOf(roomId)).emit("game-won");
       }
+    }, allowEvent));
+
+    // Only the wrong cells go back, never the right number: the page shows the same thing it showed when it had
+    // the solution, and the solution stays here. The question is cheap and paid like any other event.
+    socket.on("sudoku:mistakes", safeHandler(sudokuMistakesArgsSchema, (acknowledge) => {
+      const current = getCurrentSudoku(socket);
+      acknowledge({ cells: current ? sudokuMistakesOf(current.game) : [] });
     }, allowEvent));
 
     socket.on("select-cell", safeHandler(selectCellArgsSchema, ({ r, c }) => {
@@ -466,7 +628,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       // Not behind safeHandler (it carries no payload to parse), but it needs the same guarantee: an exception
       // escaping a listener stops the whole process, and with it every room.
       try {
-        leaveCurrentRoom(socket, settleLobby);
+        leaveCurrentRoom(io, socket, settle, true);
       } catch (error) {
         logger.error("[socket] disconnect cleanup failed:", error);
       }
@@ -478,14 +640,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (!current) return;
       const { roomId, room, game: playing } = current;
 
-      // Dropped without an answer: an error screen here would replace the game of everyone who is playing.
-      if (!allowRestart(budgetKey()) || !allowBoardGeneration()) return;
-
-      const game = createGame[playing.id](difficulty, playing);
-      room.game = game;
-      room.played = false;
-
-      io.to(channelOf(roomId)).emit("game-started", gameStarted(game));
+      replaceBoard(roomId, room, () => createGame[playing.id](difficulty, playing));
     }, allowEvent));
 
     socket.on("flower-field:reveal", safeHandler(flowerFieldCellArgsSchema, ({ r, c }) => {
@@ -495,9 +650,19 @@ export const setupSocketHandlers = (io: GameServer) => {
 
       if (r >= game.size || c >= game.size || !isRevealable(game, r, c)) return;
       // The first cell lays out the mines, which costs what generating the board of another game costs.
-      if (!game.mines && !allowBoardGeneration()) return;
+      const laysMines = !game.mines;
+      if (laysMines && !chargeBoard(budgetKey())) return;
 
-      const result = revealCell(game, r, c);
+      let result: ReturnType<typeof revealCell>;
+      try {
+        result = revealCell(game, r, c);
+      } catch (error) {
+        if (!laysMines) throw error;
+        logger.error("[socket] the mines could not be laid out:", error);
+        refundBoard(budgetKey());
+        socket.emit("board-failed");
+        return;
+      }
       if (!result) return;
 
       room.played = true;
@@ -558,14 +723,8 @@ export const setupSocketHandlers = (io: GameServer) => {
       const { roomId, room, game: playing } = current;
 
       if (playing.language === language) return;
-      // A new puzzle costs what a restart costs, and is paid the same way. Dropped without an answer, like a restart.
-      if (!allowRestart(budgetKey()) || !allowBoardGeneration()) return;
-
-      const game = createWordSearch(playing.difficulty, { ...playing, language });
-      room.game = game;
-      room.played = false;
-
-      io.to(channelOf(roomId)).emit("game-started", gameStarted(game));
+      // A new puzzle costs what a restart costs, and is paid the same way.
+      replaceBoard(roomId, room, () => createWordSearch(playing.difficulty, { ...playing, language }));
     }, allowEvent));
 
     // Fire and forget: the sender already shows its own emote, so only the others are notified.

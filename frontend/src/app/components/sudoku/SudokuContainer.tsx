@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { SudokuBoard, isValid, DifficultyLevel, JoinError, NotesGrid } from '@nbg/shared';
+import { SudokuPuzzle, isValid, DifficultyLevel, JoinError, NotesGrid } from '@nbg/shared';
 import { SudokuBoardUI } from './SudokuBoardUI';
 import { SettingsPanel } from './SettingsPanel';
 import { ServerLoader } from '../loader/ServerLoader';
@@ -28,7 +28,7 @@ export interface GameSettings {
 }
 
 export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
-  const [board, setBoard] = useState<SudokuBoard>();
+  const [board, setBoard] = useState<SudokuPuzzle>();
   const [playerGrid, setPlayerGrid] = useState<number[][]>();
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -56,6 +56,19 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
 
 
   const [othersSelections, setOthersSelections] = useState<Record<string, [number, number]>>({});
+  const [wrongCells, setWrongCells] = useState<ReadonlySet<string>>(new Set());
+  // Each question gets a number: only the answer to the last one counts, an older one is about a board that changed.
+  const mistakesAsked = useRef(0);
+
+  // God mode compares with the solution, which only the server has: the page asks it each time the board changes.
+  useEffect(() => {
+    const asked = ++mistakesAsked.current;
+    if (!settings.godMode || !playerGrid) return;
+    getSocket().emit('sudoku:mistakes', ({ cells }) => {
+      if (asked !== mistakesAsked.current) return;
+      setWrongCells(new Set(cells.map(([r, c]) => `${r}-${c}`)));
+    });
+  }, [settings.godMode, playerGrid]);
 
   const completedNumbers = useMemo(
     () => (board && playerGrid ? getCompletedNumbers(playerGrid, board.size) : new Set<number>()),
@@ -127,7 +140,13 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedCell || !board) return;
+      if (!selectedCell || !board || e.ctrlKey || e.metaKey || e.altKey) return;
+
+      // N switches notes on and off, like the button under the board.
+      if (e.key === 'n' || e.key === 'N') {
+        setIsNotesMode((on) => !on);
+        return;
+      }
 
       if (e.key === 'Backspace' || e.key === 'Delete') {
         handleClear();
@@ -309,6 +328,7 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
           completedNumbers={completedNumbers}
           profiles={profiles}
           highlightedAlias={highlighted}
+          wrongCells={settings.godMode ? wrongCells : undefined}
         />
       </div>
 
@@ -370,6 +390,7 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
             <li>{t('sudoku.ruleNotes')}</li>
           </ul>
           <p className="mt-3 font-medium">{t('sudoku.tapHint')}</p>
+          <p className="mt-1 font-medium">{t('sudoku.keyHint')}</p>
         </div>
       </div>
 

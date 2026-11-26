@@ -57,13 +57,32 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
   const { self, players, profiles, setColor } = usePlayers(roomId);
   const { highlighted, highlight } = useHighlight();
 
-  const handleCellClick = useCallback((r: number, c: number) => {
+  // Selecting without playing, for the arrow keys: a tap selects and plays.
+  const selectCell = useCallback((r: number, c: number) => {
     setSelectedCell([r, c]);
     getSocket().emit('select-cell', { r, c });
+  }, []);
+
+  const handleCellClick = useCallback((r: number, c: number) => {
+    selectCell(r, c);
     if (field?.status !== 'playing' || field.grid[r][c] !== FLOWER_HIDDEN) return;
 
     getSocket().emit(isFlagMode ? 'flower-field:flag' : 'flower-field:reveal', { r, c });
-  }, [field, isFlagMode]);
+  }, [field, isFlagMode, selectCell]);
+
+  // F puts or takes a flag on the selected cell, whatever the flag mode: Enter and Space play it like a tap.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!selectedCell || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key !== 'f' && event.key !== 'F') return;
+      const [r, c] = selectedCell;
+      if (field?.status !== 'playing' || field.grid[r][c] !== FLOWER_HIDDEN) return;
+      getSocket().emit('flower-field:flag', { r, c });
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedCell, field]);
 
   const handleDifficultyChange = (level: DifficultyLevel) => {
     setIsSettingsOpen(false);
@@ -181,6 +200,7 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
           selectedCell={selectedCell}
           isOver={isOver}
           onCellClick={handleCellClick}
+          onMove={selectCell}
           othersSelections={othersSelections}
           profiles={profiles}
           highlightedAlias={highlighted}
@@ -220,6 +240,7 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
             <li>{t('flowerField.ruleFlags')}</li>
             <li>{field.explosive ? t('flowerField.ruleMineLoses') : t('flowerField.ruleMineMarks')}</li>
           </ul>
+          <p className="mt-3 font-medium">{t('flowerField.keyHint')}</p>
         </div>
       </div>
 

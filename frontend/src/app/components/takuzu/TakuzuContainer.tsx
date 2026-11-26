@@ -53,11 +53,16 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
     });
   }, [grid, initial, isGameWon, roomId]);
 
-  const handleCellClick = useCallback((r: number, c: number) => {
+  // Selecting without playing, for the arrow keys: a tap selects and plays.
+  const selectCell = useCallback((r: number, c: number) => {
     setSelectedCell([r, c]);
     getSocket().emit('select-cell', { r, c });
+  }, []);
+
+  const handleCellClick = useCallback((r: number, c: number) => {
+    selectCell(r, c);
     if (grid) setCell(r, c, nextValue(grid[r][c]));
-  }, [grid, setCell]);
+  }, [grid, setCell, selectCell]);
 
   // For the keyboard: 0 and 1 write that symbol in the selected cell, delete empties it.
   useEffect(() => {
@@ -165,6 +170,7 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
           conflicts={conflicts}
           isGameWon={isGameWon}
           onCellClick={handleCellClick}
+          onMove={selectCell}
           othersSelections={othersSelections}
           profiles={profiles}
           highlightedAlias={highlighted}
@@ -182,6 +188,7 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
             <li>{t('takuzu.ruleUnique')}</li>
           </ul>
           <p className="mt-3 font-medium">{t('takuzu.tapHint')}</p>
+          <p className="mt-1 font-medium">{t('takuzu.keyHint')}</p>
         </div>
       </div>
 

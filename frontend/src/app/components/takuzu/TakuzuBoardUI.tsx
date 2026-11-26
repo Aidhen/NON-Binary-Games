@@ -4,6 +4,7 @@ import type { PlayerProfile } from '@nbg/shared';
 import { cn } from '@/lib/utils';
 import { BOARD_TILE, BOARD_TRAY, gapOf } from '../games/boardStyles';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
+import { useGridKeyboard } from '@/lib/useGridKeyboard';
 import { UNKNOWN_PLAYER_STYLE, styleOfColor } from '@/lib/playerPalette';
 
 /** What a cell shows for each value: the two symbols of the game are written 0 and 1, and the value 0 is "empty". */
@@ -19,6 +20,8 @@ interface TakuzuBoardUIProps {
   conflicts: Set<string>;
   isGameWon: boolean;
   onCellClick: (r: number, c: number) => void;
+  /** The arrows select a cell without playing it, which a tap does (see useGridKeyboard). */
+  onMove?: (r: number, c: number) => void;
   othersSelections?: Record<string, [number, number]>;
   /** Every player the page has seen in the room, by alias: the color of a cursor comes from here. */
   profiles?: Record<string, PlayerProfile>;
@@ -42,8 +45,11 @@ const symbolClass = (value: number, isGiven: boolean, isConflict: boolean): stri
   return 'text-[var(--number-player)] font-medium';
 };
 
-export function TakuzuBoardUI({ size, grid, initial, selectedCell, conflicts, isGameWon, onCellClick, othersSelections = {}, profiles = {}, highlightedAlias = null }: Readonly<TakuzuBoardUIProps>) {
+const noMove = () => {};
+
+export function TakuzuBoardUI({ size, grid, initial, selectedCell, conflicts, isGameWon, onCellClick, onMove, othersSelections = {}, profiles = {}, highlightedAlias = null }: Readonly<TakuzuBoardUIProps>) {
   const { t } = useTranslation();
+  const keyboard = useGridKeyboard(size, selectedCell, onMove ?? noMove);
 
   // The list comes from the server and an alias is a key of it: only a key it really has counts.
   const styleOf = (alias: string) => (Object.hasOwn(profiles, alias) ? styleOfColor(profiles[alias].color) : UNKNOWN_PLAYER_STYLE);
@@ -83,6 +89,7 @@ export function TakuzuBoardUI({ size, grid, initial, selectedCell, conflicts, is
               type="button"
               aria-label={labelOf(r, c, value)}
               onClick={() => !isGameWon && onCellClick(r, c)}
+              {...(!isGameWon && onMove ? keyboard(r, c) : {})}
               className={cn(
                 "relative flex items-center justify-center font-display leading-none",
                 sizeClass,

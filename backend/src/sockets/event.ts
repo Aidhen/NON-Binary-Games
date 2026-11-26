@@ -306,6 +306,9 @@ export const setupSocketHandlers = (io: GameServer) => {
   const allowRoomCreation = createKeyedRateLimiter(roomCreationLimit.max, roomCreationLimit.windowMs);
   const allowRestart = createKeyedRateLimiter(restartLimit.max, restartLimit.windowMs);
 
+  /** The Flower Field lays its mines on the first cell: opening or restarting it makes no board, so it is not charged. */
+  const makesBoardOnStart = (id: GameId): boolean => id !== 'flower-field';
+
   /** Charges one board to `key` and to the server. False, with nothing charged, when either has none left. */
   const chargeBoard = (key: string): boolean => {
     if (!allowClientBoardGeneration(key)) return false;
@@ -343,11 +346,14 @@ export const setupSocketHandlers = (io: GameServer) => {
     if (room.game) return false;
 
     const chosen = chosenGame(room);
-    if (!chosen || !chargeBoard(key)) return false;
+    if (!chosen) return false;
+
+    const charged = makesBoardOnStart(chosen);
+    if (charged && !chargeBoard(key)) return false;
 
     const game = makeGame(() => createGame[chosen](FIRST_DIFFICULTY));
     if (!game) {
-      refundBoard(key);
+      if (charged) refundBoard(key);
       io.to(channelOf(roomId)).emit("board-failed");
       return false;
     }
@@ -423,14 +429,16 @@ export const setupSocketHandlers = (io: GameServer) => {
     const replaceBoard = (roomId: string, room: RoomState, make: () => RoomGame) => {
       const key = budgetKey();
       if (!allowRestart(key)) return;
-      if (!chargeBoard(key)) {
+      // Only the game the room is playing is made again, so its id says whether this costs a board.
+      const charged = !!room.game && makesBoardOnStart(room.game.id);
+      if (charged && !chargeBoard(key)) {
         allowRestart.refund(key);
         return;
       }
 
       const game = makeGame(make);
       if (!game) {
-        refundBoard(key);
+        if (charged) refundBoard(key);
         allowRestart.refund(key);
         socket.emit("board-failed");
         return;

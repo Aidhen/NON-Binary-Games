@@ -1646,6 +1646,42 @@ describe('Socket Events Security & Bounds Checking', () => {
       });
     });
 
+    it('does not spend the budget of the boards on a Flower Field before its first cell', async () => {
+      await withServer({ boardGeneration: 1, clientBoardGeneration: 1 }, async (connect) => {
+        const player = await connect();
+        await joinOutcome(player, idOf('flower-budget'));
+        const restarted = vi.fn();
+        player.on('game-started', restarted);
+
+        // All at once: with one board per window, a charge before the first cell would drop it.
+        player.emit('vote-game', 'flower-field');
+        player.emit('restart-game', 'easy');
+        player.emit('flower-field:reveal', { r: 0, c: 0 });
+        await flushSocketEvents(player);
+
+        // The opening and the restart.
+        expect(restarted).toHaveBeenCalledTimes(2);
+        const game = rooms.get(idOf('flower-budget'))!.game;
+        expect(game?.id === 'flower-field' && game.mines).toBeTruthy();
+      });
+    });
+
+    it('keeps the restart limit on the Flower Field', async () => {
+      await withServer({ restart: 1 }, async (connect) => {
+        const player = await connect();
+        await joinOutcome(player, idOf('flower-restarts'));
+        const started = vi.fn();
+        player.on('game-started', started);
+
+        player.emit('vote-game', 'flower-field');
+        for (let i = 0; i < 3; i++) player.emit('restart-game', 'easy');
+        await flushSocketEvents(player);
+
+        // The opening and the one restart that is allowed.
+        expect(started).toHaveBeenCalledTimes(2);
+      });
+    });
+
     it('does not spend the budget of the boards on a room that is only created', async () => {
       await withServer({ boardGeneration: 1 }, async (connect) => {
         const [first, second] = [await connect(), await connect()];

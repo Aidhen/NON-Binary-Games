@@ -3,7 +3,7 @@ import type { PlayerProfile } from '@nbg/shared';
 import type { GameEntry } from './types';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
-import { animalEmoji } from '@/lib/playerNames';
+import { AnimalHead } from '../players/AnimalHead';
 import { styleOfColor } from '@/lib/playerPalette';
 
 interface GameBoxProps {
@@ -84,11 +84,11 @@ export function GameBox({ game, index, selected, voters, playerCount, enabled, o
               <span
                 key={voter.alias}
                 className={cn(
-                  "flex size-8 items-center justify-center rounded-full border-2 bg-[var(--paper)] text-base leading-none",
+                  "flex size-9 items-center justify-center rounded-full border-2 bg-[var(--paper)]",
                   styleOfColor(voter.color).border
                 )}
               >
-                {animalEmoji(voter.animal)}
+                <AnimalHead animal={voter.animal} color={voter.color} className="size-7" />
               </span>
             ))}
           </span>

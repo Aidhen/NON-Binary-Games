@@ -83,13 +83,13 @@ describe('RoomContainer', () => {
   });
 
   it('shows the label of the room, never its id, at the table and above the game', () => {
-    const label = getRoomEmoji(ROOM).join('');
+    const label = `sudoku.room: ${getRoomEmoji(ROOM).map((icon) => `roomIcons.${icon}`).join(', ')}`;
     render(<RoomContainer roomId={ROOM} games={games} />);
 
-    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: label })).toBeInTheDocument();
     serverSays({ game: 'sudoku', votes: [], tableVotes: [] });
 
-    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: label })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sudoku.copyLink/ })).toBeInTheDocument();
     expect(screen.queryByText(ROOM)).not.toBeInTheDocument();
   });

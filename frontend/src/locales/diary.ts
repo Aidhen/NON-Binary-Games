@@ -28,6 +28,28 @@ export interface DiaryEntry {
 
 export const DIARY: readonly DiaryEntry[] = [
   {
+    id: 'drawn-rooms-and-animals',
+    type: 'released',
+    date: '2026-11-27',
+    version: '0.10.0-alpha',
+    en: {
+      title: 'Little drawings for rooms and players',
+      summary: 'Rooms and players are drawn now, no more system emoji.',
+      body: [
+        'Every room has its own little drawings: five different ones, taken from a set of sixteen, the same for everyone in the room. Lemons, moons, teacups and sailboats stand in for the emoji that were there before.',
+        'Players are drawn too: an animal with the head in the color of the player, in place of the emoji. There are six animals now (fox, owl, koala, hedgehog, penguin and octopus), and in a room everyone has a different one.',
+      ],
+    },
+    it: {
+      title: 'Piccoli disegni per stanze e giocatori',
+      summary: 'Stanze e giocatori ora sono disegnati, niente più emoji di sistema.',
+      body: [
+        'Ogni stanza ha i suoi piccoli disegni: cinque diversi, presi da un insieme di sedici, uguali per tutti quelli che sono nella stanza. Limoni, lune, tazze e barche a vela prendono il posto delle emoji che c\'erano prima.',
+        'Anche i giocatori sono disegnati: un animale con la testa del colore del giocatore, al posto dell\'emoji. Ora gli animali sono sei (volpe, gufo, koala, riccio, pinguino e polpo), e in una stanza ognuno ne ha uno diverso.',
+      ],
+    },
+  },
+  {
     id: 'tarot-memory',
     type: 'upcoming',
     date: '2026-11-20',

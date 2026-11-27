@@ -30,9 +30,9 @@ describe('GameBox', () => {
   });
 
   it('shows the animal of each player who voted for it', () => {
-    renderBox(playable, { voters: [fox] });
+    const { container } = renderBox(playable, { voters: [fox] });
 
-    expect(screen.getByText('🦊')).toBeInTheDocument();
+    expect(container.querySelector('svg[data-animal="fox"]')).toHaveClass('text-[var(--player-blue)]');
   });
 
   it('tells when it is the box the player is looking at, and when it is picked', () => {

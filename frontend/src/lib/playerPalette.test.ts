@@ -124,16 +124,16 @@ describe('PLAYER_COLOR_STYLES', () => {
   });
 
   it.each(PLAYER_COLORS)('uses the variables of %s and no other color', (color) => {
-    const { ring, tint, disc, swatch, border, text } = PLAYER_COLOR_STYLES[color];
+    const { ring, tint, head, swatch, border, text } = PLAYER_COLOR_STYLES[color];
 
     expect(ring).toContain(`--player-${color})`);
     expect(tint).toContain(`--player-${color})`);
-    expect(disc).toContain(`--player-${color})`);
+    expect(head).toContain(`--player-${color})`);
     expect(swatch).toContain(`--player-${color})`);
     expect(border).toContain(`--player-${color})`);
     expect(text).toContain(`--player-${color}-text)`);
     for (const other of PLAYER_COLORS.filter((name) => name !== color)) {
-      expect([ring, tint, disc, swatch, border, text].join(' ')).not.toContain(`--player-${other}`);
+      expect([ring, tint, head, swatch, border, text].join(' ')).not.toContain(`--player-${other}`);
     }
   });
 });

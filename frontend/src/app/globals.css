@@ -114,6 +114,8 @@
 
 /* Theme: DARK */
 [data-theme="dark"] {
+  /* Thin cream line under the plum outline of the drawings (art/src/halo.ts), so they stay visible on dark paper. Absent in the light themes. */
+  --art-halo: rgb(255 247 232 / 0.75);
   --bg: #020617;
   --title-text: #f8fafc;
   --subtitle-text: #94a3b8;
@@ -258,6 +260,8 @@
 
 /* Theme: OLED */
 [data-theme="oled"] {
+  /* Thin cream line under the plum outline of the drawings (art/src/halo.ts), so they stay visible on dark paper. Absent in the light themes. */
+  --art-halo: rgb(255 247 232 / 0.75);
   --bg: #000000;
   --title-text: #ffffff;
   --subtitle-text: #808080;
@@ -330,6 +334,8 @@
 
 /* Theme: NON-BINARY */
 [data-theme="non-binary"] {
+  /* Thin cream line under the plum outline of the drawings (art/src/halo.ts), so they stay visible on dark paper. Absent in the light themes. */
+  --art-halo: rgb(255 247 232 / 0.75);
   --bg: #1a1a1a;
   
   --title-text: #c39bea;

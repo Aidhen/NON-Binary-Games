@@ -118,19 +118,31 @@ export const it: Translations = {
       pink: { m: "Rosa", f: "Rosa" }
     },
     animals: {
-      panda: { name: "Panda", gender: "m" },
       fox: { name: "Volpe", gender: "f" },
-      otter: { name: "Lontra", gender: "f" },
       owl: { name: "Gufo", gender: "m" },
-      frog: { name: "Rana", gender: "f" },
       koala: { name: "Koala", gender: "m" },
       hedgehog: { name: "Riccio", gender: "m" },
       penguin: { name: "Pinguino", gender: "m" },
-      rabbit: { name: "Coniglio", gender: "m" },
-      turtle: { name: "Tartaruga", gender: "f" },
-      octopus: { name: "Polpo", gender: "m" },
-      dolphin: { name: "Delfino", gender: "m" }
+      octopus: { name: "Polpo", gender: "m" }
     }
+  },
+  roomIcons: {
+    lemon: "limone",
+    cherries: "ciliegie",
+    mushroom: "fungo",
+    moon: "luna",
+    star: "stella",
+    leaf: "foglia",
+    teacup: "tazza",
+    house: "casa",
+    cloud: "nuvola",
+    umbrella: "ombrello",
+    icecream: "gelato",
+    acorn: "ghianda",
+    sailboat: "barca a vela",
+    donut: "ciambella",
+    balloon: "palloncino",
+    gem: "gemma"
   },
   lobby: {
     yourRoom: "La tua stanza",
@@ -285,7 +297,7 @@ export const it: Translations = {
     privateTitle: "Private, sempre",
     privateText: "Una stanza esiste solo per chi ha il link. Il suo codice non compare nella pagina.",
     noAccountTitle: "Senza account",
-    noAccountText: "Ricevi un nome di fantasia, come Panda Rosso, e un colore tutto tuo.",
+    noAccountText: "Ricevi un nome di fantasia, come Volpe Rossa, e un colore tutto tuo.",
     togetherTitle: "Si decide insieme",
     togetherText: "Le scatole si votano: un gioco si apre quando più di metà della stanza lo vuole.",
     wip: "Lavori in corso",

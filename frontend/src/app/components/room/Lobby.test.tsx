@@ -19,7 +19,7 @@ const soon = (id: string): GameEntry => ({ id, status: 'soon', titleKey: `games.
 const oneGame = [available('sudoku'), soon('later')];
 const twoGames = [available('sudoku'), available('other'), soon('later')];
 
-const panda: PlayerProfile = { alias: 'aaaaaaaaaaaa', animal: 'panda', color: 'red' };
+const koala: PlayerProfile = { alias: 'aaaaaaaaaaaa', animal: 'koala', color: 'red' };
 const fox: PlayerProfile = { alias: 'bbbbbbbbbbbb', animal: 'fox', color: 'blue' };
 const owl: PlayerProfile = { alias: 'cccccccccccc', animal: 'owl', color: 'teal' };
 const ROOM = '3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c';
@@ -29,8 +29,8 @@ const onRetry = vi.fn();
 
 interface Options { votes?: LobbyVote[] | null; games?: GameEntry[]; status?: ConnectionStatus; players?: PlayerProfile[] }
 
-const renderLobby = ({ votes = [], games = oneGame, status = 'connected', players = [panda, fox] }: Options = {}) =>
-  render(<Lobby roomId={ROOM} games={games} players={players} self={panda.alias} votes={votes} status={status} onRetry={onRetry} onVote={onVote} onPickColor={vi.fn()} />);
+const renderLobby = ({ votes = [], games = oneGame, status = 'connected', players = [koala, fox] }: Options = {}) =>
+  render(<Lobby roomId={ROOM} games={games} players={players} self={koala.alias} votes={votes} status={status} onRetry={onRetry} onVote={onVote} onPickColor={vi.fn()} />);
 
 const box = (id: string) => screen.getByRole('button', { name: new RegExp(`games.${id}.title`) });
 const openButton = () => screen.getByRole('button', { name: /^Open |Take my vote back/ });
@@ -72,7 +72,7 @@ describe('Lobby', () => {
   });
 
   it('starts from the box the player already voted for, and offers to take the vote back', () => {
-    renderLobby({ games: twoGames, votes: [{ alias: panda.alias, game: 'other' as GameId }] });
+    renderLobby({ games: twoGames, votes: [{ alias: koala.alias, game: 'other' as GameId }] });
 
     expect(box('other')).toHaveAttribute('aria-pressed', 'true');
     expect(openButton()).toHaveAccessibleName('Take my vote back');
@@ -83,7 +83,7 @@ describe('Lobby', () => {
   });
 
   it('lets the player change their mind by opening another box', () => {
-    renderLobby({ games: twoGames, votes: [{ alias: panda.alias, game: 'other' as GameId }] });
+    renderLobby({ games: twoGames, votes: [{ alias: koala.alias, game: 'other' as GameId }] });
 
     fireEvent.click(box('sudoku'));
     expect(openButton()).toHaveAccessibleName('Open games.sudoku.title');
@@ -155,33 +155,33 @@ describe('Lobby', () => {
   });
 
   it('starts from the box the room wants most, when the player has not picked or voted', () => {
-    renderLobby({ games: twoGames, players: [panda, fox, owl], votes: [{ alias: fox.alias, game: 'other' as GameId }, { alias: owl.alias, game: 'other' as GameId }] });
+    renderLobby({ games: twoGames, players: [koala, fox, owl], votes: [{ alias: fox.alias, game: 'other' as GameId }, { alias: owl.alias, game: 'other' as GameId }] });
 
     expect(box('other')).toHaveAttribute('aria-pressed', 'true');
     expect(openButton()).toHaveAccessibleName('Open games.other.title');
   });
 
   it('does not move the selection from under a player who picked a box themselves', () => {
-    const view = renderLobby({ games: twoGames, players: [panda, fox, owl] });
+    const view = renderLobby({ games: twoGames, players: [koala, fox, owl] });
 
     fireEvent.click(box('sudoku'));
-    view.rerender(<Lobby roomId={ROOM} games={twoGames} players={[panda, fox, owl]} self={panda.alias} votes={[{ alias: fox.alias, game: 'other' as GameId }, { alias: owl.alias, game: 'other' as GameId }]} status="connected" onRetry={onRetry} onVote={onVote} onPickColor={vi.fn()} />);
+    view.rerender(<Lobby roomId={ROOM} games={twoGames} players={[koala, fox, owl]} self={koala.alias} votes={[{ alias: fox.alias, game: 'other' as GameId }, { alias: owl.alias, game: 'other' as GameId }]} status="connected" onRetry={onRetry} onVote={onVote} onPickColor={vi.fn()} />);
 
     expect(box('sudoku')).toHaveAttribute('aria-pressed', 'true');
     expect(box('other')).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('says who wants what by the names of the chips, one game or two', () => {
-    renderLobby({ games: twoGames, players: [panda, fox, owl], votes: [{ alias: fox.alias, game: 'other' as GameId }, { alias: owl.alias, game: 'other' as GameId }] });
+    renderLobby({ games: twoGames, players: [koala, fox, owl], votes: [{ alias: fox.alias, game: 'other' as GameId }, { alias: owl.alias, game: 'other' as GameId }] });
 
     expect(screen.getByText('Blue Fox and Teal Owl want games.other.title')).toBeInTheDocument();
     expect(screen.queryByText(/Votes are split/)).not.toBeInTheDocument();
   });
 
   it('says that the votes are split, and how a box opens, when two games have votes', () => {
-    renderLobby({ games: twoGames, votes: [{ alias: panda.alias, game: 'sudoku' as GameId }, { alias: fox.alias, game: 'other' as GameId }] });
+    renderLobby({ games: twoGames, votes: [{ alias: koala.alias, game: 'sudoku' as GameId }, { alias: fox.alias, game: 'other' as GameId }] });
 
-    expect(screen.getByText('Red Panda wants games.sudoku.title')).toBeInTheDocument();
+    expect(screen.getByText('Red Koala wants games.sudoku.title')).toBeInTheDocument();
     expect(screen.getByText('Blue Fox wants games.other.title')).toBeInTheDocument();
     expect(screen.getByText('Votes are split: a box opens when more than half of the room picks it.')).toBeInTheDocument();
   });

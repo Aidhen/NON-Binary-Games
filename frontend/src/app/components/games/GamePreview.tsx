@@ -8,7 +8,7 @@ import { WordSearchBoardUI } from '../word-search/WordSearchBoardUI';
 
 // Two made-up players, so that the previews show what playing together looks like: flags, words and cursors in two colors.
 const PROFILES: Record<string, PlayerProfile> = {
-  first: { alias: 'first', animal: 'otter', color: 'teal' },
+  first: { alias: 'first', animal: 'penguin', color: 'teal' },
   second: { alias: 'second', animal: 'fox', color: 'orange' },
 };
 

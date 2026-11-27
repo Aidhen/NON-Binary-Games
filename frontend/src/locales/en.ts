@@ -116,19 +116,31 @@ export const en = {
       pink: { m: "Pink", f: "Pink" }
     },
     animals: {
-      panda: { name: "Panda", gender: "m" },
       fox: { name: "Fox", gender: "m" },
-      otter: { name: "Otter", gender: "m" },
       owl: { name: "Owl", gender: "m" },
-      frog: { name: "Frog", gender: "m" },
       koala: { name: "Koala", gender: "m" },
       hedgehog: { name: "Hedgehog", gender: "m" },
       penguin: { name: "Penguin", gender: "m" },
-      rabbit: { name: "Rabbit", gender: "m" },
-      turtle: { name: "Turtle", gender: "m" },
-      octopus: { name: "Octopus", gender: "m" },
-      dolphin: { name: "Dolphin", gender: "m" }
+      octopus: { name: "Octopus", gender: "m" }
     }
+  },
+  roomIcons: {
+    lemon: "lemon",
+    cherries: "cherries",
+    mushroom: "mushroom",
+    moon: "moon",
+    star: "star",
+    leaf: "leaf",
+    teacup: "teacup",
+    house: "house",
+    cloud: "cloud",
+    umbrella: "umbrella",
+    icecream: "ice cream",
+    acorn: "acorn",
+    sailboat: "sailboat",
+    donut: "donut",
+    balloon: "balloon",
+    gem: "gem"
   },
   lobby: {
     yourRoom: "Your room",
@@ -283,7 +295,7 @@ export const en = {
     privateTitle: "Private, always",
     privateText: "A room exists only for those who have the link. Its code is not shown in the page.",
     noAccountTitle: "No account",
-    noAccountText: "You get a made-up name, like Red Panda, and a color of your own.",
+    noAccountText: "You get a made-up name, like Red Fox, and a color of your own.",
     togetherTitle: "Decided together",
     togetherText: "Boxes are voted: a game opens when more than half of the room wants it.",
     wip: "Work in progress",

@@ -3,7 +3,8 @@ import { PLAYER_ANIMALS, PLAYER_COLORS } from '@nbg/shared';
 import { en } from '@/locales/en';
 import { it as italian } from '@/locales/it';
 import type { Translations } from '@/locales/en';
-import { PLAYER_ANIMAL_EMOJI, animalEmoji, playerName } from './playerNames';
+import { ANIMAL_ART_IDS } from '@nbg/art';
+import { animalArtId, playerName } from './playerNames';
 
 /** Looks a path up in a dictionary the way the translation context does. */
 const translatorOf = (dictionary: Translations) => (path: string): string =>
@@ -14,14 +15,14 @@ const italiano = translatorOf(italian);
 
 describe('playerName', () => {
   it('puts the color before the animal in English', () => {
-    expect(playerName(english, { animal: 'panda', color: 'red' })).toBe('Red Panda');
+    expect(playerName(english, { animal: 'koala', color: 'red' })).toBe('Red Koala');
     expect(playerName(english, { animal: 'fox', color: 'teal' })).toBe('Teal Fox');
   });
 
   it('puts the color after the animal in Italian and makes it agree with it', () => {
-    expect(playerName(italiano, { animal: 'panda', color: 'red' })).toBe('Panda Rosso');
+    expect(playerName(italiano, { animal: 'koala', color: 'red' })).toBe('Koala Rosso');
     expect(playerName(italiano, { animal: 'fox', color: 'red' })).toBe('Volpe Rossa');
-    expect(playerName(italiano, { animal: 'turtle', color: 'pink' })).toBe('Tartaruga Rosa');
+    expect(playerName(italiano, { animal: 'octopus', color: 'pink' })).toBe('Polpo Rosa');
     expect(playerName(italiano, { animal: 'owl', color: 'green' })).toBe('Gufo Verde');
   });
 
@@ -45,8 +46,8 @@ describe('playerName', () => {
   });
 
   it('changes only the color word when the color changes, and only the animal word when the animal does', () => {
-    expect(playerName(english, { animal: 'panda', color: 'blue' })).toBe('Blue Panda');
-    expect(playerName(english, { animal: 'otter', color: 'blue' })).toBe('Blue Otter');
+    expect(playerName(english, { animal: 'koala', color: 'blue' })).toBe('Blue Koala');
+    expect(playerName(english, { animal: 'octopus', color: 'blue' })).toBe('Blue Octopus');
   });
 });
 
@@ -76,17 +77,20 @@ describe('the texts about a player', () => {
   });
 });
 
-describe('animalEmoji', () => {
-  it('gives the emoji of an animal, and a paw for one it does not know', () => {
-    expect(animalEmoji('panda')).toBe('🐼');
-    expect(animalEmoji('unicorn')).toBe('🐾');
-    expect(animalEmoji('__proto__')).toBe('🐾');
+describe('animalArtId', () => {
+  it('gives the drawing of an animal', () => {
+    for (const animal of PLAYER_ANIMALS) expect(animalArtId(animal)).toBe(animal);
   });
-});
 
-describe('PLAYER_ANIMAL_EMOJI', () => {
-  it('has a different emoji for every animal', () => {
-    expect(Object.keys(PLAYER_ANIMAL_EMOJI).sort()).toEqual([...PLAYER_ANIMALS].sort());
-    expect(new Set(Object.values(PLAYER_ANIMAL_EMOJI)).size).toBe(PLAYER_ANIMALS.length);
+  it('has a drawing for every animal of the contract and for no other', () => {
+    expect([...ANIMAL_ART_IDS].sort()).toEqual([...PLAYER_ANIMALS].sort());
+  });
+
+  it('gives one of ours, always the same, for an animal it does not know (a server older than the page)', () => {
+    for (const animal of ['panda', 'otter', 'unicorn', '__proto__', '']) {
+      expect(ANIMAL_ART_IDS).toContain(animalArtId(animal));
+      expect(animalArtId(animal)).toBe(animalArtId(animal));
+    }
+    expect(playerName(english, { animal: 'panda', color: 'red' })).toBe('Someone');
   });
 });

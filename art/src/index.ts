@@ -5,3 +5,7 @@ export { LogoMark } from './logo/LogoMark';
 export { FLOWER_COLORS, FLOWER_KINDS, FlowerArt, HEAD_MOTION } from './flowers/FlowerArt';
 export type { FlowerKind } from './flowers/FlowerArt';
 export { BeeArt } from './bee/BeeArt';
+export { ROOM_ICONS, RoomIconArt } from './room/RoomIconArt';
+export type { RoomIconId } from './room/RoomIconArt';
+export { ANIMAL_ART_IDS, AnimalArt } from './animals/AnimalArt';
+export type { AnimalArtId } from './animals/AnimalArt';

@@ -83,11 +83,7 @@ describe('assignProfile', () => {
     const room = createRoom();
     PLAYER_COLORS.forEach((color, i) => {
       room.players.set(`other-${i}`, new Set(['s']));
-      room.profiles.set(`other-${i}`, { color, animal: PLAYER_ANIMALS[i] });
-    });
-    PLAYER_ANIMALS.slice(PLAYER_COLORS.length).forEach((animal, i) => {
-      room.players.set(`extra-${i}`, new Set(['s']));
-      room.profiles.set(`extra-${i}`, { color: PLAYER_COLORS[0], animal });
+      room.profiles.set(`other-${i}`, { color, animal: PLAYER_ANIMALS[i % PLAYER_ANIMALS.length] });
     });
 
     const profile = assignProfile(room, 'late');

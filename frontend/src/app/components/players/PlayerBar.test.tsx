@@ -6,7 +6,7 @@ import type { PlayerProfile } from '@nbg/shared';
 import { TranslationProvider, useTranslation } from '@/lib/i18n/TranslationContext';
 import { PlayerBar } from './PlayerBar';
 
-const panda: PlayerProfile = { alias: 'aaaaaaaaaaaa', animal: 'panda', color: 'red' };
+const koala: PlayerProfile = { alias: 'aaaaaaaaaaaa', animal: 'koala', color: 'red' };
 const fox: PlayerProfile = { alias: 'bbbbbbbbbbbb', animal: 'fox', color: 'blue' };
 const owl: PlayerProfile = { alias: 'cccccccccccc', animal: 'owl', color: 'green' };
 
@@ -19,7 +19,7 @@ function InItalian({ children }: { children: React.ReactNode }) {
 const setup = (props: Partial<React.ComponentProps<typeof PlayerBar>> = {}, italian = false) => {
   const onPickColor = vi.fn();
   const onHighlight = vi.fn();
-  const defaults = { players: [panda, fox], self: panda.alias, highlightedAlias: null, onPickColor, onHighlight };
+  const defaults = { players: [koala, fox], self: koala.alias, highlightedAlias: null, onPickColor, onHighlight };
   const bar = (extra: Partial<React.ComponentProps<typeof PlayerBar>> = {}) => {
     const content = <PlayerBar {...defaults} {...props} {...extra} />;
     return <TranslationProvider>{italian ? <InItalian>{content}</InItalian> : content}</TranslationProvider>;
@@ -28,39 +28,40 @@ const setup = (props: Partial<React.ComponentProps<typeof PlayerBar>> = {}, ital
   return { ...view, onPickColor, onHighlight, update: (extra: Partial<React.ComponentProps<typeof PlayerBar>>) => view.rerender(bar(extra)) };
 };
 
-const ownChip = () => screen.getByRole('button', { name: 'Red Panda (you)' });
+const ownChip = () => screen.getByRole('button', { name: 'Red Koala (you)' });
 const swatch = (name: RegExp) => screen.getByRole('radio', { name });
 
 describe('PlayerBar', () => {
-  it('shows a paw for an animal it does not know', () => {
-    setup({ players: [panda, { ...fox, animal: 'unicorn' as PlayerProfile['animal'] }] });
+  it('draws a head of ours for an animal it does not know, and calls the player by a neutral name', () => {
+    const { container } = setup({ players: [koala, { ...fox, animal: 'unicorn' as PlayerProfile['animal'] }] });
 
-    expect(screen.getByText('🐾')).toBeInTheDocument();
+    expect(container.querySelectorAll('svg[data-animal]')).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Show where Someone is playing' })).toBeInTheDocument();
   });
 
-  it('lists the players in the room, each with the emoji of the animal and the generated name', () => {
+  it('lists the players in the room, each with the drawing of the animal and the generated name', () => {
     setup();
 
     const list = screen.getByRole('list', { name: 'Players in this room' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(list).getByText('Red Panda')).toBeInTheDocument();
+    expect(within(list).getByText('Red Koala')).toBeInTheDocument();
     expect(within(list).getByText('Blue Fox')).toBeInTheDocument();
-    expect(within(list).getByText('🐼')).toBeInTheDocument();
-    expect(within(list).getByText('🦊')).toBeInTheDocument();
+    expect(list.querySelector('svg[data-animal="koala"]')).toBeInTheDocument();
+    expect(list.querySelector('svg[data-animal="fox"]')).toBeInTheDocument();
   });
 
-  it('puts the emoji of the animal in a small disc tinted with the color of the player', () => {
-    setup();
+  it('fills the head of the animal with the color of the player, and hides it from screen readers', () => {
+    const { container } = setup();
 
-    expect(screen.getByText('🦊')).toHaveClass('rounded-full', 'bg-[var(--player-blue)]/20');
-    expect(screen.getByText('🐼')).toHaveClass('bg-[var(--player-red)]/20');
+    expect(container.querySelector('svg[data-animal="fox"]')).toHaveClass('text-[var(--player-blue)]');
+    expect(container.querySelector('svg[data-animal="koala"]')).toHaveClass('text-[var(--player-red)]');
+    container.querySelectorAll('svg[data-animal]').forEach((svg) => expect(svg).toHaveAttribute('aria-hidden', 'true'));
   });
 
   it('puts the player first and says which chip is theirs', () => {
-    setup({ players: [fox, panda] });
+    setup({ players: [fox, koala] });
 
-    expect(within(screen.getAllByRole('listitem')[0]).getByText('Red Panda')).toBeInTheDocument();
+    expect(within(screen.getAllByRole('listitem')[0]).getByText('Red Koala')).toBeInTheDocument();
     expect(ownChip()).toBeInTheDocument();
   });
 
@@ -73,16 +74,16 @@ describe('PlayerBar', () => {
   it('follows the color: a player who takes another color has another name', () => {
     const { update } = setup();
 
-    update({ players: [{ ...panda, color: 'pink' }, fox] });
+    update({ players: [{ ...koala, color: 'pink' }, fox] });
 
-    expect(screen.getByText('Pink Panda')).toBeInTheDocument();
-    expect(screen.queryByText('Red Panda')).not.toBeInTheDocument();
+    expect(screen.getByText('Pink Koala')).toBeInTheDocument();
+    expect(screen.queryByText('Red Koala')).not.toBeInTheDocument();
   });
 
   it('writes the names in Italian, with the animal first and the color agreeing with it', () => {
-    setup({ players: [{ ...panda, color: 'red' }, { ...fox, color: 'red' }] }, true);
+    setup({ players: [{ ...koala, color: 'red' }, { ...fox, color: 'red' }] }, true);
 
-    expect(screen.getByText('Panda Rosso')).toBeInTheDocument();
+    expect(screen.getByText('Koala Rosso')).toBeInTheDocument();
     expect(screen.getByText('Volpe Rossa')).toBeInTheDocument();
   });
 
@@ -109,7 +110,7 @@ describe('PlayerBar', () => {
     });
 
     it('marks the colors that others have, says who has them, and does not pick them', () => {
-      const { onPickColor } = setup({ players: [panda, fox, owl] });
+      const { onPickColor } = setup({ players: [koala, fox, owl] });
       fireEvent.click(ownChip());
 
       const taken = swatch(/^Blue/);
@@ -166,7 +167,7 @@ describe('PlayerBar', () => {
     });
 
     it('moves between the colors with the arrow keys, skipping the ones that are taken', () => {
-      setup({ players: [panda, fox, owl] });
+      setup({ players: [koala, fox, owl] });
       fireEvent.click(ownChip());
       const group = screen.getByRole('radiogroup');
 
@@ -195,7 +196,7 @@ describe('PlayerBar', () => {
   });
 
   it('does not break on a color it does not know, which a newer server could send', () => {
-    setup({ players: [panda, { ...fox, color: 'gold' as PlayerProfile['color'] }] });
+    setup({ players: [koala, { ...fox, color: 'gold' as PlayerProfile['color'] }] });
 
     fireEvent.click(ownChip());
 
@@ -246,28 +247,28 @@ describe('PlayerBar', () => {
     it('say who comes and who leaves', () => {
       const { update } = setup();
 
-      update({ players: [panda, fox, owl] });
+      update({ players: [koala, fox, owl] });
       expect(screen.getByRole('status')).toHaveTextContent('Green Owl joined the room');
 
-      update({ players: [panda, owl] });
+      update({ players: [koala, owl] });
       expect(screen.getByRole('status')).toHaveTextContent('Blue Fox left the room');
     });
 
     it('say it again when the same player comes back', () => {
       const { update } = setup();
 
-      update({ players: [panda, fox, owl] });
+      update({ players: [koala, fox, owl] });
       expect(screen.getByRole('status')).toHaveTextContent('Green Owl joined the room');
-      update({ players: [panda, fox] });
+      update({ players: [koala, fox] });
       expect(screen.getByRole('status')).toHaveTextContent('Green Owl left the room');
-      update({ players: [panda, fox, owl] });
+      update({ players: [koala, fox, owl] });
       expect(screen.getByRole('status')).toHaveTextContent('Green Owl joined the room');
     });
 
     it('do not announce the player to themselves', () => {
       const { update } = setup({ players: [], self: null });
 
-      update({ players: [panda], self: panda.alias });
+      update({ players: [koala], self: koala.alias });
 
       expect(screen.getByRole('status')).toBeEmptyDOMElement();
     });

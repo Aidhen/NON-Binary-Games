@@ -37,7 +37,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('@/lib/socket', () => ({ getSocket: () => mocks.socket }));
 
-const panda: PlayerProfile = { alias: 'aaaaaaaaaaaa', animal: 'panda', color: 'red' };
+const koala: PlayerProfile = { alias: 'aaaaaaaaaaaa', animal: 'koala', color: 'red' };
 const fox: PlayerProfile = { alias: 'bbbbbbbbbbbb', animal: 'fox', color: 'blue' };
 
 const update = (players: PlayerProfile[]) => act(() => { mocks.dispatch('players-updated', { players }); });
@@ -57,37 +57,37 @@ describe('usePlayers', () => {
   it('learns who the player is from the server', () => {
     const { result } = renderHook(() => usePlayers('room-a'));
 
-    act(() => mocks.dispatch('joined-as', panda.alias));
+    act(() => mocks.dispatch('joined-as', koala.alias));
 
-    expect(result.current.self).toBe(panda.alias);
+    expect(result.current.self).toBe(koala.alias);
   });
 
   it('shows the players the server lists, in the order it gives them', () => {
     const { result } = renderHook(() => usePlayers('room-a'));
 
-    update([panda, fox]);
+    update([koala, fox]);
 
-    expect(result.current.players).toEqual([panda, fox]);
-    expect(result.current.profiles).toEqual({ [panda.alias]: panda, [fox.alias]: fox });
+    expect(result.current.players).toEqual([koala, fox]);
+    expect(result.current.profiles).toEqual({ [koala.alias]: koala, [fox.alias]: fox });
   });
 
   it('takes the new color of a player who changes it', () => {
     const { result } = renderHook(() => usePlayers('room-a'));
-    update([panda, fox]);
+    update([koala, fox]);
 
-    update([{ ...panda, color: 'green' }, fox]);
+    update([{ ...koala, color: 'green' }, fox]);
 
     expect(result.current.players[0].color).toBe('green');
-    expect(result.current.profiles[panda.alias].color).toBe('green');
+    expect(result.current.profiles[koala.alias].color).toBe('green');
   });
 
   it('remembers a player who left, so that their notes keep their color, but no longer lists them', () => {
     const { result } = renderHook(() => usePlayers('room-a'));
-    update([panda, fox]);
+    update([koala, fox]);
 
-    update([panda]);
+    update([koala]);
 
-    expect(result.current.players).toEqual([panda]);
+    expect(result.current.players).toEqual([koala]);
     expect(result.current.profiles[fox.alias]).toEqual(fox);
   });
 
@@ -99,17 +99,17 @@ describe('usePlayers', () => {
       color: 'teal',
     }));
 
-    for (const player of crowd) update([panda, player]);
+    for (const player of crowd) update([koala, player]);
 
     expect(Object.keys(result.current.profiles).length).toBeLessThanOrEqual(MAX_KNOWN_PLAYERS);
-    expect(result.current.profiles[panda.alias]).toEqual(panda);
+    expect(result.current.profiles[koala.alias]).toEqual(koala);
     expect(result.current.profiles[crowd.at(-1)!.alias]).toBeDefined();
   });
 
   it('forgets everything when the room changes', () => {
     const { result, rerender } = renderHook(({ room }) => usePlayers(room), { initialProps: { room: 'room-a' } });
-    act(() => mocks.dispatch('joined-as', panda.alias));
-    update([panda, fox]);
+    act(() => mocks.dispatch('joined-as', koala.alias));
+    update([koala, fox]);
 
     rerender({ room: 'room-b' });
 

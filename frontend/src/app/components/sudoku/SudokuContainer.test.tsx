@@ -791,12 +791,12 @@ describe('SudokuContainer', () => {
   });
 
   describe('players', () => {
-    const panda = { alias: 'aaaaaaaaaaaa', animal: 'panda', color: 'red' };
+    const koala = { alias: 'aaaaaaaaaaaa', animal: 'koala', color: 'red' };
     const fox = { alias: 'bbbbbbbbbbbb', animal: 'fox', color: 'blue' };
 
-    const tellPlayers = async (players = [panda, fox]) => {
+    const tellPlayers = async (players = [koala, fox]) => {
       await act(async () => {
-        mocks.dispatch('joined-as', panda.alias);
+        mocks.dispatch('joined-as', koala.alias);
         mocks.dispatch('players-updated', { players });
       });
     };
@@ -862,7 +862,7 @@ describe('SudokuContainer', () => {
       await renderGame();
       await tellPlayers();
 
-      expect(getBoardState().profiles).toEqual({ [panda.alias]: panda, [fox.alias]: fox });
+      expect(getBoardState().profiles).toEqual({ [koala.alias]: koala, [fox.alias]: fox });
       expect(getBoardState().highlightedAlias).toBeNull();
 
       fireEvent.click(within(screen.getByRole('list', { name: 'players.title' })).getAllByRole('listitem')[1].querySelector('button')!);

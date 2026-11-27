@@ -37,6 +37,10 @@ You review, propose and draft. You do not edit application code: `fullstack` bui
 - **One of each motif.** A detail that repeats the main symbol of the scene (a second heart between the Lovers) is clutter: drop it.
 - **Round things are not tiles.** A sun is the disc with its face, no tile behind it, with rays all the same size. A crescent moon is one clean path, with eyes, mouth and blush well inside it.
 - **Mouths stay visible.** When something sits in front of a character (the chariot's box), move the face up rather than hide the mouth.
+- **Bodies share one proportion.** The dark body behind a character (throne, cloak, robe) has about the same size and corner radius on every card; a body much narrower, longer or smaller than the others stands out at once.
+- **One object, one shape.** An object is drawn as a single outlined shape (the Judgement trumpet: tube and bell in one path), with no seam line where two pieces were joined.
+- **Long props lean.** Scepters and staves look better tilted than upright, as long as they stay clear of the face.
+- **Symbols in plain outline.** Marks drawn on an object (the Venus sign under the heart on the Empress's shield) use plain plum lines, not an extra color.
 - **Text in a drawing is a path**, not a `<text>` with a font (the "z" of a sleeper, a "!").
 - **The owner's edited sheet is the spec.** When the owner paints over a preview sheet and sends it back, rebuild what it shows faithfully and apply the same change to every drawing it implies, then ask only about what the picture cannot say.
 

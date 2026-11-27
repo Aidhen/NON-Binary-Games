@@ -20,7 +20,7 @@ Where things are, so nobody has to explore the repo to find them (tests sit next
 - Server: `backend/src/server.ts` (HTTP, CORS, health check, shutdown), `backend/src/sockets/event.ts` (every socket handler), `safeHandler.ts`, `rateLimiter.ts`, `connectionLimits.ts` in the same folder, `backend/src/rooms/roomStore.ts` (with the per-game room state next to it: `lobby.ts`, `profiles.ts`, `flowerField.ts`, `wordSearch.ts`), `backend/src/logger.ts`. Hosting: `render.yaml`.
 - Pages: `frontend/src/app/page.tsx` (home), `frontend/src/app/play/[roomId]/page.tsx` (room), and `rooms/`, `diary/`, `feedback/`, `privacy/` next to them.
 - Components, under `frontend/src/app/components/`: one folder per game (`sudoku/`, `takuzu/`, `flower-field/`, `word-search/`), `games/` (the registry, covers, previews and the board styles shared by every game), `play/` (toolbar, difficulty picker, end-of-game card), `room/` (table, lobby, wake status), `site/` (header, footer), `players/`, `emotes/`, `loader/`, `ui/`.
-- Artwork: `art/src/logo/`, `art/src/emotes/`.
+- Artwork: `art/src/logo/`, `art/src/emotes/`, `art/src/memory/` (SVG sources of the cards in `svg/`).
 - Client plumbing, under `frontend/src/lib/`: `socket.ts`, `storage.ts`, `playerId.ts`, `securityHeaders.ts`, the `use*.ts` hooks, `i18n/`.
 - Strings: `frontend/src/locales/en.ts` and `it.ts`. Diary entries: `frontend/src/locales/diary.ts` (rules in `docs/DIARY.md`).
 

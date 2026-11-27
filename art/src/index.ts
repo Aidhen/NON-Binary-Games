@@ -9,3 +9,6 @@ export { ROOM_ICONS, RoomIconArt } from './room/RoomIconArt';
 export type { RoomIconId } from './room/RoomIconArt';
 export { ANIMAL_ART_IDS, AnimalArt } from './animals/AnimalArt';
 export type { AnimalArtId } from './animals/AnimalArt';
+export { MemoryCardArt, hasMemoryArt } from './memory/MemoryCardArt';
+export { MEMORY_BACK, MEMORY_FACES } from './memory/drawings';
+export type { MemoryDrawing } from './memory/drawings';

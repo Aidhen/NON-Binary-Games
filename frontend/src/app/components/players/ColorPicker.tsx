@@ -5,7 +5,8 @@ import { PLAYER_COLORS } from '@nbg/shared';
 import type { PlayerColor, PlayerProfile } from '@nbg/shared';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { PLAYER_COLOR_STYLES } from '@/lib/playerPalette';
-import { animalEmoji, playerName } from '@/lib/playerNames';
+import { AnimalArt } from '@nbg/art';
+import { animalArtId, playerName } from '@/lib/playerNames';
 import { cn } from '@/lib/utils';
 
 interface ColorPickerProps {
@@ -20,7 +21,7 @@ interface ColorPickerProps {
 
 /**
  * A row of swatches under the chip of the player. A color that somebody else has is shown with their
- * emoji and cannot be picked; the server decides in the end, this only saves a wrong try.
+ * animal and cannot be picked; the server decides in the end, this only saves a wrong try.
  */
 export function ColorPicker({ id, current, others, onPick, onClose }: Readonly<ColorPickerProps>) {
   const { t } = useTranslation();
@@ -29,9 +30,10 @@ export function ColorPicker({ id, current, others, onPick, onClose }: Readonly<C
 
   const takenBy = (color: PlayerColor) => others.find((player) => player.color === color);
 
-  // What is inside a swatch: the emoji of whoever has the color, a check mark on the color the player has.
+  // What is inside a swatch: the head of the animal of whoever has the color, a check mark on the color the player has.
   const markOf = (color: PlayerColor, owner: PlayerProfile | undefined) => {
-    if (owner) return <span aria-hidden="true" className="text-sm">{animalEmoji(owner.animal)}</span>;
+    // Paper-colored head: on a swatch of their own color it would melt into it.
+    if (owner) return <AnimalArt animal={animalArtId(owner.animal)} className="size-5 text-[var(--paper)]" />;
     if (color === current) return <span aria-hidden="true" className="text-[var(--bg)]">✓</span>;
     return null;
   };

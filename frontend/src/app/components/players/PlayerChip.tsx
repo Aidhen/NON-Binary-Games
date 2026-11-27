@@ -3,7 +3,7 @@ import type { Ref } from 'react';
 import type { PlayerProfile } from '@nbg/shared';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { styleOfColor } from '@/lib/playerPalette';
-import { animalEmoji } from '@/lib/playerNames';
+import { AnimalHead } from './AnimalHead';
 import { cn } from '@/lib/utils';
 
 interface PlayerChipProps {
@@ -21,8 +21,8 @@ interface PlayerChipProps {
 }
 
 /**
- * One player: the emoji of the animal, the name and the color of the player around them. The player's own
- * chip opens the color picker; the chips of the others point them out on the board. The emoji and the name
+ * One player: the head of the animal in the color of the player, the name and the same color around them. The player's own
+ * chip opens the color picker; the chips of the others point them out on the board. The animal and the name
  * are what tells players apart without relying on color.
  */
 export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, label, onClick, buttonRef }: Readonly<PlayerChipProps>) {
@@ -47,7 +47,7 @@ export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, lab
         isHighlighted && ['ring-4 motion-safe:animate-pulse', style.ring],
       )}
     >
-      <span aria-hidden="true" className={cn('flex size-[22px] shrink-0 items-center justify-center rounded-full text-sm leading-none', style.disc)}>{animalEmoji(profile.animal)}</span>
+      <AnimalHead animal={profile.animal} color={profile.color} className="size-7" />
       <span>{name}</span>
       {isSelf && (
         <span aria-hidden="true" className="text-xs font-bold uppercase tracking-wider text-[var(--subtitle-text)]">

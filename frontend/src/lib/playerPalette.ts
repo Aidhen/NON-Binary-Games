@@ -5,8 +5,8 @@ export interface PlayerColorStyle {
   ring: string;
   /** Light fill of that cell. */
   tint: string;
-  /** The disc behind the emoji of a player: the color at about a fifth. */
-  disc: string;
+  /** Sets `color` to the player color, for the head of the animal (it is filled with currentColor). */
+  head: string;
   /** Solid fill, for the swatches of the color picker and the dot of a chip. */
   swatch: string;
   border: string;
@@ -20,13 +20,13 @@ export interface PlayerColorStyle {
  * are chosen to be seen on the surfaces of that theme.
  */
 export const PLAYER_COLOR_STYLES: Record<PlayerColor, PlayerColorStyle> = {
-  red: { ring: 'ring-[var(--player-red)]', tint: 'bg-[var(--player-red)]/10', disc: 'bg-[var(--player-red)]/20', swatch: 'bg-[var(--player-red)]', border: 'border-[var(--player-red)]', text: 'text-[var(--player-red-text)]' },
-  orange: { ring: 'ring-[var(--player-orange)]', tint: 'bg-[var(--player-orange)]/10', disc: 'bg-[var(--player-orange)]/20', swatch: 'bg-[var(--player-orange)]', border: 'border-[var(--player-orange)]', text: 'text-[var(--player-orange-text)]' },
-  green: { ring: 'ring-[var(--player-green)]', tint: 'bg-[var(--player-green)]/10', disc: 'bg-[var(--player-green)]/20', swatch: 'bg-[var(--player-green)]', border: 'border-[var(--player-green)]', text: 'text-[var(--player-green-text)]' },
-  teal: { ring: 'ring-[var(--player-teal)]', tint: 'bg-[var(--player-teal)]/10', disc: 'bg-[var(--player-teal)]/20', swatch: 'bg-[var(--player-teal)]', border: 'border-[var(--player-teal)]', text: 'text-[var(--player-teal-text)]' },
-  blue: { ring: 'ring-[var(--player-blue)]', tint: 'bg-[var(--player-blue)]/10', disc: 'bg-[var(--player-blue)]/20', swatch: 'bg-[var(--player-blue)]', border: 'border-[var(--player-blue)]', text: 'text-[var(--player-blue-text)]' },
-  purple: { ring: 'ring-[var(--player-purple)]', tint: 'bg-[var(--player-purple)]/10', disc: 'bg-[var(--player-purple)]/20', swatch: 'bg-[var(--player-purple)]', border: 'border-[var(--player-purple)]', text: 'text-[var(--player-purple-text)]' },
-  pink: { ring: 'ring-[var(--player-pink)]', tint: 'bg-[var(--player-pink)]/10', disc: 'bg-[var(--player-pink)]/20', swatch: 'bg-[var(--player-pink)]', border: 'border-[var(--player-pink)]', text: 'text-[var(--player-pink-text)]' },
+  red: { ring: 'ring-[var(--player-red)]', tint: 'bg-[var(--player-red)]/10', head: 'text-[var(--player-red)]', swatch: 'bg-[var(--player-red)]', border: 'border-[var(--player-red)]', text: 'text-[var(--player-red-text)]' },
+  orange: { ring: 'ring-[var(--player-orange)]', tint: 'bg-[var(--player-orange)]/10', head: 'text-[var(--player-orange)]', swatch: 'bg-[var(--player-orange)]', border: 'border-[var(--player-orange)]', text: 'text-[var(--player-orange-text)]' },
+  green: { ring: 'ring-[var(--player-green)]', tint: 'bg-[var(--player-green)]/10', head: 'text-[var(--player-green)]', swatch: 'bg-[var(--player-green)]', border: 'border-[var(--player-green)]', text: 'text-[var(--player-green-text)]' },
+  teal: { ring: 'ring-[var(--player-teal)]', tint: 'bg-[var(--player-teal)]/10', head: 'text-[var(--player-teal)]', swatch: 'bg-[var(--player-teal)]', border: 'border-[var(--player-teal)]', text: 'text-[var(--player-teal-text)]' },
+  blue: { ring: 'ring-[var(--player-blue)]', tint: 'bg-[var(--player-blue)]/10', head: 'text-[var(--player-blue)]', swatch: 'bg-[var(--player-blue)]', border: 'border-[var(--player-blue)]', text: 'text-[var(--player-blue-text)]' },
+  purple: { ring: 'ring-[var(--player-purple)]', tint: 'bg-[var(--player-purple)]/10', head: 'text-[var(--player-purple)]', swatch: 'bg-[var(--player-purple)]', border: 'border-[var(--player-purple)]', text: 'text-[var(--player-purple-text)]' },
+  pink: { ring: 'ring-[var(--player-pink)]', tint: 'bg-[var(--player-pink)]/10', head: 'text-[var(--player-pink)]', swatch: 'bg-[var(--player-pink)]', border: 'border-[var(--player-pink)]', text: 'text-[var(--player-pink-text)]' },
 };
 
 /** The style of a color, or the one of the theme for a color this page does not know (a newer server than the page). */
@@ -36,7 +36,7 @@ export const styleOfColor = (color: string): PlayerColorStyle => (Object.hasOwn(
 export const UNKNOWN_PLAYER_STYLE: PlayerColorStyle = {
   ring: 'ring-[var(--number-player)]',
   tint: 'bg-[var(--number-player)]/10',
-  disc: 'bg-[var(--number-player)]/20',
+  head: 'text-[var(--number-player)]',
   swatch: 'bg-[var(--number-player)]',
   border: 'border-[var(--number-player)]',
   text: 'text-[var(--number-player)]',

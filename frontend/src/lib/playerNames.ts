@@ -1,27 +1,19 @@
 import { PLAYER_ANIMALS, PLAYER_COLORS } from '@nbg/shared';
-import type { PlayerAnimal } from '@nbg/shared';
+import { ANIMAL_ART_IDS } from '@nbg/art';
+import type { AnimalArtId } from '@nbg/art';
 
 /**
- * One emoji for each animal: plain Unicode like the emotes, so there is nothing to load and screen readers
- * know them. They are also the way to tell players apart without looking at colors.
+ * The drawing for an animal. A page older or newer than the server can get an animal it has no drawing for
+ * (the server used to have panda, otter and more): it gets one of the drawings we have, always the same for the
+ * same word, so that a player does not change face between renders. The name written next to it stays the truth.
  */
-export const PLAYER_ANIMAL_EMOJI: Record<PlayerAnimal, string> = {
-  panda: '🐼',
-  fox: '🦊',
-  otter: '🦦',
-  owl: '🦉',
-  frog: '🐸',
-  koala: '🐨',
-  hedgehog: '🦔',
-  penguin: '🐧',
-  rabbit: '🐰',
-  turtle: '🐢',
-  octopus: '🐙',
-  dolphin: '🐬',
+export const animalArtId = (animal: string): AnimalArtId => {
+  const known = ANIMAL_ART_IDS.find((id) => id === animal);
+  if (known) return known;
+  let sum = 0;
+  for (const char of animal) sum += char.codePointAt(0) ?? 0;
+  return ANIMAL_ART_IDS[sum % ANIMAL_ART_IDS.length];
 };
-
-/** The emoji of an animal, or a paw for one this page does not know (a newer server than the page). */
-export const animalEmoji = (animal: string): string => (Object.hasOwn(PLAYER_ANIMAL_EMOJI, animal) ? PLAYER_ANIMAL_EMOJI[animal as PlayerAnimal] : '🐾');
 
 const KNOWN_ANIMALS: readonly string[] = PLAYER_ANIMALS;
 const KNOWN_COLORS: readonly string[] = PLAYER_COLORS;

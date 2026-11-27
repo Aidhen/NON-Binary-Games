@@ -47,7 +47,7 @@ const defaultSettings: GameSettings = {
 
 /** The players of the tests, as the list of the room gives them: each has the color of their profile. */
 const profiles: Record<string, PlayerProfile> = {
-  'player-2': { alias: 'player-2', animal: 'panda', color: 'red' },
+  'player-2': { alias: 'player-2', animal: 'koala', color: 'red' },
   'player-3': { alias: 'player-3', animal: 'fox', color: 'blue' },
 };
 

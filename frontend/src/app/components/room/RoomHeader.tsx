@@ -2,9 +2,9 @@
 import { useEffect, useId, useState } from 'react';
 import type { PlayerProfile } from '@nbg/shared';
 import { CopyLinkButton } from './CopyLinkButton';
+import { RoomCode } from './RoomCode';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { playerName } from '@/lib/playerNames';
-import { getRoomEmoji } from '@/lib/roomEmoji';
 import { cn } from '@/lib/utils';
 
 interface RoomHeaderProps {
@@ -45,8 +45,8 @@ export function RoomHeader({ roomId, players, self, tableVotes, onVoteTable }: R
     <header className="mb-3 flex w-full max-w-[500px] flex-col gap-2 rounded-[var(--radius-paper)] bg-[var(--paper)] px-3 py-2 shadow-[var(--shadow-paper)] sm:mb-6 sm:px-4 sm:py-3">
       <div className="flex items-center justify-between gap-2">
         <h1 className="font-display text-lg font-extrabold leading-tight">
-          <span className="sr-only sm:not-sr-only">{t('sudoku.room')}: </span>
-          <span className="text-base tracking-wide sm:text-lg sm:tracking-widest">{getRoomEmoji(roomId).join('')}</span>
+          <span aria-hidden="true" className="sr-only sm:not-sr-only">{t('sudoku.room')}: </span>
+          <RoomCode roomId={roomId} iconClassName="size-6 sm:size-7" className="align-middle" />
         </h1>
         <div className="flex items-center gap-2">
           <CopyLinkButton className="px-2.5 py-1.5 text-xs sm:px-3.5 sm:py-2 sm:text-sm" />

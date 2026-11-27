@@ -2,8 +2,8 @@
 import type { PlayerColor, PlayerProfile } from '@nbg/shared';
 import { PlayerBar } from '../players/PlayerBar';
 import { CopyLinkButton } from './CopyLinkButton';
+import { RoomCode } from './RoomCode';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
-import { getRoomEmoji } from '@/lib/roomEmoji';
 import { useHighlight } from '@/lib/useHighlight';
 
 interface RoomCardProps {
@@ -33,7 +33,7 @@ export function RoomCard({ roomId, players, self, onPickColor }: Readonly<RoomCa
           {t('lobby.yourRoom')}
         </h1>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-3xl tracking-widest">{getRoomEmoji(roomId).join('')}</span>
+          <RoomCode roomId={roomId} iconClassName="size-9" />
           <CopyLinkButton />
         </div>
         <p className="text-sm font-medium text-[var(--subtitle-text)]">{t('lobby.invite')}</p>

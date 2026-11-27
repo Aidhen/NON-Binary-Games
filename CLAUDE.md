@@ -102,11 +102,14 @@ GitHub Issues are the backlog. Nothing that needs doing lives only in a chat or 
 
 - `fullstack` builds features and fixes across the three workspaces.
 - `secops` reviews the changes that can affect safety and owns Docker, CI, dependencies and hosting configuration.
+- `uiux` reviews flows, layout, copy and accessibility from screenshots of the running app. Read-only on application code.
+- `designer` owns the look (palette, illustration, typography, motion) and drafts new drawings for the owner to approve. Read-only on application code.
 
 The main session organizes the work. There is no separate planning agent.
 
 - **Small changes stay in the main session**: a fix in one or two files, copy, styling, a test. No agent is started for these.
 - **Larger changes go to `fullstack`**, with a brief that lets it start without exploring: the issue number and its checklist, the files involved (see Layout), the plan agreed with the owner, and what is out of scope.
+- **`uiux` and `designer` come before `fullstack`** for changes players will see beyond a small fix: a new screen or flow, a layout change, new artwork, a palette or theme change. Their accepted proposals go into the brief for `fullstack`. New drawings are approved by the owner on a preview sheet before any code is written. Copy-only and one-component tweaks skip them.
 - **`secops` reviews only when the diff touches** socket events or their schemas, state kept by the server, anything stored in the browser, what is broadcast to other players, dependencies, or Docker, CI and hosting configuration. Pure UI, copy and test changes skip the review. Give it the list of changed files and the hand-off notes from `fullstack`, not the whole story of the work.
 - One review round. `fullstack` addresses the blocking findings, the rest become proposed issues, and `secops` is not called again unless a blocking fix changed the contract.
 

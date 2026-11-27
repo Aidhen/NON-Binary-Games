@@ -98,6 +98,99 @@ export const it: Translations = {
     cell: "Riga {row}, colonna {column}: {value}",
     empty: "vuota"
   },
+  memory: {
+    // One entry per card, under the id of its drawing (see art/src/memory/drawings.tsx).
+    cards: {
+      "fool": {
+        name: "Il Matto",
+        alt: "Una faccina verde acqua felice, con il fagotto sulla spalla e un fiore in mano, sul bordo di un dirupo sotto il sole, con un cagnolino che salta"
+      },
+      "magician": {
+        name: "Il Bagatto",
+        alt: "Una faccina gialla con il cappello a forma di infinito alza la bacchetta sopra un tavolo con coppa, moneta, dado e spada"
+      },
+      "high-priestess": {
+        name: "La Papessa",
+        alt: "Una faccina viola serena con la tiara e la luna, avvolta nel velo, tiene un libro aperto tra due colonne"
+      },
+      "empress": {
+        name: "L'Imperatrice",
+        alt: "Una faccina arancione sorridente con la corona, su un trono tra le spighe, tiene uno scudo a cuore e uno scettro"
+      },
+      "emperor": {
+        name: "L'Imperatore",
+        alt: "Una faccina azzurra seria con la corona, seduta su un trono con le teste d'ariete, tiene lo scettro e il globo"
+      },
+      "hierophant": {
+        name: "Il Papa",
+        alt: "Una faccina gialla benedicente con la tiara e il bastone con la croce, davanti a due faccine piccole"
+      },
+      "lovers": {
+        name: "Gli Amanti",
+        alt: "Due faccine, una verde acqua e una arancione, vicine e innamorate, con un cuoricino alato che scocca una freccia dall'alto"
+      },
+      "chariot": {
+        name: "Il Carro",
+        alt: "Una faccina viola fiera con la corona guida il carro sotto un baldacchino di stelle, trainato da due faccine piccole, una chiara e una scura"
+      },
+      "justice": {
+        name: "La Giustizia",
+        alt: "Una faccina gialla calma con la corona, tiene in una mano la bilancia e nell'altra la spada"
+      },
+      "hermit": {
+        name: "L'Eremita",
+        alt: "Una faccina azzurra assorta, con il cappuccio, cammina nella notte con la lanterna e il bastone"
+      },
+      "wheel-of-fortune": {
+        name: "La Ruota della Fortuna",
+        alt: "Una grande ruota arancione che gira, con tre faccine: una in cima con la corona, una che sale sorridente, una che scende stupita"
+      },
+      "strength": {
+        name: "La Forza",
+        alt: "Una faccina viola con il cappello a forma di infinito appoggia dolcemente le mani sulla criniera di un leone sereno"
+      },
+      "hanged-man": {
+        name: "L'Appeso",
+        alt: "Una faccina verde acqua appesa a testa in giù a una trave, tranquilla, con un'aureola dorata"
+      },
+      "death": {
+        name: "La Morte",
+        alt: "Una faccina lilla assonnata con il cappuccio e la falce, mentre dal terreno spunta un germoglio: la fine che lascia spazio al nuovo"
+      },
+      "temperance": {
+        name: "La Temperanza",
+        alt: "Una faccina azzurra con le ali versa con calma l'acqua da una coppa all'altra"
+      },
+      "devil": {
+        name: "Il Diavolo",
+        alt: "Una faccina viola birichina con le corna e le ali da pipistrello, con due faccine piccole legate da una corda lenta che potrebbero sciogliere quando vogliono"
+      },
+      "tower": {
+        name: "La Torre",
+        alt: "Una torre colpita da un fulmine perde la corona, mentre due faccine stupite saltano giù"
+      },
+      "star": {
+        name: "La Stella",
+        alt: "Sotto una grande stella e sette stelline, una faccina verde acqua versa l'acqua da due brocche in uno stagno"
+      },
+      "moon": {
+        name: "La Luna",
+        alt: "Una falce di luna gialla assonnata tra due torri; sotto, due faccine le cantano contro e un granchietto esce dallo stagno"
+      },
+      "sun": {
+        name: "Il Sole",
+        alt: "Un grande sole giallo raggiante e sorridente; sotto, due faccine si tengono per mano davanti a un muretto"
+      },
+      "judgement": {
+        name: "Il Giudizio",
+        alt: "Una faccina azzurra con le ali, su una nuvola, suona una lunga tromba dorata verso il basso, e tre faccine escono felici dalle loro casse a braccia alzate"
+      },
+      "world": {
+        name: "Il Mondo",
+        alt: "Una faccina viola danza dentro una ghirlanda verde, con quattro faccine agli angoli"
+      }
+    }
+  },
   players: {
     title: "Giocatori in questa stanza",
     you: "tu",

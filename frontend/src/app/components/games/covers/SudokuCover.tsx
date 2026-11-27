@@ -3,7 +3,7 @@ const CELLS = ['5', '', '3', '', '7', '', '6', '', '9'];
 
 export function SudokuCover() {
   return (
-    <span className="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-[var(--box-lid)]">
+    <span className="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-[var(--lid-sudoku)] shadow-[inset_0_0_0_2.5px_#3A2E3F]">
       <span className="grid grid-cols-3 gap-1">
         {CELLS.map((digit, i) => (
           <span

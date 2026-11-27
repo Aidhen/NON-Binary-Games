@@ -68,6 +68,14 @@ describe('the text and the lines of every theme', () => {
       }
     });
 
+    it.runIf(theme === 'light')('keeps the plum and lilac of the light theme: the subtitle reaches 4.5:1 on the page, the paper and its wells', () => {
+      expect(variables['title-text'].toLowerCase()).toBe('#3a2e3f');
+      expect(variables['bg'].toLowerCase()).toBe('#f3f0f7');
+      for (const surface of ['bg', 'paper', 'paper-well']) {
+        expect(contrast(variables['subtitle-text'], variables[surface]), `subtitle on ${surface}`).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+
     it('keeps the lines between the boxes of a board visible (3:1) on the cells', () => {
       for (const surface of ['cell-background', 'cell-background-initial']) {
         expect(contrast(variables['grid-border-outer'], variables[surface]), `lines on ${surface}`).toBeGreaterThanOrEqual(3);
@@ -78,6 +86,34 @@ describe('the text and the lines of every theme', () => {
       expect(variables['field-grass']).toMatch(/^#[0-9a-fA-F]{6}$/);
       expect(variables['field-meadow']).toMatch(/^#[0-9a-fA-F]{6}$/);
       expect(contrast(variables['number-initial'], variables['paper-well'])).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+});
+
+const PLUM = '#3A2E3F';
+
+describe('the game boxes of every theme', () => {
+  describe.each(Object.keys(themes))('%s', (theme) => {
+    const variables = themes[theme];
+    const block = css.slice(css.indexOf(theme === 'light' ? ':root, [data-theme="light"]' : `[data-theme="${theme}"]`)).split('\n}\n')[0];
+
+    it('defines the four lids, the Takuzu one split between its two tiles', () => {
+      for (const name of ['lid-sudoku', 'lid-flower-field', 'lid-word-search', 'lid-takuzu-a', 'lid-takuzu-b']) {
+        expect(variables[name], name).toMatch(/^#[0-9a-fA-F]{6}$/);
+      }
+      expect(block).toMatch(/--lid-takuzu: linear-gradient\(135deg, var\(--lid-takuzu-a\) 50%, var\(--lid-takuzu-b\) 50%\);/);
+    });
+
+    it('keeps the plum outline visible (3:1) on every lid, and the plum letters of Word Search readable (4.5:1) on its sunflower', () => {
+      for (const name of ['lid-sudoku', 'lid-flower-field', 'lid-word-search', 'lid-takuzu-a', 'lid-takuzu-b']) {
+        expect(contrast(PLUM, variables[name]), `outline on ${name}`).toBeGreaterThanOrEqual(3);
+      }
+      expect(contrast(PLUM, variables['lid-word-search'])).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it('gives each game its own lid', () => {
+      const lids = ['lid-sudoku', 'lid-flower-field', 'lid-word-search', 'lid-takuzu-a'].map((name) => variables[name].toLowerCase());
+      expect(new Set(lids).size).toBe(lids.length);
     });
   });
 });

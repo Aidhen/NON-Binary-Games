@@ -94,6 +94,11 @@ export const wordSearchSelectPayloadSchema = z.object({
   to: z.object({ r: coordinateSchema, c: coordinateSchema }),
 });
 
+/** A card of the Memory, by its place in the deck. The upper bound depends on the deck, so it is checked by the server. */
+export const memoryFlipPayloadSchema = z.object({
+  index: coordinateSchema,
+});
+
 export const wordSearchLanguagePayloadSchema = z.object({
   language: wordLanguageSchema,
 });
@@ -113,6 +118,7 @@ export type FlowerFieldCellPayload = z.infer<typeof flowerFieldCellPayloadSchema
 export type FlowerFieldModePayload = z.infer<typeof flowerFieldModePayloadSchema>;
 export type WordSearchSelectPayload = z.infer<typeof wordSearchSelectPayloadSchema>;
 export type WordSearchLanguagePayload = z.infer<typeof wordSearchLanguagePayloadSchema>;
+export type MemoryFlipPayload = z.infer<typeof memoryFlipPayloadSchema>;
 
 /**
  * Argument lists of the client-to-server events, as tuples.
@@ -136,6 +142,7 @@ export const flowerFieldCellArgsSchema = z.tuple([flowerFieldCellPayloadSchema])
 export const flowerFieldModeArgsSchema = z.tuple([flowerFieldModePayloadSchema]);
 export const wordSearchSelectArgsSchema = z.tuple([wordSearchSelectPayloadSchema]);
 export const wordSearchLanguageArgsSchema = z.tuple([wordSearchLanguagePayloadSchema]);
+export const memoryFlipArgsSchema = z.tuple([memoryFlipPayloadSchema]);
 export const restartGameArgsSchema = z.tuple([difficultySchema]);
 export const sendEmoteArgsSchema = z.tuple([emoteSchema]);
 export const setColorArgsSchema = z.tuple([playerColorSchema]);

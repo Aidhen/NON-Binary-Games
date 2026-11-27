@@ -11,6 +11,7 @@ const WHERE: Record<FeedbackWhere, string> = {
   'takuzu': 'Takuzu',
   'flower-field': 'Flower Field',
   'word-search': 'Word Search',
+  'memory': 'Memory',
   'table': 'The table (choosing a game)',
   'room-and-invite': 'Rooms and invitations',
   'rest-of-site': 'The rest of the site',

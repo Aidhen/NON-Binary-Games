@@ -1,16 +1,18 @@
 import type { SudokuPuzzle, Difficulty } from './games/sudoku/types';
 import type { TakuzuGrid } from './games/takuzu/types';
 import type { FlowerCellChange, FlowerGrid, FlowerStatus } from './games/flower-field/types';
+import type { MemoryCardOpen, MemoryCardShown } from './games/memory/types';
 import type { WordLanguage, WordSearchGrid } from './games/word-search/types';
 import type { Emote } from './emotes';
 import type { GameId } from './games';
 import type { PlayerColor, PlayerProfile } from './players';
-import type { CellUpdatePayload, CellUpdateResult, SudokuMistakesResult, FlowerFieldCellPayload, FlowerFieldModePayload, ToggleNotePayload, SelectCellPayload, WordSearchLanguagePayload, WordSearchSelectPayload } from './schemas';
+import type { CellUpdatePayload, CellUpdateResult, SudokuMistakesResult, FlowerFieldCellPayload, FlowerFieldModePayload, ToggleNotePayload, SelectCellPayload, WordSearchLanguagePayload, WordSearchSelectPayload, MemoryFlipPayload } from './schemas';
 
 export * from './games/sudoku/index';
 export * from './games/takuzu/index';
 export * from './games/flower-field/index';
 export * from './games/word-search/index';
+export * from './games/memory/index';
 export * from './schemas';
 export * from './emotes';
 export * from './feedback';
@@ -115,10 +117,26 @@ export interface WordSearchStartedPayload {
 }
 
 /**
+ * The Memory of a room. The deck never leaves the server: a face is told when its card is flipped, so a player who
+ * comes in (or comes back) learns the cards that are matched or open and nothing else. The cards that did not match
+ * and are still locked (see MEMORY_MISMATCH_MS) are told as hidden, like the rest.
+ */
+export interface MemoryStartedPayload {
+  game: 'memory';
+  difficulty: DifficultyLevel;
+  /** How many cards lie on the table, matched or not. They are told apart by their place, from 0. */
+  cards: number;
+  /** The pairs found, both cards of each, with who found them (by alias). */
+  matched: MemoryCardShown[];
+  /** The cards somebody holds face up right now, one at most for each player, with the time each one has left. */
+  open: MemoryCardOpen[];
+}
+
+/**
  * What the players are told when a game opens or restarts, and the one who joins a room that is playing it.
  * `game` says which one it is: the page of a game ignores the start of any other.
  */
-export type GameStartedPayload = SudokuStartedPayload | TakuzuStartedPayload | FlowerFieldStartedPayload | WordSearchStartedPayload;
+export type GameStartedPayload = SudokuStartedPayload | TakuzuStartedPayload | FlowerFieldStartedPayload | WordSearchStartedPayload | MemoryStartedPayload;
 
 export interface ServerToClientEvents {
   /** Sent to a player who joins, and to everybody each time a vote changes, a voter leaves or the game opens. */
@@ -146,6 +164,14 @@ export interface ServerToClientEvents {
   "flower-field:mode": (data: { explosive: boolean }) => void;
   /** A word of the Word Search that somebody found, to everybody in the room, the player who found it included. The last one is followed by `game-won`. */
   "word-search:found": (data: WordSearchFound) => void;
+  /** A card turned face up, to everybody in the room, the player who flipped it included. */
+  "memory:flipped": (data: MemoryCardShown) => void;
+  /** The second card was the pair of the first: both stay face up for good. */
+  "memory:matched": (data: { indices: [number, number]; alias: string }) => void;
+  /** The second card was another one: both are shown for MEMORY_MISMATCH_MS and then turn, and nobody can flip them until then. Follows the second `memory:flipped`. */
+  "memory:mismatched": (data: { indices: [number, number] }) => void;
+  /** The player who held this card face up left the room: it turns back. */
+  "memory:closed": (data: { index: number }) => void;
   "emote-received": (data: { alias: string; emote: Emote }) => void;
   /** Sent to the player who has just joined: the alias that is theirs in the list of players. */
   "joined-as": (alias: string) => void;
@@ -178,6 +204,8 @@ export interface ClientToServerEvents {
   "word-search:select": (payload: WordSearchSelectPayload) => void;
   /** A new puzzle in another language, with the level the room has. Everybody is told with `game-started`. */
   "word-search:set-language": (payload: WordSearchLanguagePayload) => void;
+  /** Nothing comes back when the card cannot be flipped: the page only shows what the server says. */
+  "memory:flip": (payload: MemoryFlipPayload) => void;
   "send-emote": (emote: Emote) => void;
   "set-color": (color: PlayerColor) => void;
 }

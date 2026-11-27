@@ -34,4 +34,10 @@ export const GAME_GUIDES: Readonly<Record<GameId, GameGuide>> = {
     descriptionKey: 'gamesPage.wordSearch.description',
     ruleKeys: ['wordSearch.ruleFind', 'wordSearch.ruleDrag', 'gamesPage.wordSearch.rule3', 'gamesPage.wordSearch.rule4'],
   },
+  // Placeholder so that the build compiles: the keys do not exist yet, and the game is not in the registry, so nothing reads them.
+  memory: {
+    taglineKey: 'gamesPage.memory.tagline',
+    descriptionKey: 'gamesPage.memory.description',
+    ruleKeys: [],
+  },
 };

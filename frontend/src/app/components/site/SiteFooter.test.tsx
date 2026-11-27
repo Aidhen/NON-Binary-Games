@@ -40,10 +40,11 @@ describe('SiteFooter', () => {
     expect(repository.getAttribute('rel')).toContain('noopener');
   });
 
-  it('shows the social profiles as coming soon: one image with a name, and nothing to press', () => {
+  it('has no placeholder for profiles that do not exist yet', () => {
     render(<SiteFooter />);
 
-    expect(screen.getByRole('img', { name: 'footer.social' })).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.queryByText('footer.social')).not.toBeInTheDocument();
     expect(screen.getAllByRole('link')).toHaveLength(3);
   });
 });

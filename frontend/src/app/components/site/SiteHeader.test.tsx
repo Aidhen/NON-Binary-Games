@@ -11,6 +11,7 @@ vi.mock('@/lib/i18n/TranslationContext', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+vi.mock('./SettingsMenu', () => ({ SettingsMenu: () => <div data-testid="settings-menu" /> }));
 vi.mock('../ui/ThemeSelector', () => ({ ThemeSelector: () => <div data-testid="theme-selector" /> }));
 vi.mock('../ui/LanguageSelector', () => ({ LanguageSelector: () => <div data-testid="language-selector" /> }));
 
@@ -62,5 +63,11 @@ describe('SiteHeader', () => {
 
     expect(screen.getByTestId('theme-selector')).toBeInTheDocument();
     expect(screen.getByTestId('language-selector')).toBeInTheDocument();
+  });
+
+  it('offers a phone the same choices behind one button', () => {
+    render(<SiteHeader />);
+
+    expect(screen.getByTestId('settings-menu')).toBeInTheDocument();
   });
 });

@@ -10,6 +10,8 @@ import { EmoteOverlay } from '../emotes/EmoteOverlay';
 import { PlayerBar } from '../players/PlayerBar';
 import { GameOverCard } from '../play/GameOverCard';
 import { GameToolbar } from '../play/GameToolbar';
+import { cn } from '@/lib/utils';
+import { BOARD_FIT } from '../games/boardStyles';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from '@/lib/socket';
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
@@ -143,7 +145,7 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
   if (!grid || !initial) return <ServerLoader status={status} onRetry={retry} />;
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
+    <div className="flex flex-col items-center gap-3 sm:gap-6 w-full max-w-[500px] mx-auto relative">
       <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={setColor} onHighlight={highlight} />
 
       <GameToolbar difficulty={difficulty} isSettingsOpen={isSettingsOpen} onToggleSettings={() => setIsSettingsOpen(!isSettingsOpen)} />
@@ -157,9 +159,9 @@ export function TakuzuContainer({ roomId }: Readonly<{ roomId: string }>) {
         />
       )}
 
-      <div className="relative w-full">
+      <div className={cn("relative w-full", BOARD_FIT)}>
         {isGameWon && (
-          <GameOverCard title={t('takuzu.cleared')} message={t('takuzu.compliment')} onPlayAgain={() => getSocket().emit('restart-game', difficulty)} />
+          <GameOverCard title={t('takuzu.cleared')} message={t('takuzu.compliment')} onBackToTable={() => getSocket().emit('vote-table', true)} onPlayAgain={() => getSocket().emit('restart-game', difficulty)} />
         )}
 
         <TakuzuBoardUI

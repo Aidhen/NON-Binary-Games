@@ -39,7 +39,7 @@ export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, lab
       aria-expanded={isSelf ? expanded : undefined}
       data-highlighted={isHighlighted || undefined}
       className={cn(
-        'flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border-2 px-2.5 py-1 text-sm font-bold',
+        'flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border-2 py-0.5 pl-1 pr-2.5 text-sm font-bold',
         'text-[var(--title-text)] transition-all duration-200',
         style.border,
         style.tint,
@@ -47,7 +47,7 @@ export function PlayerChip({ profile, name, isSelf, isHighlighted, expanded, lab
         isHighlighted && ['ring-4 motion-safe:animate-pulse', style.ring],
       )}
     >
-      <span aria-hidden="true" className="text-lg leading-none">{animalEmoji(profile.animal)}</span>
+      <span aria-hidden="true" className={cn('flex size-[22px] shrink-0 items-center justify-center rounded-full text-sm leading-none', style.disc)}>{animalEmoji(profile.animal)}</span>
       <span>{name}</span>
       {isSelf && (
         <span aria-hidden="true" className="text-xs font-bold uppercase tracking-wider text-[var(--subtitle-text)]">

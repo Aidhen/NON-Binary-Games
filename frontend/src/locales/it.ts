@@ -8,7 +8,7 @@ export const it: Translations = {
     keyHint: "Da tastiera: le frecce per muoverti, i numeri per scrivere, N per le note, Canc per cancellare.",
     title: "(NON) Binary Games",
     subtitle: "Motore Sudoku",
-    loading: "Caricamento motore...",
+    loading: "Preparo la griglia…",
     cleared: "Puzzle risolto!",
     compliment: "Eccellenti abilità logiche.",
     playAgain: "Gioca ancora",
@@ -44,24 +44,24 @@ export const it: Translations = {
     keyHint: "Da tastiera: le frecce per muoverti, Invio per aprire una cella, F per mettere o togliere una bandierina.",
     cleared: "Tutto fiorito!",
     compliment: "Ottimo lavoro!",
-    lost: "Una mina!",
-    lostHint: "Hai scelto di perdere quando si apre una mina. Riproviamo?",
+    lost: "Un'ape!",
+    lostHint: "Hai scelto di perdere quando si sveglia un'ape. Riproviamo?",
     rules: "Come funziona",
-    ruleNumbers: "Un numero dice quante mine toccano quella cella, anche in diagonale.",
-    ruleSafe: "Apri tutte le celle che non sono mine. La prima è sempre sicura e non devi mai tirare a caso.",
-    ruleFlags: "Metti una bandierina dove sai che c'è una mina: attiva la modalità bandierine e tocca.",
-    ruleMineMarks: "Se apri una mina viene solo segnata per tutti e la partita continua.",
-    ruleMineLoses: "Se apri una mina la partita è persa per tutti.",
+    ruleNumbers: "Un numero dice quante api toccano quella cella, anche in diagonale.",
+    ruleSafe: "Apri tutte le celle senza un'ape. La prima è sempre sicura e non devi mai tirare a caso.",
+    ruleFlags: "Metti una bandierina dove sai che dorme un'ape: attiva la modalità bandierine e tocca.",
+    ruleMineMarks: "Se svegli un'ape viene solo segnata per tutti e la partita continua.",
+    ruleMineLoses: "Se svegli un'ape la partita è persa per tutti.",
     flagMode: "Bandierine",
-    explosive: "Perdi quando si apre una mina",
+    explosive: "Perdi quando si sveglia un'ape",
     bloom: "Fiori che crescono alla fine",
     bloomHint: "Spenti, i fiori compaiono fermi: più leggero per i telefoni meno veloci.",
     explosiveLocked: "Si può cambiare prima di aprire la prima cella, o con una nuova partita.",
     cell: "Riga {row}, colonna {column}: {state}",
     closed: "chiusa",
     flagged: "bandierina",
-    mine: "mina",
-    empty: "nessuna mina intorno"
+    mine: "ape",
+    empty: "nessuna ape intorno"
   },
   wordSearch: {
     cleared: "Tutte le parole sono state trovate!",
@@ -138,7 +138,7 @@ export const it: Translations = {
     title: "Scegli una scatola",
     hint: "Ognuno ne sceglie una. La scatola si apre quando la vuole più di metà della stanza.",
     games: "Giochi",
-    open: "Apri la scatola",
+    open: "Apri {game}",
     takeBack: "Ritiro il mio voto",
     reconnecting: "Connessione persa, ci stiamo ricollegando… Il tuo posto nella stanza resta per un po’.",
     connectionLost: "Il server non risponde.",
@@ -146,8 +146,14 @@ export const it: Translations = {
     boardFailed: "La griglia non è venuta. Non è cambiato niente: riprova.",
     backToTable: "Torna al tavolo",
     stayHere: "Preferisco restare",
+    backAsk: "{names} vorrebbe tornare al tavolo",
+    goBack: "Torna al tavolo",
+    keepPlaying: "Continua a giocare",
     backProgress: "{count} su {total} vogliono tornare al tavolo",
-    progress: "{count} su {total} vogliono {game}",
+    wants: "{names} vuole {game}",
+    wantsPlural: "{names} vogliono {game}",
+    and: "e",
+    split: "I voti sono divisi: una scatola si apre quando più di metà della stanza la sceglie.",
     votes: "{count} voti su {total}",
     players: "{min}–{max} giocatori",
     playersExact: "{count} giocatori",
@@ -179,9 +185,42 @@ export const it: Translations = {
     failedDetails: "Ci sta mettendo più del solito. Continuiamo a riprovare in background.",
     retry: "Riprova"
   },
+  settings: {
+    label: "Tema e lingua",
+    theme: "Tema",
+    language: "Lingua"
+  },
+  themes: {
+    system: "Sistema",
+    light: "Chiaro",
+    dark: "Scuro",
+    retro: "Retrò",
+    oled: "OLED",
+    "non-binary": "Non binario"
+  },
   emotes: {
     title: "Reazioni",
-    more: "Altre reazioni"
+    more: "Altre reazioni",
+    names: {
+      "💜": "Cuore viola",
+      "🔥": "Fuoco",
+      "😂": "Risata",
+      "😤": "Sbuffo",
+      "👏": "Applauso",
+      "😎": "Occhiali da sole",
+      "🤔": "Pensieroso",
+      "😢": "Triste",
+      "😴": "Sonno",
+      "❤️": "Cuore rosso",
+      "🎉": "Festa",
+      "🦆": "Papera",
+      "🫪": "Faccia stravolta",
+      "🙏": "Grazie",
+      "😓": "Uff",
+      "😶‍🌫️": "Testa tra le nuvole",
+      "🤯": "Testa che esplode",
+      "🫰": "Cuoricino con le dita"
+    }
   },
   nav: {
     label: "Principale",
@@ -193,8 +232,7 @@ export const it: Translations = {
   footer: {
     tagline: "Un progetto queer-owned, fatto per giocare insieme.",
     privacy: "Privacy",
-    github: "GitHub",
-    social: "Instagram, X e TikTok: in arrivo"
+    github: "GitHub"
   },
   home: {
     titleStart: "Prenditi una pausa: gioca in solitaria o",
@@ -231,7 +269,7 @@ export const it: Translations = {
     },
     flowerField: {
       tagline: "Un prato da esplorare insieme",
-      description: "Aprite tutte le celle che non nascondono una mina, usando i numeri per capire dove sono."
+      description: "Aprite tutte le celle che non nascondono un'ape, usando i numeri per capire dove dormono le api."
     },
     wordSearch: {
       tagline: "Parole nascoste, trovate insieme",

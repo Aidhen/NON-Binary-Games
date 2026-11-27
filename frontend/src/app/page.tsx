@@ -27,13 +27,16 @@ export default function Home() {
         <div className="flex min-w-0 max-w-xl flex-1 basis-96 flex-col items-start gap-5">
           <h1 className={cn(HEADING, "text-5xl sm:text-6xl")}>
             {t('home.titleStart')}{' '}
-            <span className="relative inline-block whitespace-nowrap text-[var(--logo-non)]">
-              {t('home.titleAccent')}
-              {/* One stroke of a marker under the words, stretched to their width. */}
-              <svg aria-hidden="true" viewBox="0 0 100 10" preserveAspectRatio="none" className="absolute -bottom-1.5 left-0 h-2.5 w-full">
-                <path d="M2 6 Q14 1 26 5 T50 5 T74 5 T98 4" fill="none" strokeWidth="5" strokeLinecap="round" vectorEffect="non-scaling-stroke" style={{ stroke: 'var(--logo-sparkle)' }} />
-              </svg>
-            </span>.
+            {/* The word and the period never part: on a phone the period would wrap alone. The underline is the word's only. */}
+            <span className="whitespace-nowrap">
+              <span className="relative inline-block text-[var(--logo-non)]">
+                {t('home.titleAccent')}
+                {/* One stroke of a marker under the word, stretched to its width. */}
+                <svg aria-hidden="true" viewBox="0 0 100 10" preserveAspectRatio="none" className="absolute -bottom-1.5 left-0 h-2.5 w-full">
+                  <path d="M2 6 Q14 1 26 5 T50 5 T74 5 T98 4" fill="none" strokeWidth="5" strokeLinecap="round" vectorEffect="non-scaling-stroke" style={{ stroke: 'var(--logo-sparkle)' }} />
+                </svg>
+              </span>.
+            </span>
           </h1>
           <p className={cn(BODY, "text-lg")}>{t('home.lead')}</p>
           <button type="button" onClick={openNewRoom} className={BUTTON_PRIMARY}>{t('home.create')}</button>

@@ -282,6 +282,15 @@ describe('FlowerFieldContainer', () => {
     expect(mocks.emitted).toContainEqual({ event: 'restart-game', args: ['easy'] });
   });
 
+  it('lets the players go back to the table from the end card, with the same vote as the button above the game', async () => {
+    await renderGame({ explosive: true });
+    await act(async () => { mocks.dispatch('flower-field:lost', { mines: [[0, 0]], exploded: [0, 0] }); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'lobby.backToTable' }));
+
+    expect(mocks.emitted).toContainEqual({ event: 'vote-table', args: [true] });
+  });
+
   it('shows the win when the server says so, with the field in bloom and the card under it', async () => {
     await renderGame();
     expect(boardState().bloom).toBeNull();

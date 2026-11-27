@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DIFFICULTIES } from '@nbg/shared';
+import { DIFFICULTIES, EMOTES } from '@nbg/shared';
 import { en } from './en';
 import { it as italian } from './it';
 
@@ -33,5 +33,20 @@ describe('the two dictionaries', () => {
     for (const path of pathsOf(dictionary)) {
       expect((lookUp(path) as string).trim(), path).not.toBe('');
     }
+  });
+});
+
+describe('the names of the emotes', () => {
+  it.each([['English', en], ['Italian', italian]])('exist for every emote, in %s', (_language, dictionary) => {
+    const names = dictionary.emotes.names as Record<string, string>;
+    for (const emote of EMOTES) expect(names[emote], emote).toBeTruthy();
+    expect(Object.keys(names).sort()).toEqual([...EMOTES].sort());
+  });
+});
+
+describe('the Flower Field copy', () => {
+  it.each([['English', en], ['Italian', italian]])('talks about bees and not mines, in %s', (_language, dictionary) => {
+    const text = JSON.stringify([dictionary.flowerField, dictionary.gamesPage.flowerField]).toLowerCase();
+    expect(text).not.toMatch(/\bmin[ae]s?\b|\bmin[ae]\b/);
   });
 });

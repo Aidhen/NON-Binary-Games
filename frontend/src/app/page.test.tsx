@@ -37,6 +37,14 @@ describe('Home', () => {
     expect(router.replace).not.toHaveBeenCalled();
   });
 
+  it('keeps the last word of the title and the period together, so that the period never wraps alone', () => {
+    render(<Home />);
+
+    const word = screen.getByText('home.titleAccent');
+    expect(word.parentElement).toHaveClass('whitespace-nowrap');
+    expect(word.parentElement).toHaveTextContent('home.titleAccent.');
+  });
+
   it('opens a new room when asked, with an id the server accepts', () => {
     render(<Home />);
 

@@ -263,11 +263,12 @@ describe('WordSearchContainer', () => {
     expect(screen.queryByText(/The hidden word was/)).not.toBeInTheDocument();
   });
 
-  it('puts the emotes right under the grid, above the words and the rules: they are used while playing', async () => {
+  it('puts the words to find right under the grid, above the emotes, and the rules last', async () => {
     await renderGame();
 
+    const words = screen.getByText(en.wordSearch.words);
     const emotes = screen.getByRole('group', { name: en.emotes.title });
-    expect(emotes.compareDocumentPosition(screen.getByText(en.wordSearch.words)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(words.compareDocumentPosition(emotes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(emotes.compareDocumentPosition(screen.getByText(en.wordSearch.rules)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 

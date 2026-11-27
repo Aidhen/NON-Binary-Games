@@ -39,7 +39,7 @@ Tooling: **Vitest** for unit, component and integration tests (the server tests 
 
 ---
 
-## Current status: v0.8.0-alpha
+## Current status: v0.9.0-alpha
 
 Four games are playable online. What changed in each version is in the [releases](https://github.com/Aidhen/NON-Binary-Games/releases); news for the players is in the Diary on the site.
 

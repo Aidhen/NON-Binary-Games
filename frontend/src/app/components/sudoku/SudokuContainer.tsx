@@ -11,6 +11,7 @@ import { PlayerBar } from '../players/PlayerBar';
 import { GameOverCard } from '../play/GameOverCard';
 import { GameToolbar } from '../play/GameToolbar';
 import { cn } from '@/lib/utils';
+import { BOARD_FIT } from '../games/boardStyles';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from "@/lib/socket";
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
@@ -296,7 +297,7 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
+    <div className="flex flex-col items-center gap-3 sm:gap-6 w-full max-w-[500px] mx-auto relative">
       <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={setColor} onHighlight={highlight} />
 
       <GameToolbar difficulty={difficulty} isSettingsOpen={isSettingsOpen} onToggleSettings={() => setIsSettingsOpen(!isSettingsOpen)} />
@@ -310,9 +311,9 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
         />
       )}
 
-      <div className="relative w-full">
+      <div className={cn("relative w-full", BOARD_FIT)}>
         {isGameWon && (
-          <GameOverCard title={t('sudoku.cleared')} message={t('sudoku.compliment')} onPlayAgain={() => getSocket().emit('restart-game', difficulty)} />
+          <GameOverCard title={t('sudoku.cleared')} message={t('sudoku.compliment')} onBackToTable={() => getSocket().emit('vote-table', true)} onPlayAgain={() => getSocket().emit('restart-game', difficulty)} />
         )}
 
         <SudokuBoardUI
@@ -333,12 +334,12 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
       </div>
 
       {/* Controls Area (Toggle + Numpad) */}
-      <div className="w-full flex flex-col gap-3 mt-2">
+      <div className="w-full flex flex-col gap-2 sm:gap-3 sm:mt-2">
         <div className="flex justify-center w-full">
           <button
             onClick={() => setIsNotesMode(!isNotesMode)}
             className={cn(
-              "flex cursor-pointer items-center gap-2 px-5 py-2 rounded-full text-sm font-bold transition-all duration-200",
+              "flex cursor-pointer items-center gap-2 px-5 py-1.5 sm:py-2 rounded-full text-sm font-bold transition-all duration-200",
               isNotesMode
                 ? "bg-[var(--number-player)]/10 text-[var(--number-player)] border-2 border-[var(--number-player)]/50"
                 : "bg-[var(--numpad-background)] text-[var(--subtitle-text)] border-2 border-transparent hover:bg-[var(--numpad-hover)]"
@@ -356,7 +357,7 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
               onClick={() => handleInput(num, isNotesMode)}
               disabled={!selectedCell || isGameWon || completedNumbers.has(num)}
               className={cn(
-                "cursor-pointer p-3 font-display text-2xl font-extrabold leading-none rounded-[var(--radius-control)]",
+                "cursor-pointer p-2 sm:p-3 font-display text-2xl font-extrabold leading-none rounded-[var(--radius-control)]",
                 "shadow-[var(--shadow-paper-sm)] transition-all duration-150 motion-reduce:transition-none",
                 isNotesMode
                   ? "bg-[var(--cell-background)] text-[var(--number-player)] border border-[var(--number-player)]/30"
@@ -372,7 +373,7 @@ export function SudokuContainer({ roomId }: Readonly<{ roomId: string }>) {
             onClick={handleClear}
             disabled={!selectedCell || isGameWon}
             className={cn(
-              "cursor-pointer p-3 text-xl font-bold rounded-[var(--radius-control)] transition-all duration-150 motion-reduce:transition-none",
+              "cursor-pointer p-2 sm:p-3 text-xl font-bold rounded-[var(--radius-control)] transition-all duration-150 motion-reduce:transition-none",
               "bg-[var(--number-error)]/10 text-[var(--number-error)] hover:bg-[var(--number-error)]/20 active:translate-y-0.5",
               "disabled:opacity-50 disabled:cursor-not-allowed"
             )}

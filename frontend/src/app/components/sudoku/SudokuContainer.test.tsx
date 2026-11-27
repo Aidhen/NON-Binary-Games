@@ -621,6 +621,15 @@ describe('SudokuContainer', () => {
     });
   });
 
+  it('offers to go back to the table on the completion overlay, with the vote of the table', async () => {
+    await renderGame();
+    await act(async () => { mocks.dispatch('game-won'); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'lobby.backToTable' }));
+
+    expect(mocks.emitted).toContainEqual({ event: 'vote-table', args: [true] });
+  });
+
   it('stacks the completion overlay above the occupied cells (z-10)', async () => {
     await renderGame();
 

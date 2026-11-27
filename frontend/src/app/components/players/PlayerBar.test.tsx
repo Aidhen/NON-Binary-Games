@@ -50,6 +50,13 @@ describe('PlayerBar', () => {
     expect(within(list).getByText('🦊')).toBeInTheDocument();
   });
 
+  it('puts the emoji of the animal in a small disc tinted with the color of the player', () => {
+    setup();
+
+    expect(screen.getByText('🦊')).toHaveClass('rounded-full', 'bg-[var(--player-blue)]/20');
+    expect(screen.getByText('🐼')).toHaveClass('bg-[var(--player-red)]/20');
+  });
+
   it('puts the player first and says which chip is theirs', () => {
     setup({ players: [fox, panda] });
 

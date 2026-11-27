@@ -19,7 +19,7 @@ vi.mock('@/lib/i18n/TranslationContext', () => ({
   }),
 }));
 
-// Closed (-1), marked as a mine (-2), and open with a number of mines around (0 and up).
+// Closed (-1), marked as a bee (-2), and open with a number of mines around (0 and up).
 const grid = [
   [-1, 2, 0],
   [-2, -1, 1],
@@ -38,7 +38,8 @@ describe('FlowerFieldBoardUI', () => {
     expect(screen.getByRole('button', { name: 'R1 C1: closed' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'R1 C2: 2' })).toHaveTextContent('2');
     expect(screen.getByRole('button', { name: 'R1 C3: empty' })).toHaveTextContent('');
-    expect(screen.getByRole('button', { name: 'R2 C1: mine' })).toHaveTextContent('✸');
+    expect(screen.getByRole('button', { name: 'R2 C1: mine' }).querySelector('svg[data-bee]')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'R2 C1: mine' })).toHaveTextContent('');
   });
 
   it('gives the rows a fixed share of the board, so a cell is never squashed by what it holds', () => {
@@ -86,12 +87,14 @@ describe('FlowerFieldBoardUI', () => {
     expect(onCellClick).not.toHaveBeenCalled();
   });
 
-  it('shows where the mines were when the game is lost, and the one that was opened stands out', () => {
+  it('shows where the bees were when the game is lost, and the one that was woken up has a soft tint, not an alarm', () => {
     render(<FlowerFieldBoardUI {...baseProps} isOver mines={[[2, 0], [2, 2]]} exploded={[2, 2]} />);
 
-    expect(screen.getByRole('button', { name: 'R3 C1: mine' })).toHaveTextContent('✸');
-    expect(screen.getByRole('button', { name: 'R3 C3: mine' }).className).toContain('--number-error)]/30');
-    expect(screen.getByRole('button', { name: 'R3 C1: mine' }).className).not.toContain('--number-error)]/30');
+    expect(screen.getByRole('button', { name: 'R3 C1: mine' }).querySelector('svg[data-bee]')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'R3 C3: mine' }).querySelector('svg[data-bee]')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'R3 C3: mine' }).className).toContain('bg-[var(--cutout-2)]');
+    expect(screen.getByRole('button', { name: 'R3 C1: mine' }).className).not.toContain('bg-[var(--cutout-2)]');
+    expect(screen.getByRole('button', { name: 'R3 C3: mine' }).className).not.toContain('--number-error');
   });
 
   it('tells apart the cell the player is on, the cells that show what they hold and the closed ones, by their background', () => {
@@ -104,29 +107,31 @@ describe('FlowerFieldBoardUI', () => {
 
     expect(selected.className).toContain('bg-[var(--cell-background-selected)]');
     expect(selected.className).toContain('outline-2');
-    expect(open.className.split(' ')).toContain('bg-[var(--cell-background-initial)]');
+    // Opened cells are flat soil; closed ones are raised grass.
+    expect(open.className.split(' ')).toContain('bg-[var(--field-soil)]');
     expect(open.className).toContain('text-[var(--number-initial)] font-bold');
-    expect(marked.className.split(' ')).toContain('bg-[var(--cell-background-initial)]');
-    expect(marked.className).toContain('text-[var(--number-error)]');
-    expect(closed.className.split(' ')).toContain('bg-[var(--cell-background)]');
-    expect(closed.className).toContain('hover:bg-[var(--cell-background-initial)]');
+    expect(open.className).not.toContain('shadow-');
+    expect(marked.className.split(' ')).toContain('bg-[var(--field-soil)]');
+    expect(closed.className.split(' ')).toContain('bg-[var(--field-grass)]');
+    expect(closed.className).toContain('shadow-[var(--shadow-paper-sm)]');
     expect(closed.className).not.toContain('outline-2');
   });
 
-  it('keeps the mine that was opened red also when the player is on it', () => {
+  it('keeps the tint of the bee that was woken up also when the player is on it', () => {
     render(<FlowerFieldBoardUI {...baseProps} isOver mines={[[2, 2]]} exploded={[2, 2]} selectedCell={[2, 2]} />);
 
     const cell = screen.getByRole('button', { name: 'R3 C3: mine' });
-    expect(cell.className).toContain('--number-error)]/30');
+    expect(cell.className).toContain('bg-[var(--cutout-2)]');
     expect(cell.className).not.toContain('bg-[var(--cell-background-selected)]');
   });
 
-  it('shows a mine and not the flag that was on it', () => {
+  it('shows a bee and not the flag that was on it', () => {
     render(<FlowerFieldBoardUI {...baseProps} isOver mines={[[2, 0]]} flags={{ '2-0': 'friend', '1-0': 'friend' }} profiles={profiles} />);
 
-    expect(screen.getByRole('button', { name: 'R3 C1: mine' })).toHaveTextContent('✸');
+    expect(screen.getByRole('button', { name: 'R3 C1: mine' }).querySelector('svg[data-bee]')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'R3 C1: mine' })).not.toHaveTextContent('⚑');
     expect(screen.getByRole('button', { name: 'R3 C1: mine' }).className).not.toContain('--player-teal-text');
-    expect(screen.getByRole('button', { name: 'R2 C1: mine' })).toHaveTextContent('✸');
+    expect(screen.getByRole('button', { name: 'R2 C1: mine' }).querySelector('svg[data-bee]')).toBeInTheDocument();
   });
 
   it('writes smaller symbols on a field of more than ten cells a side', () => {
@@ -206,6 +211,44 @@ describe('FlowerFieldBoardUI', () => {
       }
       // The flowers are decoration: the cells keep saying what they hold.
       expect(screen.getByRole('button', { name: 'R1 C2: 2' })).toBeInTheDocument();
+    });
+
+    it('shows only the flowers: no number, no flag, no bee, no cursor, no ring, no outline', () => {
+      const { container } = render(
+        <FlowerFieldBoardUI
+          {...baseProps}
+          isOver
+          mines={[[2, 0]]}
+          flags={{ '2-1': 'friend' }}
+          profiles={profiles}
+          selectedCell={[0, 1]}
+          othersSelections={{ friend: [1, 2] }}
+          bloom={{ grow: true }}
+        />,
+      );
+
+      expect(container).not.toHaveTextContent(/\d|⚑/);
+      expect(container.querySelectorAll('svg[data-bee]')).toHaveLength(0);
+      expect(container.querySelectorAll('svg[data-flower]')).toHaveLength(9);
+      for (const cell of screen.getAllByRole('button')) {
+        expect(cell.className).not.toMatch(/ring-\d|ring-inset|outline-2|--cell-background-selected|--player-/);
+        expect(cell.className).toContain('bg-transparent');
+      }
+    });
+
+    it('keeps the cells named after what they hold while only the flowers are seen', () => {
+      render(<FlowerFieldBoardUI {...baseProps} isOver flags={{ '2-1': 'friend' }} profiles={profiles} bloom={{ grow: false }} />);
+
+      expect(screen.getByRole('button', { name: 'R1 C2: 2' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'R3 C2: flag' })).toBeInTheDocument();
+    });
+
+    it('turns the tray into a meadow, and lets the tiles fade into it', () => {
+      const { container } = render(<FlowerFieldBoardUI {...baseProps} isOver bloom={{ grow: true }} />);
+
+      expect((container.firstElementChild as HTMLElement).className).toContain('bg-[var(--field-meadow)]');
+      expect(screen.getAllByRole('button')[0].className).toContain('duration-[400ms]');
+      expect(screen.getAllByRole('button')[0].className).toContain('motion-reduce:transition-none');
     });
 
     it('shows the flowers still when growing is turned off', () => {

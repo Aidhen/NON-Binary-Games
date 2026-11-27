@@ -11,6 +11,7 @@ import { PlayerBar } from '../players/PlayerBar';
 import { GameOverCard } from '../play/GameOverCard';
 import { GameToolbar } from '../play/GameToolbar';
 import { cn } from '@/lib/utils';
+import { BOARD_FIT } from '../games/boardStyles';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from '@/lib/socket';
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
@@ -169,7 +170,7 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
   const isUntouched = field.grid.every((row) => row.every((value) => value === FLOWER_HIDDEN));
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
+    <div className="flex flex-col items-center gap-3 sm:gap-6 w-full max-w-[500px] mx-auto relative">
       <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={setColor} onHighlight={highlight} />
 
       <GameToolbar difficulty={field.difficulty} isSettingsOpen={isSettingsOpen} onToggleSettings={() => setIsSettingsOpen(!isSettingsOpen)} />
@@ -186,9 +187,9 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
         />
       )}
 
-      <div className="relative w-full">
+      <div className={cn("relative w-full", BOARD_FIT)}>
         {field.status === 'lost' && (
-          <GameOverCard title={t('flowerField.lost')} message={t('flowerField.lostHint')} onPlayAgain={() => getSocket().emit('restart-game', field.difficulty)} />
+          <GameOverCard title={t('flowerField.lost')} message={t('flowerField.lostHint')} onBackToTable={() => getSocket().emit('vote-table', true)} onPlayAgain={() => getSocket().emit('restart-game', field.difficulty)} />
         )}
 
         <FlowerFieldBoardUI
@@ -210,7 +211,7 @@ export function FlowerFieldContainer({ roomId }: Readonly<{ roomId: string }>) {
 
       {/* Under the field, not over it: the field in bloom is the reward. */}
       {field.status === 'won' && (
-        <GameOverCard overlay={false} title={t('flowerField.cleared')} message={t('flowerField.compliment')} onPlayAgain={() => getSocket().emit('restart-game', field.difficulty)} />
+        <GameOverCard overlay={false} title={t('flowerField.cleared')} message={t('flowerField.compliment')} onBackToTable={() => getSocket().emit('vote-table', true)} onPlayAgain={() => getSocket().emit('restart-game', field.difficulty)} />
       )}
 
       <div className="w-full flex flex-col gap-3 mt-2">

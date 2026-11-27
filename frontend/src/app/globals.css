@@ -42,7 +42,7 @@
 :root, [data-theme="light"] {
   --bg: #eef2f8;
   --title-text: #0f172a;
-  --subtitle-text: #64748b;
+  --subtitle-text: #556377;
   
   --grid-border-outer: #0f172a;
   --grid-border-inner: #cbd5e1;
@@ -79,6 +79,10 @@
   --paper: #ffffff;
   --paper-well: #f1f5f9;
   --paper-shadow: rgba(15, 23, 42, 0.16);
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #CFEBDD;
+  --field-soil: var(--paper-well);
+  --field-meadow: #BFE3CF;
   --cutout-1: #dfe6ef;
   --cutout-2: #bfdbfe;
   --accent: #2563eb;
@@ -141,6 +145,10 @@
   --paper: #1e293b;
   --paper-well: #0f172a;
   --paper-shadow: rgba(0, 0, 0, 0.55);
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #1F3B33;
+  --field-soil: var(--paper-well);
+  --field-meadow: #17302a;
   --cutout-1: #0f172a;
   --cutout-2: #172554;
   --accent: #60a5fa;
@@ -202,6 +210,10 @@
   --paper: #fbf6e9;
   --paper-well: #e9dec1;
   --paper-shadow: rgba(74, 60, 49, 0.2);
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #c9d9b0;
+  --field-soil: var(--paper-well);
+  --field-meadow: #bccfa0;
   --cutout-1: #e9dec1;
   --cutout-2: #e7d395;
   --accent: #92400e;
@@ -229,7 +241,7 @@
   --title-text: #ffffff;
   --subtitle-text: #808080;
   
-  --grid-border-outer: #444444;
+  --grid-border-outer: #666666;
   --grid-border-inner: #222222;
   
   --cell-background: #000000;
@@ -263,6 +275,10 @@
   --paper: #0a0a0a;
   --paper-well: #1a1a1a;
   --paper-shadow: #2a2a2a;
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #17332a;
+  --field-soil: var(--paper-well);
+  --field-meadow: #0e211a;
   --cutout-1: #0d0d0d;
   --cutout-2: #161616;
   --accent: #ffffff;
@@ -288,7 +304,7 @@
 [data-theme="non-binary"] {
   --bg: #1a1a1a;
   
-  --title-text: #ab6fde; 
+  --title-text: #c39bea;
   --subtitle-text: #fcf434;
   
   /* The tray is the purple of the flag and the lines between the boxes its yellow: with both white the lines vanished. */
@@ -327,6 +343,10 @@
   --paper: #2c2c2c;
   --paper-well: #383838;
   --paper-shadow: rgba(0, 0, 0, 0.55);
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #2d4a3a;
+  --field-soil: var(--paper-well);
+  --field-meadow: #243f31;
   --cutout-1: #5b3a7e;
   --cutout-2: #2f2438;
   --accent: #9553cc;
@@ -355,6 +375,13 @@
   --animate-float: float 2.5s ease-out forwards;
   /* The flowers of a cleared Flower Field. Only transform and opacity move, which a phone animates cheaply. */
   --animate-bloom: bloom 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  /* A sparkle that pops once, on the card that ends a game. */
+  --animate-pop: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms both;
+
+  @keyframes pop {
+    0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
 
   @keyframes bloom {
     0% { transform: scale(0); opacity: 0; }
@@ -445,5 +472,19 @@ body::after {
   [data-blooming] [data-flower-head="grow"] {
     transform-origin: 20px 25px;
     animation-name: flower-open;
+  }
+}
+
+/* The wings of a bee flutter slowly, as if it dozed: a drawing in @nbg/art cannot use Tailwind, so the motion is here. */
+@keyframes bee-flutter {
+  0%, 100% { transform: rotate(0); }
+  50% { transform: rotate(-7deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-bee-wings] {
+    transform-box: view-box;
+    transform-origin: 17px 13px;
+    animation: bee-flutter 2s ease-in-out infinite;
   }
 }

@@ -12,11 +12,9 @@ describe('the drawings of the Memory cards', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('are drawn in a square, so that every card takes the same room', () => {
+  it('are drawn on the same 300 by 400 card, so that every card takes the same room', () => {
     for (const { id, viewBox } of ALL) {
-      const [, , width, height] = viewBox.split(' ').map(Number);
-      expect(width, id).toBeGreaterThan(0);
-      expect(width, id).toBe(height);
+      expect(viewBox, id).toBe('0 0 300 400');
     }
   });
 });
@@ -29,9 +27,16 @@ describe('MemoryCardArt', () => {
       const drawing = container.querySelector('svg')!;
       expect(drawing).toHaveAttribute('data-memory-art', id);
       expect(drawing).toHaveAttribute('width', '40');
+      expect(drawing).toHaveAttribute('height', '53');
       expect(drawing.childElementCount).toBeGreaterThan(0);
       unmount();
     });
+  });
+
+  it('keeps the 3:4 of the cards when it has no drawing yet', () => {
+    const { container } = render(<MemoryCardArt face={MEMORY_FACES.length} size={60} />);
+
+    expect(container.querySelector('svg')).toHaveAttribute('height', '80');
   });
 
   it('shows a numbered tile for a face that has no drawing yet', () => {

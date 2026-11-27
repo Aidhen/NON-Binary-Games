@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 export interface MemoryDrawing {
   /** A name for the drawing that does not depend on its place in the deck: for tests and file names (see svg/README.md). */
   id: string;
-  /** Always a square, so that every card takes the same room on the table. */
+  /** Always `0 0 300 400`: the card is tall like a tarot card, and every card takes the same room on the table. */
   viewBox: string;
   art: ReactNode;
 }

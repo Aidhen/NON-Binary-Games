@@ -2,6 +2,8 @@ import { createServer } from "node:http";
 import type { Server as HttpServer } from "node:http";
 import type { Server } from "socket.io";
 import { logger } from "./logger";
+import { FEEDBACK_PATH } from "./feedback/feedbackEndpoint";
+import type { FeedbackHandler } from "./feedback/feedbackEndpoint";
 
 export const DEFAULT_PORT = 4000;
 export const DEFAULT_FRONTEND_URL = "http://localhost:3000";
@@ -37,14 +39,20 @@ export const resolveAllowedOrigin = (env: NodeJS.ProcessEnv = process.env): stri
 
 /**
  * Plain HTTP server that Socket.IO attaches to.
- * GET /healthz is for the hosting platform's health check; everything else that
- * is not a Socket.IO request is a 404.
+ * GET /healthz is for the hosting platform's health check and /feedback is the feedback form (when there is a
+ * handler for it); everything else that is not a Socket.IO request is a 404.
+ * Socket.IO answers its own path before this function is asked, so none of this reaches or changes it.
  */
-export const createHttpServer = (): HttpServer =>
+export const createHttpServer = (feedback?: FeedbackHandler): HttpServer =>
   createServer((req, res) => {
     if (req.method === "GET" && req.url === "/healthz") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("ok");
+      return;
+    }
+
+    if (feedback && req.url === FEEDBACK_PATH) {
+      feedback(req, res);
       return;
     }
 

@@ -28,4 +28,10 @@ describe('PrivacyPage', () => {
       expect(link.getAttribute('rel')).toContain('noopener');
     }
   });
+
+  it('links the privacy policy of GitHub, where the answers of the feedback form are kept', () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement');
+  });
 });

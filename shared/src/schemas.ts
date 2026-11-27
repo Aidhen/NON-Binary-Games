@@ -3,6 +3,7 @@ import { DIFFICULTIES } from './games/sudoku/types';
 import { WORD_LANGUAGES } from './games/word-search/types';
 import { EMOTES } from './emotes';
 import { GAME_IDS } from './games';
+import { FEEDBACK_DEVICES, FEEDBACK_FREQUENCIES, FEEDBACK_RATINGS, FEEDBACK_WHAT, FEEDBACK_WHERE, FEEDBACK_WISHES } from './feedback';
 import { PLAYER_COLORS } from './players';
 
 // In a browser the page has a Content-Security-Policy without 'unsafe-eval', and zod would report a violation
@@ -138,3 +139,28 @@ export const wordSearchLanguageArgsSchema = z.tuple([wordSearchLanguagePayloadSc
 export const restartGameArgsSchema = z.tuple([difficultySchema]);
 export const sendEmoteArgsSchema = z.tuple([emoteSchema]);
 export const setColorArgsSchema = z.tuple([playerColorSchema]);
+
+/**
+ * The body of `POST /feedback` (HTTP, not a socket event, but the same rule: it is `unknown` until it is parsed here).
+ * Closed values only, and strict objects: a field that is not in the list is a refusal, not something to ignore.
+ */
+const feedbackWhereSchema = z.enum(FEEDBACK_WHERE);
+
+export const feedbackArgsSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('bug'),
+    where: feedbackWhereSchema,
+    what: z.enum(FEEDBACK_WHAT),
+    device: z.enum(FEEDBACK_DEVICES),
+    frequency: z.enum(FEEDBACK_FREQUENCIES),
+  }),
+  z.strictObject({
+    kind: z.literal('opinion'),
+    where: feedbackWhereSchema,
+    rating: z.number().int().min(FEEDBACK_RATINGS[0]).max(FEEDBACK_RATINGS.at(-1)!),
+    wishes: z.array(z.enum(FEEDBACK_WISHES)).max(FEEDBACK_WISHES.length).refine((wishes) => new Set(wishes).size === wishes.length).optional(),
+    emote: emoteSchema.optional(),
+  }),
+]);
+
+export type FeedbackArgs = z.infer<typeof feedbackArgsSchema>;

@@ -20,3 +20,9 @@ services:
       # Render puts the address of the player in this header and a client cannot set it. See backend/.env.example.
       - key: CLIENT_IP_HEADER
         value: cf-connecting-ip
+      # The feedback form files its answers in a private GitHub repository (see backend/.env.example). The token is a
+      # secret: set it in the dashboard only. Without them the form answers "unavailable" and the games are not affected.
+      - key: FEEDBACK_GITHUB_REPO
+        sync: false
+      - key: FEEDBACK_GITHUB_TOKEN
+        sync: false

@@ -9,6 +9,7 @@ const SECTIONS = ['browser', 'server', 'hosting', 'feedback'] as const;
 export const HOSTING_POLICIES = [
   { name: 'Vercel', url: 'https://vercel.com/legal/privacy-policy' },
   { name: 'Render', url: 'https://render.com/privacy' },
+  { name: 'GitHub', url: 'https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement' },
 ] as const;
 
 // What the site keeps, where and for how long. It has to say what the code really does: when something that

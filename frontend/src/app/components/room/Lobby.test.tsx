@@ -5,7 +5,7 @@ import { Lobby } from './Lobby';
 import type { GameEntry } from '../games/types';
 import type { ConnectionStatus } from '@/lib/useConnectionStatus';
 
-// The English dictionary, so that a sentence with names in it can be read; a key it does not have (the titles of the test games) stays as it is.
+// The English dictionary, so that a sentence with names in it can be read; a key it does not have stays as it is. The test games have made-up ids, so that their titles stay keys and not the names of the real games.
 vi.mock('@/lib/i18n/TranslationContext', async () => {
   const { en } = await import('@/locales/en');
   const t = (path: string) => path.split('.').reduce<unknown>((current, part) => (current as Record<string, unknown> | undefined)?.[part], en) as string ?? path;
@@ -16,8 +16,8 @@ const Cover = ({ index }: { index: number }) => <span data-testid="cover" data-i
 const available = (id: string): GameEntry => ({ id: id as GameId, status: 'available', titleKey: `games.${id}.title`, Cover, minPlayers: 1, maxPlayers: 5, Game: () => null });
 const soon = (id: string): GameEntry => ({ id, status: 'soon', titleKey: `games.${id}.title`, Cover, minPlayers: 2, maxPlayers: 2 });
 
-const oneGame = [available('sudoku'), soon('later')];
-const twoGames = [available('sudoku'), available('other'), soon('later')];
+const oneGame = [available('first'), soon('later')];
+const twoGames = [available('first'), available('other'), soon('later')];
 
 const koala: PlayerProfile = { alias: 'aaaaaaaaaaaa', animal: 'koala', color: 'red' };
 const fox: PlayerProfile = { alias: 'bbbbbbbbbbbb', animal: 'fox', color: 'blue' };
@@ -32,8 +32,8 @@ interface Options { votes?: LobbyVote[] | null; games?: GameEntry[]; status?: Co
 const renderLobby = ({ votes = [], games = oneGame, status = 'connected', players = [koala, fox] }: Options = {}) =>
   render(<Lobby roomId={ROOM} games={games} players={players} self={koala.alias} votes={votes} status={status} onRetry={onRetry} onVote={onVote} onPickColor={vi.fn()} />);
 
-const box = (id: string) => screen.getByRole('button', { name: new RegExp(`games.${id}.title`) });
-const openButton = () => screen.getByRole('button', { name: /^Open |Take my vote back/ });
+const box = (id: string) => screen.getByRole('button', { name: new RegExp(`^games\\.${id}\\.title`) });
+const openButton = () => screen.getByRole('button', { name: /^Open\b|Take my vote back/ });
 
 beforeEach(() => {
   onVote.mockClear();
@@ -52,10 +52,10 @@ describe('Lobby', () => {
   it('lifts the lid of the first game that can be played, so that one tap is enough', () => {
     renderLobby();
 
-    expect(box('sudoku')).toHaveAttribute('aria-pressed', 'true');
+    expect(box('first')).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(openButton());
 
-    expect(onVote).toHaveBeenCalledExactlyOnceWith('sudoku');
+    expect(onVote).toHaveBeenCalledExactlyOnceWith('first');
   });
 
   it('votes for the box the player picked', () => {
@@ -64,7 +64,7 @@ describe('Lobby', () => {
     fireEvent.click(box('other'));
 
     expect(box('other')).toHaveAttribute('aria-pressed', 'true');
-    expect(box('sudoku')).toHaveAttribute('aria-pressed', 'false');
+    expect(box('first')).toHaveAttribute('aria-pressed', 'false');
     expect(onVote).not.toHaveBeenCalled();
 
     fireEvent.click(openButton());
@@ -85,19 +85,19 @@ describe('Lobby', () => {
   it('lets the player change their mind by opening another box', () => {
     renderLobby({ games: twoGames, votes: [{ alias: koala.alias, game: 'other' as GameId }] });
 
-    fireEvent.click(box('sudoku'));
-    expect(openButton()).toHaveAccessibleName('Open games.sudoku.title');
+    fireEvent.click(box('first'));
+    expect(openButton()).toHaveAccessibleName('Open games.first.title');
 
     fireEvent.click(openButton());
-    expect(onVote).toHaveBeenCalledExactlyOnceWith('sudoku');
+    expect(onVote).toHaveBeenCalledExactlyOnceWith('first');
   });
 
   it('does not take the vote of another player for the vote of this one, and says how the choice is going', () => {
-    renderLobby({ votes: [{ alias: fox.alias, game: 'sudoku' }] });
+    renderLobby({ votes: [{ alias: fox.alias, game: 'first' as GameId }] });
 
-    expect(openButton()).toHaveAccessibleName('Open games.sudoku.title');
-    expect(screen.getByText('Blue Fox wants games.sudoku.title')).toBeInTheDocument();
-    expect(box('sudoku')).toHaveTextContent('1 of 2 votes');
+    expect(openButton()).toHaveAccessibleName('Open games.first.title');
+    expect(screen.getByText('Blue Fox wants games.first.title')).toBeInTheDocument();
+    expect(box('first')).toHaveTextContent('1 of 2 votes');
   });
 
   it('keeps a game that is only announced closed: it is not a button and cannot be picked', () => {
@@ -118,7 +118,7 @@ describe('Lobby', () => {
     renderLobby({ votes: null, status: 'connecting' });
 
     expect(openButton()).toBeDisabled();
-    expect(box('sudoku')).toBeDisabled();
+    expect(box('first')).toBeDisabled();
     expect(screen.getByText('Setting the table…')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Your room' })).toBeInTheDocument();
   });
@@ -164,10 +164,10 @@ describe('Lobby', () => {
   it('does not move the selection from under a player who picked a box themselves', () => {
     const view = renderLobby({ games: twoGames, players: [koala, fox, owl] });
 
-    fireEvent.click(box('sudoku'));
+    fireEvent.click(box('first'));
     view.rerender(<Lobby roomId={ROOM} games={twoGames} players={[koala, fox, owl]} self={koala.alias} votes={[{ alias: fox.alias, game: 'other' as GameId }, { alias: owl.alias, game: 'other' as GameId }]} status="connected" onRetry={onRetry} onVote={onVote} onPickColor={vi.fn()} />);
 
-    expect(box('sudoku')).toHaveAttribute('aria-pressed', 'true');
+    expect(box('first')).toHaveAttribute('aria-pressed', 'true');
     expect(box('other')).toHaveAttribute('aria-pressed', 'false');
   });
 
@@ -179,9 +179,9 @@ describe('Lobby', () => {
   });
 
   it('says that the votes are split, and how a box opens, when two games have votes', () => {
-    renderLobby({ games: twoGames, votes: [{ alias: koala.alias, game: 'sudoku' as GameId }, { alias: fox.alias, game: 'other' as GameId }] });
+    renderLobby({ games: twoGames, votes: [{ alias: koala.alias, game: 'first' as GameId }, { alias: fox.alias, game: 'other' as GameId }] });
 
-    expect(screen.getByText('Red Koala wants games.sudoku.title')).toBeInTheDocument();
+    expect(screen.getByText('Red Koala wants games.first.title')).toBeInTheDocument();
     expect(screen.getByText('Blue Fox wants games.other.title')).toBeInTheDocument();
     expect(screen.getByText('Votes are split: a box opens when more than half of the room picks it.')).toBeInTheDocument();
   });

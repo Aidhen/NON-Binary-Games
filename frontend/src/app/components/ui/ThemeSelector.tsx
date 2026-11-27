@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { Dropdown, DropdownOption } from './Dropdown';
 
-const KNOWN_THEMES = ['light', 'dark', 'retro', 'oled', 'non-binary', 'system'];
+const KNOWN_THEMES = new Set(['light', 'dark', 'retro', 'oled', 'non-binary', 'system']);
 
 export function ThemeSelector() {
   const [mounted, setMounted] = useState(false);
@@ -28,7 +28,7 @@ export function ThemeSelector() {
   }
 
   // The name of a theme is a word of the page, not its id; a theme this page has no word for shows its id.
-  const nameOf = (id: string) => (KNOWN_THEMES.includes(id) ? t(`themes.${id}`) : id);
+  const nameOf = (id: string) => (KNOWN_THEMES.has(id) ? t(`themes.${id}`) : id);
   const themeOptions: DropdownOption<string>[] = themes.map(id => ({
     value: id,
     label: nameOf(id)

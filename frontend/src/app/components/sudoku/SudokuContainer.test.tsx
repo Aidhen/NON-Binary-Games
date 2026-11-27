@@ -755,7 +755,7 @@ describe('SudokuContainer', () => {
     it('lets the player send a reaction to the others in the room', async () => {
       await renderGame();
 
-      fireEvent.click(screen.getByRole('button', { name: EMOTES[5] }));
+      fireEvent.click(screen.getByRole('button', { name: `emotes.names.${EMOTES[5]}` }));
 
       expect(mocks.emitted).toContainEqual({ event: 'send-emote', args: [EMOTES[5]] });
       expect(screen.getAllByTestId('floating-emote').map((element) => element.dataset.emote)).toEqual([EMOTES[5]]);
@@ -764,7 +764,7 @@ describe('SudokuContainer', () => {
     it('waits for the cooldown before accepting another reaction', async () => {
       await renderGame();
 
-      fireEvent.click(screen.getByRole('button', { name: EMOTES[0] }));
+      fireEvent.click(screen.getByRole('button', { name: `emotes.names.${EMOTES[0]}` }));
 
       for (const button of screen.getAllByRole('button', { name: new RegExp(EMOTES.join('|')) })) {
         expect(button).toBeDisabled();

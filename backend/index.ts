@@ -4,6 +4,8 @@ import { setupSocketHandlers } from "./src/sockets/event";
 import { addressResolverFromEnv, CONNECT_TIMEOUT_MS, createConnectionGuard, MAX_MESSAGE_BYTES } from "./src/sockets/connectionLimits";
 import { createHttpServer, installCrashLogging, parsePort, resolveAllowedOrigin, shutdown } from "./src/server";
 import { logger } from "./src/logger";
+import { createFeedbackHandler } from "./src/feedback/feedbackEndpoint";
+import { createGithubTracker, githubConfigFromEnv } from "./src/feedback/githubTracker";
 import { FORBIDDEN } from "./src/rooms/wordSearchBlocklist";
 
 const allowedOrigin = resolveAllowedOrigin();
@@ -18,10 +20,11 @@ installCrashLogging();
 // The first puzzle would otherwise wait for the tables (about 60 ms on the thread of every room).
 warmUpWordSearch(FORBIDDEN);
 
-const httpServer = createHttpServer();
-
 const addressOf = addressResolverFromEnv();
 if (!addressOf) logger.warn("Limits on connections are off, they need to know the address of each player: set CLIENT_IP_HEADER (or LIMIT_BY_PEER_ADDRESS=true when there is no proxy).");
+
+const github = githubConfigFromEnv();
+const httpServer = createHttpServer(createFeedbackHandler(allowedOrigin, addressOf, github && createGithubTracker(github)));
 const guard = createConnectionGuard(allowedOrigin, addressOf);
 
 const io = new Server(httpServer, {

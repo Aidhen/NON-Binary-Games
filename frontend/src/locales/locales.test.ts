@@ -46,7 +46,9 @@ describe('the names of the emotes', () => {
 
 describe('the Flower Field copy', () => {
   it.each([['English', en], ['Italian', italian]])('talks about bees and not mines, in %s', (_language, dictionary) => {
-    const text = JSON.stringify([dictionary.flowerField, dictionary.gamesPage.flowerField]).toLowerCase();
-    expect(text).not.toMatch(/\bmin[ae]s?\b|\bmin[ae]\b/);
+    // Only what players read: the keys keep the old identifiers (flowerField.mine), like the code does.
+    const values = (node: unknown): string[] => (typeof node === 'string' ? [node] : Object.values(node as object).flatMap(values));
+    const text = values([dictionary.flowerField, dictionary.gamesPage.flowerField]).join(' ').toLowerCase();
+    expect(text).not.toMatch(/\bmin[ae]s?\b/);
   });
 });

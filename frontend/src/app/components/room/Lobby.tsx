@@ -40,13 +40,17 @@ export function Lobby({ roomId, games, players, self, votes, status, onRetry, on
   const ownVote = votes?.find(({ alias }) => alias === self)?.game ?? null;
   const votesFor = (id: string) => (votes ?? []).filter((vote) => vote.game === id);
   // The box with the most votes, the first of them when they are tied: the table opens on what the room leans to.
-  const leading = playable.reduce<AvailableGame | undefined>((best, game) => (votesFor(game.id).length > (best ? votesFor(best.id).length : 0) ? game : best), undefined);
+  const leading = playable.reduce<AvailableGame | undefined>((best, game) => {
+    const bestCount = best ? votesFor(best.id).length : 0;
+    return votesFor(game.id).length > bestCount ? game : best;
+  }, undefined);
   // The box the player touched last, else the one they voted for, else the one most of the room wants, else the first that can be played.
   const selected = playable.find(({ id }) => id === (lookedAt ?? ownVote ?? leading?.id)) ?? playable[0];
   const voted = ownVote === selected?.id;
+  const openLabel = t('lobby.open').replace('{game}', selected ? t(selected.titleKey) : '').trim();
 
   // Who wants what, by the names the chips show. A game nobody wants is not mentioned.
-  const nameList = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${t('lobby.and')} ${names[names.length - 1]}`);
+  const nameList = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${t('lobby.and')} ${names.at(-1)}`);
   const wishes = playable.flatMap((game) => {
     const names = players.filter(({ alias }) => votesFor(game.id).some((vote) => vote.alias === alias)).map((player) => playerName(t, player));
     if (names.length === 0) return [];
@@ -88,16 +92,17 @@ export function Lobby({ roomId, games, players, self, votes, status, onRetry, on
               : "bg-[var(--accent)] text-[var(--accent-ink)]"
           )}
         >
-          {voted ? t('lobby.takeBack') : t('lobby.open').replace('{game}', selected ? t(selected.titleKey) : '').trim()}
+          {voted ? t('lobby.takeBack') : openLabel}
         </button>
 
         {!ready && <WakeStatus status={status} onRetry={onRetry} />}
 
         {ready && (
-          <div role="status" className="min-h-5 text-center text-sm font-bold text-[var(--subtitle-text)]">
-            {wishes.map((wish) => <p key={wish}>{wish}</p>)}
-            {isSplit && <p className="mt-1 font-medium">{t('lobby.split')}</p>}
-          </div>
+          // An <output> holds phrasing content only: the lines are spans shown as blocks.
+          <output className="block min-h-5 text-center text-sm font-bold text-[var(--subtitle-text)]">
+            {wishes.map((wish) => <span key={wish} className="block">{wish}</span>)}
+            {isSplit && <span className="mt-1 block font-medium">{t('lobby.split')}</span>}
+          </output>
         )}
       </section>
 

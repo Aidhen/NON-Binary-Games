@@ -39,7 +39,7 @@ export function RoomHeader({ roomId, players, self, tableVotes, onVoteTable }: R
   useEffect(() => { if (askKey === '') setDismissed(null); }, [askKey]);
 
   const names = askers.map((player) => playerName(t, player));
-  const nameList = names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${t('lobby.and')} ${names[names.length - 1]}`;
+  const nameList = names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${t('lobby.and')} ${names.at(-1)}`;
 
   return (
     <header className="mb-3 flex w-full max-w-[500px] flex-col gap-2 rounded-[var(--radius-paper)] bg-[var(--paper)] px-3 py-2 shadow-[var(--shadow-paper)] sm:mb-6 sm:px-4 sm:py-3">
@@ -64,13 +64,13 @@ export function RoomHeader({ roomId, players, self, tableVotes, onVoteTable }: R
       </div>
 
       {isAsked && (
-        <div role="group" aria-labelledby={askId} className="flex flex-col gap-2 rounded-[var(--radius-control)] bg-[var(--paper-well)] p-3">
+        <fieldset aria-labelledby={askId} className="m-0 flex min-w-0 flex-col border-0 gap-2 rounded-[var(--radius-control)] bg-[var(--paper-well)] p-3">
           <p id={askId} className="text-sm font-bold text-[var(--title-text)]">{t('lobby.backAsk').replace('{names}', nameList)}</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => onVoteTable(true)} className={cn(SECONDARY, "bg-[var(--accent)] text-[var(--accent-ink)]")}>{t('lobby.goBack')}</button>
             <button type="button" onClick={() => setDismissed(askKey)} className={cn(SECONDARY, "bg-[var(--paper)] text-[var(--title-text)]")}>{t('lobby.keepPlaying')}</button>
           </div>
-        </div>
+        </fieldset>
       )}
 
       <output className="text-sm font-bold text-[var(--subtitle-text)] empty:hidden">

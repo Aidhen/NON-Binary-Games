@@ -12,6 +12,8 @@ interface DropdownProps<T extends string> {
   value: T;
   options: DropdownOption<T>[];
   onChange: (value: T) => void;
+  /** What the choice is about ("Theme"): with the current value it names the button for a screen reader. */
+  label: string;
   className?: string;
 }
 
@@ -19,10 +21,12 @@ export function Dropdown<T extends string>({
   value,
   options,
   onChange,
+  label,
   className
 }: Readonly<DropdownProps<T>>) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const currentLabel = options.find(opt => opt.value === value)?.label || value;
 
@@ -36,6 +40,20 @@ export function Dropdown<T extends string>({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Escape closes the list and puts the focus back on the button, where the keyboard player was. It is heard in the
+  // capture phase and marked as handled, so that a panel around the dropdown (SettingsMenu) does not close with it.
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    }
+    document.addEventListener('keydown', handleEscape, true);
+    return () => document.removeEventListener('keydown', handleEscape, true);
+  }, [isOpen]);
+
   const handleSelect = (val: T) => {
     onChange(val);
     setIsOpen(false);
@@ -44,7 +62,11 @@ export function Dropdown<T extends string>({
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        ref={triggerRef}
         type="button"
+        aria-label={`${label}: ${currentLabel}`}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "px-3 py-2 rounded-[var(--radius-control)] text-left text-sm whitespace-nowrap flex items-center justify-between gap-2",
@@ -55,7 +77,7 @@ export function Dropdown<T extends string>({
         )}
       >
         {currentLabel}
-        <span className={cn(
+        <span aria-hidden="true" className={cn(
           "text-xs opacity-50 transition-transform duration-200",
           isOpen ? "rotate-180" : "rotate-0"
         )}>
@@ -73,6 +95,7 @@ export function Dropdown<T extends string>({
             <button
               type="button"
               key={opt.value}
+              aria-current={value === opt.value ? 'true' : undefined}
               onClick={() => handleSelect(opt.value)}
               className={cn(
                 "cursor-pointer px-3 py-2 text-left text-sm font-bold transition-colors capitalize",

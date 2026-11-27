@@ -14,9 +14,10 @@ export function GameToolbar({ difficulty, isSettingsOpen, onToggleSettings }: Re
 
   return (
     <div className="w-full flex justify-between items-center">
-      <div className="rounded-full bg-[var(--paper)] px-4 py-1.5 text-[var(--subtitle-text)] text-sm font-bold uppercase tracking-wider shadow-[var(--shadow-paper-sm)]">
+      {/* A label, not a button: only the settings are pressed. */}
+      <p className="text-sm font-bold uppercase tracking-wider text-[var(--subtitle-text)]">
         {t('sudoku.mode')}: {t(`sudoku.${difficulty}`)}
-      </div>
+      </p>
       <button
         onClick={onToggleSettings}
         aria-expanded={isSettingsOpen}

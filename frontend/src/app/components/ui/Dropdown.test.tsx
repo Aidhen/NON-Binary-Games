@@ -7,6 +7,7 @@ type TestProps = {
   value: string;
   options: DropdownOption<string>[];
   onChange: (value: string) => void;
+  label: string;
   className?: string;
 };
 
@@ -17,11 +18,11 @@ const options: DropdownOption<string>[] = [
 ];
 
 const renderDropdown = (overrides: Partial<TestProps> = {}) => {
-  const props: TestProps = { value: 'en', options, onChange: vi.fn(), ...overrides };
+  const props: TestProps = { value: 'en', options, onChange: vi.fn(), label: 'Choice', ...overrides };
   return { ...render(<Dropdown {...props} />), props };
 };
 
-const getTrigger = () => screen.getByRole('button', { name: /▼/ });
+const getTrigger = () => screen.getByRole('button', { name: /^Choice:/ });
 
 describe('Dropdown', () => {
   it('renders the current option label', () => {
@@ -92,6 +93,47 @@ describe('Dropdown', () => {
     fireEvent.mouseDown(document.body);
 
     expect(screen.queryByRole('button', { name: 'French' })).not.toBeInTheDocument();
+  });
+
+  it('is named after what it chooses and its current value, and says it opens a list', () => {
+    renderDropdown();
+
+    expect(getTrigger()).toHaveAccessibleName('Choice: English');
+    expect(getTrigger()).toHaveAttribute('aria-haspopup', 'true');
+    expect(getTrigger()).toHaveAttribute('aria-expanded', 'false');
+    expect(getTrigger().querySelector('[aria-hidden="true"]')).toHaveTextContent('▼');
+
+    fireEvent.click(getTrigger());
+    expect(getTrigger()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('marks the current option for assistive technology', () => {
+    renderDropdown();
+
+    fireEvent.click(getTrigger());
+
+    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'Italian' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('closes on Escape and gives the focus back to the button', () => {
+    renderDropdown();
+
+    fireEvent.click(getTrigger());
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Italian' }), { key: 'Escape' });
+
+    expect(screen.queryByRole('button', { name: 'Italian' })).not.toBeInTheDocument();
+    expect(getTrigger()).toHaveFocus();
+  });
+
+  it('marks the Escape it closes with as handled, so that a panel around it stays open', () => {
+    renderDropdown();
+
+    fireEvent.click(getTrigger());
+    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    screen.getByRole('button', { name: 'Italian' }).dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it('applies the custom class to the trigger', () => {

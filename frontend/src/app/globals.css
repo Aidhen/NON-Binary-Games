@@ -40,26 +40,26 @@
 
 /* Theme: LIGHT (Default) */
 :root, [data-theme="light"] {
-  --bg: #eef2f8;
-  --title-text: #0f172a;
-  --subtitle-text: #64748b;
+  --bg: #f3f0f7;
+  --title-text: #3a2e3f;
+  --subtitle-text: #6b6275;
   
-  --grid-border-outer: #0f172a;
-  --grid-border-inner: #cbd5e1;
+  --grid-border-outer: #3a2e3f;
+  --grid-border-inner: #d4ccdd;
   
   --cell-background: #ffffff;
-  --cell-background-initial: #f8fafc;
+  --cell-background-initial: #f7f4fa;
   --cell-background-selected: #bfdbfe;
-  --cell-background-highlight: #dfe6ef;
+  --cell-background-highlight: #e6e0ee;
   
-  --number-initial: #0f172a;
+  --number-initial: #3a2e3f;
   --number-player: #2563eb;
   --number-error: #b91c1c;
   
-  --numpad-background: #f1f5f9;
-  --numpad-text: #0f172a;
-  --numpad-hover: #e2e8f0;
-  --numpad-active: #cbd5e1;
+  --numpad-background: #efeaf5;
+  --numpad-text: #3a2e3f;
+  --numpad-hover: #e6e0ee;
+  --numpad-active: #d5ccdf;
   /* Colors of the players: the first of each pair is for rings and swatches (3:1 on every surface), the second for the digits of notes (4.5:1). */
   --player-red: #dc2626;
   --player-red-text: #b91c1c;
@@ -77,25 +77,36 @@
   --player-pink-text: #be185d;
   /* Paper: surfaces, the color of their flat shadow, the two cut-outs behind the page, the main action and the game boxes. */
   --paper: #ffffff;
-  --paper-well: #f1f5f9;
-  --paper-shadow: rgba(15, 23, 42, 0.16);
-  --cutout-1: #dfe6ef;
-  --cutout-2: #bfdbfe;
+  --paper-well: #ede8f3;
+  --paper-shadow: rgba(58, 46, 63, 0.16);
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #CFEBDD;
+  --field-soil: var(--paper-well);
+  --field-meadow: #BFE3CF;
+  --cutout-1: #e6e0ee;
+  --cutout-2: #d5e0ff;
   --accent: #2563eb;
   --accent-ink: #ffffff;
   --box-lid: #2563eb;
   --box-lid-ink: #ffffff;
-  --box-inside: #94a3b8;
-  --box-soon-1: #cbd5e1;
+  /* One lid color per game, each with the outline of the drawings in @nbg/art; the Takuzu lid is split on a diagonal, like the two tiles of the logo. */
+  --lid-sudoku: #5b8def;
+  --lid-takuzu-a: #14b8a6;
+  --lid-takuzu-b: #f97316;
+  --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
+  --lid-flower-field: #3f9e8f;
+  --lid-word-search: #f2b544;
+  --box-inside: #a79fb5;
+  --box-soon-1: #d5ccdf;
   --box-soon-2: #bfdbfe;
-  --box-soon-ink: #0f172a;
+  --box-soon-ink: #3a2e3f;
   /* The logo: its two tiles, where they overlap, outline, shadow, faces and star; then the two colored words of the name. */
   --logo-left: #14b8a6;
   --logo-right: #f97316;
   --logo-overlap: #7c9bff;
-  --logo-line: #0f172a;
-  --logo-shadow: #0f172a;
-  --logo-face: #0f172a;
+  --logo-line: #3a2e3f;
+  --logo-shadow: #3a2e3f;
+  --logo-face: #3a2e3f;
   --logo-sparkle: #fbbf24;
   --logo-non: #c2410c;
   --logo-games: #0f766e;
@@ -141,12 +152,23 @@
   --paper: #1e293b;
   --paper-well: #0f172a;
   --paper-shadow: rgba(0, 0, 0, 0.55);
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #1F3B33;
+  --field-soil: var(--paper-well);
+  --field-meadow: #17302a;
   --cutout-1: #0f172a;
   --cutout-2: #172554;
   --accent: #60a5fa;
   --accent-ink: #020617;
   --box-lid: #60a5fa;
   --box-lid-ink: #020617;
+  /* One lid color per game, each with the outline of the drawings in @nbg/art; the Takuzu lid is split on a diagonal, like the two tiles of the logo. */
+  --lid-sudoku: #4f7fdc;
+  --lid-takuzu-a: #0f9f90;
+  --lid-takuzu-b: #e8680f;
+  --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
+  --lid-flower-field: #338a7c;
+  --lid-word-search: #e0a236;
   --box-inside: #0f172a;
   --box-soon-1: #334155;
   --box-soon-2: #1e3a8a;
@@ -185,29 +207,40 @@
   --numpad-hover: #d1bfae;
   --numpad-active: #b8ad9e;
   /* Colors of the players: the first of each pair is for rings and swatches (3:1 on every surface), the second for the digits of notes (4.5:1). */
-  --player-red: #b91c1c;
-  --player-red-text: #991b1b;
-  --player-orange: #9a3412;
-  --player-orange-text: #9a3412;
-  --player-green: #166534;
-  --player-green-text: #166534;
-  --player-teal: #0f766e;
-  --player-teal-text: #115e59;
-  --player-blue: #1d4ed8;
-  --player-blue-text: #1e40af;
-  --player-purple: #7e22ce;
-  --player-purple-text: #7e22ce;
-  --player-pink: #be185d;
-  --player-pink-text: #9d174d;
+  --player-red: #ab3426;
+  --player-red-text: #942b1f;
+  --player-orange: #9c4310;
+  --player-orange-text: #853a0e;
+  --player-green: #487336;
+  --player-green-text: #3a5f2b;
+  --player-teal: #2a6c61;
+  --player-teal-text: #215a50;
+  --player-blue: #37659c;
+  --player-blue-text: #2c5486;
+  --player-purple: #76458f;
+  --player-purple-text: #653a80;
+  --player-pink: #a03c68;
+  --player-pink-text: #8a315a;
   --paper: #fbf6e9;
   --paper-well: #e9dec1;
   --paper-shadow: rgba(74, 60, 49, 0.2);
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #c9d9b0;
+  --field-soil: var(--paper-well);
+  --field-meadow: #bccfa0;
   --cutout-1: #e9dec1;
   --cutout-2: #e7d395;
   --accent: #92400e;
   --accent-ink: #ffffff;
   --box-lid: #92400e;
   --box-lid-ink: #fbf6e9;
+  /* One lid color per game, each with the outline of the drawings in @nbg/art; the Takuzu lid is split on a diagonal, like the two tiles of the logo. */
+  --lid-sudoku: #6485c2;
+  --lid-takuzu-a: #3e9f8e;
+  --lid-takuzu-b: #e0782f;
+  --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
+  --lid-flower-field: #4e9a82;
+  --lid-word-search: #e3b24a;
   --box-inside: #b8ad9e;
   --box-soon-1: #d1bfae;
   --box-soon-2: #e7d395;
@@ -229,7 +262,7 @@
   --title-text: #ffffff;
   --subtitle-text: #808080;
   
-  --grid-border-outer: #444444;
+  --grid-border-outer: #666666;
   --grid-border-inner: #222222;
   
   --cell-background: #000000;
@@ -263,12 +296,23 @@
   --paper: #0a0a0a;
   --paper-well: #1a1a1a;
   --paper-shadow: #2a2a2a;
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #17332a;
+  --field-soil: var(--paper-well);
+  --field-meadow: #0e211a;
   --cutout-1: #0d0d0d;
   --cutout-2: #161616;
   --accent: #ffffff;
   --accent-ink: #000000;
   --box-lid: #ffffff;
   --box-lid-ink: #000000;
+  /* One lid color per game, each with the outline of the drawings in @nbg/art; the Takuzu lid is split on a diagonal, like the two tiles of the logo. */
+  --lid-sudoku: #4a78d6;
+  --lid-takuzu-a: #12a898;
+  --lid-takuzu-b: #f26b10;
+  --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
+  --lid-flower-field: #2f8f80;
+  --lid-word-search: #e8ac3a;
   --box-inside: #222222;
   --box-soon-1: #222222;
   --box-soon-2: #393939;
@@ -288,7 +332,7 @@
 [data-theme="non-binary"] {
   --bg: #1a1a1a;
   
-  --title-text: #ab6fde; 
+  --title-text: #c39bea;
   --subtitle-text: #fcf434;
   
   /* The tray is the purple of the flag and the lines between the boxes its yellow: with both white the lines vanished. */
@@ -327,12 +371,23 @@
   --paper: #2c2c2c;
   --paper-well: #383838;
   --paper-shadow: rgba(0, 0, 0, 0.55);
+  /* The Flower Field: closed cells are grass, opened ones soil; a cleared field is one meadow. */
+  --field-grass: #2d4a3a;
+  --field-soil: var(--paper-well);
+  --field-meadow: #243f31;
   --cutout-1: #5b3a7e;
   --cutout-2: #2f2438;
   --accent: #9553cc;
   --accent-ink: #ffffff;
   --box-lid: #fcf434;
   --box-lid-ink: #1a1a1a;
+  /* One lid color per game, each with the outline of the drawings in @nbg/art; the Takuzu lid is split on a diagonal, like the two tiles of the logo. */
+  --lid-sudoku: #7b8deb;
+  --lid-takuzu-a: #14b8a6;
+  --lid-takuzu-b: #f97316;
+  --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
+  --lid-flower-field: #3f9e8f;
+  --lid-word-search: #f7d84a;
   --box-inside: #0d0d0d;
   /* The accent is too close to the surfaces of this theme to be a focus ring: the yellow of the flag is not. */
   --focus-ring: #fcf434;
@@ -355,6 +410,13 @@
   --animate-float: float 2.5s ease-out forwards;
   /* The flowers of a cleared Flower Field. Only transform and opacity move, which a phone animates cheaply. */
   --animate-bloom: bloom 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  /* A sparkle that pops once, on the card that ends a game. */
+  --animate-pop: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms both;
+
+  @keyframes pop {
+    0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
 
   @keyframes bloom {
     0% { transform: scale(0); opacity: 0; }
@@ -445,5 +507,19 @@ body::after {
   [data-blooming] [data-flower-head="grow"] {
     transform-origin: 20px 25px;
     animation-name: flower-open;
+  }
+}
+
+/* The wings of a bee flutter slowly, as if it dozed: a drawing in @nbg/art cannot use Tailwind, so the motion is here. */
+@keyframes bee-flutter {
+  0%, 100% { transform: rotate(0); }
+  50% { transform: rotate(-7deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-bee-wings] {
+    transform-box: view-box;
+    transform-origin: 17px 13px;
+    animation: bee-flutter 2s ease-in-out infinite;
   }
 }

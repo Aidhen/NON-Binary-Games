@@ -11,6 +11,7 @@ import { PlayerBar } from '../players/PlayerBar';
 import { GameOverCard } from '../play/GameOverCard';
 import { GameToolbar } from '../play/GameToolbar';
 import { cn } from '@/lib/utils';
+import { BOARD_FIT } from '../games/boardStyles';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { getSocket } from '@/lib/socket';
 import { useConnectionStatus } from '@/lib/useConnectionStatus';
@@ -107,7 +108,7 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
   const fill = (text: string) => text.replace('{found}', counter.found).replace('{total}', counter.total);
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-[500px] mx-auto relative">
+    <div className="flex flex-col items-center gap-3 sm:gap-6 w-full max-w-[500px] mx-auto relative">
       <PlayerBar players={players} self={self} highlightedAlias={highlighted} onPickColor={setColor} onHighlight={highlight} />
 
       <GameToolbar difficulty={puzzle.difficulty} isSettingsOpen={isSettingsOpen} onToggleSettings={() => setIsSettingsOpen(!isSettingsOpen)} />
@@ -121,7 +122,7 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
         />
       )}
 
-      <div className="relative w-full">
+      <div className={cn("relative w-full", BOARD_FIT)}>
         <WordSearchBoardUI
           size={puzzle.size}
           grid={puzzle.grid}
@@ -135,12 +136,10 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
       </div>
 
       {puzzle.won && (
-        <GameOverCard overlay={false} title={t('wordSearch.cleared')} message={hidden ? `${t('wordSearch.compliment')} ${t('wordSearch.revealed').replace('{word}', hidden.word)}` : t('wordSearch.compliment')} onPlayAgain={() => getSocket().emit('restart-game', puzzle.difficulty)} />
+        <GameOverCard overlay={false} title={t('wordSearch.cleared')} message={hidden ? `${t('wordSearch.compliment')} ${t('wordSearch.revealed').replace('{word}', hidden.word)}` : t('wordSearch.compliment')} onBackToTable={() => getSocket().emit('vote-table', true)} onPlayAgain={() => getSocket().emit('restart-game', puzzle.difficulty)} />
       )}
 
       <div className="w-full flex flex-col gap-3 mt-2">
-        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
-
         <div className="rounded-[var(--radius-paper)] bg-[var(--paper)] p-4 text-sm text-[var(--subtitle-text)] shadow-[var(--shadow-paper-sm)]">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-black uppercase tracking-wide text-[var(--title-text)]">{t('wordSearch.words')}</h2>
@@ -176,6 +175,8 @@ export function WordSearchContainer({ roomId }: Readonly<{ roomId: string }>) {
             })}
           </ul>
         </div>
+
+        <EmoteBar onSend={sendEmote} disabled={isCoolingDown} />
 
         <div className="rounded-[var(--radius-paper)] bg-[var(--paper)] p-4 text-sm text-[var(--subtitle-text)] shadow-[var(--shadow-paper-sm)]">
           <p className="mb-2 font-black uppercase tracking-wide text-[var(--title-text)]">{t('wordSearch.rules')}</p>

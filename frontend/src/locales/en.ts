@@ -6,7 +6,7 @@ export const en = {
     keyHint: "With the keyboard: the arrows to move, the numbers to write, N for notes, Delete to clear.",
     title: "(NON) Binary Games",
     subtitle: "Sudoku Engine",
-    loading: "Loading engine...",
+    loading: "Setting up the board…",
     cleared: "Puzzle cleared!",
     compliment: "Excellent logical skills.",
     playAgain: "Play again",
@@ -42,24 +42,24 @@ export const en = {
     keyHint: "With the keyboard: the arrows to move, Enter to open a cell, F to put or take a flag.",
     cleared: "All in bloom!",
     compliment: "Great work!",
-    lost: "A mine!",
-    lostHint: "You chose to lose when a mine is opened. Try again?",
+    lost: "A bee!",
+    lostHint: "You chose to lose when a bee is woken up. Try again?",
     rules: "How it works",
-    ruleNumbers: "A number says how many mines touch that cell, the ones across the corners too.",
-    ruleSafe: "Open every cell that is not a mine. The first one is always safe, and you never have to guess.",
-    ruleFlags: "Put a flag where you know there is a mine: switch the flag mode on, then tap.",
-    ruleMineMarks: "If you open a mine, it is only marked for everybody and the game goes on.",
-    ruleMineLoses: "If you open a mine, the game is lost for everybody.",
+    ruleNumbers: "A number says how many bees touch that cell, the ones across the corners too.",
+    ruleSafe: "Open every cell that has no bee. The first one is always safe, and you never have to guess.",
+    ruleFlags: "Put a flag where you know a bee is sleeping: switch the flag mode on, then tap.",
+    ruleMineMarks: "If you wake a bee, it is only marked for everybody and the game goes on.",
+    ruleMineLoses: "If you wake a bee, the game is lost for everybody.",
     flagMode: "Flags",
-    explosive: "Lose when a mine is opened",
+    explosive: "Lose when a bee is woken up",
     bloom: "Flowers that grow at the end",
     bloomHint: "Off, the flowers show up still: lighter for slower phones.",
     explosiveLocked: "It can change before the first cell is opened, or with a new game.",
     cell: "Row {row}, column {column}: {state}",
     closed: "closed",
     flagged: "flag",
-    mine: "mine",
-    empty: "no mines around"
+    mine: "bee",
+    empty: "no bees around"
   },
   wordSearch: {
     cleared: "All the words are found!",
@@ -136,7 +136,7 @@ export const en = {
     title: "Pick a box",
     hint: "Everybody picks one. A box opens when more than half of the room wants it.",
     games: "Games",
-    open: "Open the box",
+    open: "Open {game}",
     takeBack: "Take my vote back",
     reconnecting: "Connection lost, reconnecting… Your place in the room is kept for a little while.",
     connectionLost: "The server cannot be reached.",
@@ -144,8 +144,14 @@ export const en = {
     boardFailed: "The board could not be made. Nothing changed: try again.",
     backToTable: "Back to the table",
     stayHere: "I'd rather stay",
+    backAsk: "{names} would like to go back to the table",
+    goBack: "Go back",
+    keepPlaying: "Keep playing",
     backProgress: "{count} of {total} want to go back to the table",
-    progress: "{count} of {total} want {game}",
+    wants: "{names} wants {game}",
+    wantsPlural: "{names} want {game}",
+    and: "and",
+    split: "Votes are split: a box opens when more than half of the room picks it.",
     votes: "{count} of {total} votes",
     players: "{min}–{max} players",
     playersExact: "{count} players",
@@ -177,9 +183,42 @@ export const en = {
     failedDetails: "It is taking longer than usual. We keep trying in the background.",
     retry: "Try again"
   },
+  settings: {
+    label: "Theme and language",
+    theme: "Theme",
+    language: "Language"
+  },
+  themes: {
+    system: "System",
+    light: "Light",
+    dark: "Dark",
+    retro: "Retro",
+    oled: "OLED",
+    "non-binary": "Non-binary"
+  },
   emotes: {
     title: "Reactions",
-    more: "More reactions"
+    more: "More reactions",
+    names: {
+      "💜": "Purple heart",
+      "🔥": "Fire",
+      "😂": "Laughing",
+      "😤": "Huffing",
+      "👏": "Clapping",
+      "😎": "Cool",
+      "🤔": "Thinking",
+      "😢": "Sad",
+      "😴": "Sleepy",
+      "❤️": "Red heart",
+      "🎉": "Party",
+      "🦆": "Duck",
+      "🫪": "Distorted face",
+      "🙏": "Thank you",
+      "😓": "Phew",
+      "😶‍🌫️": "Head in the clouds",
+      "🤯": "Mind blown",
+      "🫰": "Finger heart"
+    }
   },
   nav: {
     label: "Main",
@@ -191,8 +230,7 @@ export const en = {
   footer: {
     tagline: "A queer-owned project, made to play together.",
     privacy: "Privacy",
-    github: "GitHub",
-    social: "Instagram, X and TikTok: coming soon"
+    github: "GitHub"
   },
   home: {
     titleStart: "Take a break: play on your own or",
@@ -229,7 +267,7 @@ export const en = {
     },
     flowerField: {
       tagline: "A meadow to explore together",
-      description: "Open every cell that does not hide a mine, using the numbers to work out where the mines are."
+      description: "Open every cell that does not hide a bee, using the numbers to work out where the sleeping bees are."
     },
     wordSearch: {
       tagline: "Hidden words, found together",

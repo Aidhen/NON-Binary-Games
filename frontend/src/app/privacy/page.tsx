@@ -3,14 +3,9 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { cn } from '@/lib/utils';
 import { Page } from '../components/site/Page';
 import { BODY, CARD, HEADING } from '../components/site/styles';
+import { HOSTING_POLICIES } from './hostingPolicies';
 
 const SECTIONS = ['browser', 'server', 'hosting', 'feedback'] as const;
-
-export const HOSTING_POLICIES = [
-  { name: 'Vercel', url: 'https://vercel.com/legal/privacy-policy' },
-  { name: 'Render', url: 'https://render.com/privacy' },
-  { name: 'GitHub', url: 'https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement' },
-] as const;
 
 // What the site keeps, where and for how long. It has to say what the code really does: when something that
 // is stored changes (the feedback form, an account, a new key in localStorage), this page changes with it.

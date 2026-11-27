@@ -23,6 +23,13 @@ describe('ServerLoader', () => {
     expect(screen.queryByText('loader.waking')).not.toBeInTheDocument();
   });
 
+  it('pulses its text only for whoever welcomes motion', () => {
+    renderLoader('connecting');
+
+    expect(screen.getByText('sudoku.loading')).toHaveClass('motion-safe:animate-pulse');
+    expect(screen.getByText('sudoku.loading')).not.toHaveClass('animate-pulse');
+  });
+
   it('explains why the server is slow while waking', () => {
     renderLoader('waking');
 

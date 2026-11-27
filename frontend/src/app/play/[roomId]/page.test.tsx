@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import PlayRoomPage from '@/app/play/[roomId]/page';
 
-const mocks = vi.hoisted(() => ({ roomId: '3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c' as unknown }));
+const mocks = vi.hoisted(() => ({ roomId: '3f2b8c1e-9d4a-4b7e-8a2c-5d6e7f8a9b0c' as unknown, openNewRoom: vi.fn() }));
+
+vi.mock('@/lib/useNewRoom', () => ({ useNewRoom: () => mocks.openNewRoom }));
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ roomId: mocks.roomId }),
@@ -37,5 +39,14 @@ describe('PlayRoomPage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('sudoku.invalidRoom');
     expect(screen.getByRole('link', { name: 'sudoku.backHome' })).toHaveAttribute('href', '/');
     expect(screen.queryByTestId('room-container')).toBeNull();
+  });
+
+  it('offers to create a room instead of a dead end when the link is not valid', () => {
+    mocks.roomId = 'custom-room';
+
+    render(<PlayRoomPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'home.create' }));
+
+    expect(mocks.openNewRoom).toHaveBeenCalledOnce();
   });
 });

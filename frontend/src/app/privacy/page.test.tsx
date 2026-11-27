@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import PrivacyPage, { HOSTING_POLICIES } from './page';
+import PrivacyPage from './page';
+import { HOSTING_POLICIES } from './hostingPolicies';
 
 vi.mock('@/lib/i18n/TranslationContext', () => ({
   useTranslation: () => ({ t: (key: string) => key }),

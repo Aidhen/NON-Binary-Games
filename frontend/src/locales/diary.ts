@@ -45,6 +45,28 @@ export const DIARY: readonly DiaryEntry[] = [
     },
   },
   {
+    id: 'bees-and-phone-layout',
+    type: 'released',
+    date: '2026-11-27',
+    version: '0.9.0-alpha',
+    en: {
+      title: 'Bees, blooms and a roomier phone layout',
+      summary: 'A gentler Flower Field, a clearer table, a screen that fits.',
+      body: [
+        'In the Flower Field the mines are gone: now a sleepy bee is hiding under some cells, and waking it up is the only way to lose. When the field is cleared the flowers bloom on their own, with nothing left on top of them, and closed cells now look like grass while opened ones are bare soil.',
+        'At the table you can now see who wants which game, by name, and the button says which box it opens. If someone asks to go back to the table, you see who and can follow or keep playing. On a phone, the board and the keypad now fit on the first screen.',
+      ],
+    },
+    it: {
+      title: 'Api, fioriture e un telefono con più spazio',
+      summary: 'Un Campo fiorito più gentile, un tavolo più chiaro, uno schermo che basta.',
+      body: [
+        'Nel Campo fiorito le mine non ci sono più: ora sotto alcune celle dorme un\'ape, e svegliarla è l\'unico modo di perdere. Quando il campo è libero i fiori sbocciano da soli, senza niente sopra, e le celle chiuse ora sembrano erba mentre quelle aperte sono terra.',
+        'Al tavolo ora vedi chi vuole quale gioco, con il nome, e il pulsante dice quale scatola apre. Se qualcuno chiede di tornare al tavolo vedi chi è e puoi seguirlo o continuare a giocare. Sul telefono, griglia e tastierino ora stanno nella prima schermata.',
+      ],
+    },
+  },
+  {
     id: 'feedback-form',
     type: 'released',
     date: '2026-11-27',

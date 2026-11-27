@@ -7,6 +7,7 @@ import { RoomCard } from './RoomCard';
 import { WakeStatus } from './WakeStatus';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
+import { playerName } from '@/lib/playerNames';
 import type { ConnectionStatus } from '@/lib/useConnectionStatus';
 
 interface LobbyProps {
@@ -37,15 +38,30 @@ export function Lobby({ roomId, games, players, self, votes, status, onRetry, on
 
   const ready = votes !== null;
   const ownVote = votes?.find(({ alias }) => alias === self)?.game ?? null;
-  // The box the player touched last, else the one they voted for, else the first that can be played.
-  const selected = playable.find(({ id }) => id === (lookedAt ?? ownVote)) ?? playable[0];
+  const votesFor = (id: string) => (votes ?? []).filter((vote) => vote.game === id);
+  // The box with the most votes, the first of them when they are tied: the table opens on what the room leans to.
+  const leading = playable.reduce<AvailableGame | undefined>((best, game) => {
+    const bestCount = best ? votesFor(best.id).length : 0;
+    return votesFor(game.id).length > bestCount ? game : best;
+  }, undefined);
+  // The box the player touched last, else the one they voted for, else the one most of the room wants, else the first that can be played.
+  const selected = playable.find(({ id }) => id === (lookedAt ?? ownVote ?? leading?.id)) ?? playable[0];
   const voted = ownVote === selected?.id;
-  const count = selected ? (votes ?? []).filter((vote) => vote.game === selected.id).length : 0;
+  const openLabel = t('lobby.open').replace('{game}', selected ? t(selected.titleKey) : '').trim();
+
+  // Who wants what, by the names the chips show. A game nobody wants is not mentioned.
+  const nameList = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${t('lobby.and')} ${names.at(-1)}`);
+  const wishes = playable.flatMap((game) => {
+    const names = players.filter(({ alias }) => votesFor(game.id).some((vote) => vote.alias === alias)).map((player) => playerName(t, player));
+    if (names.length === 0) return [];
+    return [t(names.length > 1 ? 'lobby.wantsPlural' : 'lobby.wants').replace('{names}', nameList(names)).replace('{game}', t(game.titleKey))];
+  });
+  // Votes on two games or more: no box has the room yet, and it is worth saying how one gets it.
+  const isSplit = wishes.length > 1;
 
   return (
-    <div className="mx-auto grid w-full max-w-md grid-cols-1 gap-8 lg:max-w-4xl lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start lg:gap-10">
-      <RoomCard roomId={roomId} players={players} self={self} onPickColor={onPickColor} />
-
+    <div className="mx-auto grid w-full max-w-md grid-cols-1 gap-6 lg:max-w-6xl lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-10 lg:items-start">
+      {/* The table comes first, so that on a phone the boxes and the button are there without scrolling; the room card goes under it, and back to the left on a wide screen. */}
       <section aria-labelledby="lobby-title" className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h2 id="lobby-title" className="font-display text-3xl font-extrabold leading-tight text-[var(--title-text)]">{t('lobby.title')}</h2>
@@ -76,20 +92,23 @@ export function Lobby({ roomId, games, players, self, votes, status, onRetry, on
               : "bg-[var(--accent)] text-[var(--accent-ink)]"
           )}
         >
-          {voted ? t('lobby.takeBack') : t('lobby.open')}
+          {voted ? t('lobby.takeBack') : openLabel}
         </button>
 
         {!ready && <WakeStatus status={status} onRetry={onRetry} />}
 
         {ready && (
-          <p role="status" className="min-h-5 text-center text-sm font-bold text-[var(--subtitle-text)]">
-            {selected && count > 0 && t('lobby.progress')
-              .replace('{count}', String(count))
-              .replace('{total}', String(players.length))
-              .replace('{game}', t(selected.titleKey))}
-          </p>
+          // An <output> holds phrasing content only: the lines are spans shown as blocks.
+          <output className="block min-h-5 text-center text-sm font-bold text-[var(--subtitle-text)]">
+            {wishes.map((wish) => <span key={wish} className="block">{wish}</span>)}
+            {isSplit && <span className="mt-1 block font-medium">{t('lobby.split')}</span>}
+          </output>
         )}
       </section>
+
+      <div className="lg:order-first">
+        <RoomCard roomId={roomId} players={players} self={self} onPickColor={onPickColor} />
+      </div>
     </div>
   );
 }

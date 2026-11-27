@@ -1,7 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import { FLOWER_HIDDEN, FLOWER_MARKED } from '@nbg/shared';
-import { FLOWER_COLORS, FLOWER_KINDS, FlowerArt } from '@nbg/art';
+import { BeeArt, FLOWER_COLORS, FLOWER_KINDS, FlowerArt } from '@nbg/art';
 import type { PlayerProfile } from '@nbg/shared';
 import { cn } from '@/lib/utils';
 import { BOARD_TILE, BOARD_TRAY, gapOf } from '../games/boardStyles';
@@ -14,9 +14,9 @@ interface FlowerFieldBoardUIProps {
   grid: number[][];
   /** Who put the flag on each cell, by alias, under the key `r-c`. */
   flags: Record<string, string>;
-  /** Where the mines are, once the game is lost. */
+  /** Where the bees are, once the game is lost. */
   mines: [number, number][];
-  /** The mine that was opened and lost the game. */
+  /** The bee that was woken up and lost the game. */
   exploded: [number, number] | null;
   selectedCell: [number, number] | null;
   /** Won or lost: the field takes no more clicks. */
@@ -33,7 +33,6 @@ interface FlowerFieldBoardUIProps {
   bloom?: { grow: boolean } | null;
 }
 
-const MINE = '✸';
 const FLAG = '⚑';
 
 const isAt = (cell: [number, number] | null, r: number, c: number): boolean => cell?.[0] === r && cell?.[1] === c;
@@ -58,17 +57,23 @@ export const bloomDelayOf = (size: number, r: number, c: number): number => {
   return Math.round((Math.hypot(r - middle, c - middle) / farthest) * BLOOM_SPREAD_MS) + give;
 };
 
-/** The mine that lost the game comes first, then the cell the player is on, then whether the cell shows what it holds. */
-const backgroundClass = (isExploded: boolean, isSelected: boolean, isShown: boolean): string => {
-  if (isExploded) return 'bg-[var(--number-error)]/30';
+/**
+ * Closed cells are grass, raised a little; opened ones are flat soil, so it is clear at a glance what is still
+ * closed. The bee that lost the game keeps a soft tint (never an alarm), then the cell the player is on. Once the
+ * field is cleared the tiles let go of their color, and the tray, which turns into a meadow, shows through.
+ */
+const backgroundClass = (isExploded: boolean, isSelected: boolean, isShown: boolean, isBlooming: boolean, isDense: boolean): string => {
+  if (isBlooming) return 'bg-transparent shadow-none transition-colors duration-[400ms] motion-reduce:transition-none';
+  if (isExploded) return 'bg-[var(--cutout-2)]';
   if (isSelected) return 'bg-[var(--cell-background-selected)]';
-  if (isShown) return 'bg-[var(--cell-background-initial)]';
-  return 'bg-[var(--cell-background)] hover:bg-[var(--cell-background-initial)]';
+  if (isShown) return 'bg-[var(--field-soil)]';
+  // On a dense field the raised edge is thinner, so that it does not eat the tile.
+  return cn('bg-[var(--field-grass)] hover:brightness-110', isDense ? 'shadow-[1px_2px_0_var(--paper-shadow)]' : 'shadow-[var(--shadow-paper-sm)]');
 };
 
-/** What is drawn in a cell: a mine, a flag, the number of mines around it, or nothing. */
+/** What is written in a cell: a flag, the number of bees around it, or nothing (a bee is drawn, not written). */
 const contentOf = (value: number, isMine: boolean, isFlagged: boolean): string | number => {
-  if (isMine) return MINE;
+  if (isMine) return '';
   if (isFlagged) return FLAG;
   return value > 0 ? value : '';
 };
@@ -77,6 +82,7 @@ const noMove = () => {};
 
 export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selectedCell, isOver, onCellClick, onMove, othersSelections = {}, profiles = {}, highlightedAlias = null, bloom = null }: Readonly<FlowerFieldBoardUIProps>) {
   const { t } = useTranslation();
+  const isBlooming = bloom !== null;
   const keyboard = useGridKeyboard(size, selectedCell, onMove ?? noMove);
 
   // The list comes from the server and an alias is a key of it: only a key it really has counts.
@@ -115,7 +121,7 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
     t('flowerField.cell').replace('{row}', String(r + 1)).replace('{column}', String(c + 1)).replace('{state}', stateOf(r, c, value));
 
   return (
-    <div className={cn("relative aspect-square", BOARD_TRAY)} data-blooming={bloom?.grow || undefined}>
+    <div className={cn("relative aspect-square", BOARD_TRAY, isBlooming && 'bg-[var(--field-meadow)] duration-[400ms] motion-reduce:transition-none')} data-blooming={bloom?.grow || undefined}>
       <div
         className={cn("grid h-full w-full", gapOf(size))}
         style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${size}, minmax(0, 1fr))` }}
@@ -124,9 +130,11 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
           const key = `${r}-${c}`;
           const isOpen = value >= 0;
           const isMine = value === FLOWER_MARKED || revealedMines.has(key);
+          // A field in bloom shows only its flowers: nothing of the game is left under or around them.
+          const isTidy = isBlooming;
           const isShown = isOpen || isMine;
-          const isSelected = isAt(selectedCell, r, c);
-          const flagger = flaggerOf(key, isShown);
+          const isSelected = !isTidy && isAt(selectedCell, r, c);
+          const flagger = isTidy ? null : flaggerOf(key, isShown);
 
           return (
             <button
@@ -140,15 +148,15 @@ export function FlowerFieldBoardUI({ size, grid, flags, mines, exploded, selecte
                 sizeClass,
                 "cursor-pointer select-none overflow-hidden",
                 BOARD_TILE,
-                backgroundClass(isAt(exploded, r, c), isSelected, isShown),
+                backgroundClass(isAt(exploded, r, c), isSelected, isShown, isTidy, size > 8),
                 isOpen && 'text-[var(--number-initial)] font-bold',
-                isMine && 'text-[var(--number-error)]',
                 flagClass(flagger),
                 isSelected && 'outline-2 -outline-offset-2 outline-[var(--number-player)]/70',
-                ringClass(occupants.get(key), isSelected)
+                !isTidy && ringClass(occupants.get(key), isSelected)
               )}
             >
-              {contentOf(value, isMine, flagger !== null)}
+              {!isTidy && contentOf(value, isMine, flagger !== null)}
+              {isMine && !isTidy && <BeeArt className="absolute inset-[6%] size-[88%]" />}
               {bloom && (
                 <FlowerArt
                   {...flowerOf(r, c)}

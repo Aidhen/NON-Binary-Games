@@ -43,7 +43,7 @@ export function ServerLoader({ status, onRetry }: Readonly<ServerLoaderProps>) {
       )}
 
       {!isWaiting && (
-        <span className="text-[var(--subtitle-text)] font-medium animate-pulse">
+        <span className="text-[var(--subtitle-text)] font-medium motion-safe:animate-pulse">
           {t('sudoku.loading')}
         </span>
       )}

@@ -17,6 +17,17 @@ const renderSelector = () =>
   );
 
 describe('LanguageSelector', () => {
+  it('is named "Language" in the language of the page', () => {
+    renderSelector();
+
+    expect(screen.getByRole('button', { name: 'Language: English' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /English/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Italiano' }));
+
+    expect(screen.getByRole('button', { name: 'Lingua: Italiano' })).toBeInTheDocument();
+  });
+
   it('renders English as the default language', () => {
     renderSelector();
 

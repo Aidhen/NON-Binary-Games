@@ -9,13 +9,14 @@ const SUPPORTED_LANGUAGES: DropdownOption<Language>[] = [
 ];
 
 export function LanguageSelector() {
-  const { language, setLanguage } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
 
   return (
     <Dropdown<Language>
       value={language}
       options={SUPPORTED_LANGUAGES}
       onChange={setLanguage}
+      label={t('settings.language')}
       className="min-w-[120px]"
     />
   );

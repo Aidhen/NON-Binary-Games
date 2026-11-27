@@ -9,13 +9,6 @@ const VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 
 export const REPOSITORY_URL = 'https://github.com/Aidhen/NON-Binary-Games';
 
-// The profiles do not exist yet: the three marks keep their place, greyed out, and lead nowhere.
-const SOCIALS = [
-  { name: 'Instagram', mark: 'IG' },
-  { name: 'X', mark: 'X' },
-  { name: 'TikTok', mark: 'TT' },
-] as const;
-
 export function SiteFooter() {
   const { t } = useTranslation();
   const focused = useFocusMode();
@@ -32,18 +25,6 @@ export function SiteFooter() {
           <Link href="/privacy" className="font-bold text-[var(--title-text)] underline">{t('footer.privacy')}</Link>
           {/* noreferrer: the address of a room must not travel to another site (see securityHeaders.ts). */}
           <a href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer" className="font-bold text-[var(--title-text)] underline">{t('footer.github')}</a>
-          <span role="img" aria-label={t('footer.social')} className="flex gap-2">
-            {SOCIALS.map(({ name, mark }) => (
-              <span
-                key={name}
-                aria-hidden="true"
-                title={name}
-                className="flex size-9 items-center justify-center rounded-[var(--radius-control)] bg-[var(--paper)] text-xs font-extrabold opacity-60"
-              >
-                {mark}
-              </span>
-            ))}
-          </span>
         </div>
       </div>
     </footer>

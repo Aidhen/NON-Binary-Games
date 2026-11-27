@@ -9,19 +9,21 @@ vi.mock('@/lib/i18n/TranslationContext', () => ({
 }));
 
 const [FRONT_EMOTES, BACK_EMOTES] = EMOTE_PAGES;
+// The mock of the dictionary answers with the key: the name of an emote is looked up by the emote itself.
+const nameOf = (emote: string) => `emotes.names.${emote}`;
 const flip = () => fireEvent.click(screen.getByRole('button', { name: 'emotes.more' }));
 
 describe('EmoteBar', () => {
-  it('shows one button per emote of the first side, named after the emoji itself, plus the flip button', () => {
+  it('shows one button per emote of the first side, named after a short word for the feeling, plus the flip button', () => {
     render(<EmoteBar onSend={vi.fn()} />);
 
     expect(screen.getByRole('group', { name: 'emotes.title' })).toBeInTheDocument();
     expect(screen.getAllByRole('button')).toHaveLength(FRONT_EMOTES.length + 1);
     for (const emote of FRONT_EMOTES) {
-      expect(screen.getByRole('button', { name: emote })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: nameOf(emote) })).toBeInTheDocument();
     }
     for (const emote of BACK_EMOTES) {
-      expect(screen.queryByRole('button', { name: emote })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: nameOf(emote) })).not.toBeInTheDocument();
     }
     expect(screen.getByRole('button', { name: 'emotes.more' })).toHaveAttribute('aria-pressed', 'false');
   });
@@ -33,7 +35,7 @@ describe('EmoteBar', () => {
   it('draws the emotes instead of writing them, on both sides of each button', () => {
     render(<EmoteBar onSend={vi.fn()} />);
 
-    const first = screen.getByRole('button', { name: FRONT_EMOTES[0] });
+    const first = screen.getByRole('button', { name: nameOf(FRONT_EMOTES[0]) });
     expect(first.querySelectorAll('svg[data-emote-art]')).toHaveLength(2);
     expect(first).not.toHaveTextContent(FRONT_EMOTES[0]);
   });
@@ -42,7 +44,7 @@ describe('EmoteBar', () => {
     const onSend = vi.fn();
     render(<EmoteBar onSend={onSend} />);
 
-    fireEvent.click(screen.getByRole('button', { name: emote }));
+    fireEvent.click(screen.getByRole('button', { name: nameOf(emote) }));
 
     expect(onSend).toHaveBeenCalledExactlyOnceWith(emote);
   });
@@ -57,10 +59,10 @@ describe('EmoteBar', () => {
     expect(screen.getByRole('button', { name: 'emotes.more' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getAllByRole('button')).toHaveLength(BACK_EMOTES.length + 1);
     for (const emote of BACK_EMOTES) {
-      expect(screen.getByRole('button', { name: emote })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: nameOf(emote) })).toBeInTheDocument();
     }
     for (const emote of FRONT_EMOTES) {
-      expect(screen.queryByRole('button', { name: emote })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: nameOf(emote) })).not.toBeInTheDocument();
     }
   });
 
@@ -69,7 +71,7 @@ describe('EmoteBar', () => {
     render(<EmoteBar onSend={onSend} />);
 
     flip();
-    fireEvent.click(screen.getByRole('button', { name: emote }));
+    fireEvent.click(screen.getByRole('button', { name: nameOf(emote) }));
 
     expect(onSend).toHaveBeenCalledExactlyOnceWith(emote);
   });
@@ -80,7 +82,7 @@ describe('EmoteBar', () => {
 
     flip();
     flip();
-    fireEvent.click(screen.getByRole('button', { name: FRONT_EMOTES[0] }));
+    fireEvent.click(screen.getByRole('button', { name: nameOf(FRONT_EMOTES[0]) }));
 
     expect(onSend).toHaveBeenCalledExactlyOnceWith(FRONT_EMOTES[0]);
   });
@@ -90,13 +92,13 @@ describe('EmoteBar', () => {
     render(<EmoteBar onSend={onSend} disabled />);
 
     for (const emote of FRONT_EMOTES) {
-      const button = screen.getByRole('button', { name: emote });
+      const button = screen.getByRole('button', { name: nameOf(emote) });
       expect(button).toBeDisabled();
       fireEvent.click(button);
     }
     flip();
     for (const emote of BACK_EMOTES) {
-      expect(screen.getByRole('button', { name: emote })).toBeDisabled();
+      expect(screen.getByRole('button', { name: nameOf(emote) })).toBeDisabled();
     }
     expect(onSend).not.toHaveBeenCalled();
   });

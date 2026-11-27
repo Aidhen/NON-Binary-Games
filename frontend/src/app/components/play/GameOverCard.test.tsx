@@ -29,4 +29,26 @@ describe('GameOverCard', () => {
     expect(container.firstElementChild).not.toHaveClass('absolute');
     expect(screen.getByRole('heading', { name: 'Cleared' })).toBeInTheDocument();
   });
+
+  it('shows the logo above the title, as decoration', () => {
+    const { container } = render(<GameOverCard title="Cleared" message="Well played" onPlayAgain={() => {}} />);
+
+    expect(container.querySelector('svg')).toBeInTheDocument();
+  });
+
+  it('offers to go back to the table next to playing again, when the page can cast that vote', () => {
+    const onBackToTable = vi.fn();
+    render(<GameOverCard title="Cleared" message="Well played" onPlayAgain={() => {}} onBackToTable={onBackToTable} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'lobby.backToTable' }));
+
+    expect(onBackToTable).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: 'sudoku.playAgain' })).toBeInTheDocument();
+  });
+
+  it('has no way back to the table when the page gives none', () => {
+    render(<GameOverCard title="Cleared" message="Well played" onPlayAgain={() => {}} />);
+
+    expect(screen.queryByRole('button', { name: 'lobby.backToTable' })).not.toBeInTheDocument();
+  });
 });

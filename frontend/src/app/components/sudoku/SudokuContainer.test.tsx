@@ -621,6 +621,15 @@ describe('SudokuContainer', () => {
     });
   });
 
+  it('offers to go back to the table on the completion overlay, with the vote of the table', async () => {
+    await renderGame();
+    await act(async () => { mocks.dispatch('game-won'); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'lobby.backToTable' }));
+
+    expect(mocks.emitted).toContainEqual({ event: 'vote-table', args: [true] });
+  });
+
   it('stacks the completion overlay above the occupied cells (z-10)', async () => {
     await renderGame();
 
@@ -746,7 +755,7 @@ describe('SudokuContainer', () => {
     it('lets the player send a reaction to the others in the room', async () => {
       await renderGame();
 
-      fireEvent.click(screen.getByRole('button', { name: EMOTES[5] }));
+      fireEvent.click(screen.getByRole('button', { name: `emotes.names.${EMOTES[5]}` }));
 
       expect(mocks.emitted).toContainEqual({ event: 'send-emote', args: [EMOTES[5]] });
       expect(screen.getAllByTestId('floating-emote').map((element) => element.dataset.emote)).toEqual([EMOTES[5]]);
@@ -755,7 +764,7 @@ describe('SudokuContainer', () => {
     it('waits for the cooldown before accepting another reaction', async () => {
       await renderGame();
 
-      fireEvent.click(screen.getByRole('button', { name: EMOTES[0] }));
+      fireEvent.click(screen.getByRole('button', { name: `emotes.names.${EMOTES[0]}` }));
 
       for (const button of screen.getAllByRole('button', { name: new RegExp(EMOTES.join('|')) })) {
         expect(button).toBeDisabled();

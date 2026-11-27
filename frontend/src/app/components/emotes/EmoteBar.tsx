@@ -13,12 +13,12 @@ interface EmoteBarProps {
 
 const [FRONT_EMOTES, BACK_EMOTES] = EMOTE_PAGES;
 
-// The buttons are 40 pixels tall: the drawing fills them without touching the edge.
+// The buttons are 40 pixels tall, paper tiles like the ones of the home page: the drawing fills them without touching the edge.
 const ART_SIZE = 30;
 
 const FACE_CLASSES = cn(
   "absolute inset-0 flex items-center justify-center rounded-[var(--radius-control)] backface-hidden",
-  "bg-[var(--numpad-background)] group-hover:bg-[var(--numpad-hover)]"
+  "bg-[var(--paper)] shadow-[var(--shadow-paper-sm)] group-hover:bg-[var(--paper-well)]"
 );
 
 export function EmoteBar({ onSend, disabled = false }: Readonly<EmoteBarProps>) {
@@ -32,11 +32,11 @@ export function EmoteBar({ onSend, disabled = false }: Readonly<EmoteBarProps>) 
           key={emote}
           onClick={() => onSend(flipped ? BACK_EMOTES[index] : emote)}
           disabled={disabled}
-          // The drawings are decoration: the button is named after the emoji it sends, which every screen reader can say.
-          aria-label={flipped ? BACK_EMOTES[index] : emote}
+          // The drawings are decoration: the button is named with a short word for the feeling, in the language of the page.
+          aria-label={t(`emotes.names.${flipped ? BACK_EMOTES[index] : emote}`)}
           className={cn(
             "group h-10 cursor-pointer text-xl perspective-midrange transition-transform motion-reduce:transition-none",
-            "active:scale-90 disabled:cursor-not-allowed"
+            "motion-safe:active:scale-90 disabled:cursor-not-allowed"
           )}
         >
           {/* The card turns inside the button, so the press feedback of the button is not delayed by the wave. */}
@@ -58,7 +58,7 @@ export function EmoteBar({ onSend, disabled = false }: Readonly<EmoteBarProps>) 
         aria-pressed={flipped}
         className={cn(
           "flex h-10 cursor-pointer items-center justify-center rounded-[var(--radius-control)] transition-transform motion-reduce:transition-none",
-          "bg-[var(--numpad-background)] hover:bg-[var(--numpad-hover)] active:scale-90"
+          "bg-[var(--paper)] shadow-[var(--shadow-paper-sm)] hover:bg-[var(--paper-well)] motion-safe:active:scale-90"
         )}
       >
         <svg

@@ -90,9 +90,9 @@ export function RoomContainer({ roomId, games = GAMES }: Readonly<RoomContainerP
     <div className="flex w-full flex-col items-center">
       <RoomHeader
         roomId={roomId}
-        tableVotes={lobby.tableVotes.length}
-        playerCount={players.length}
-        wantsTable={self !== null && lobby.tableVotes.includes(self)}
+        players={players}
+        self={self}
+        tableVotes={lobby.tableVotes}
         onVoteTable={voteTable}
       />
       {boardFailedNotice}

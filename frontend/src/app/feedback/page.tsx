@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { ReactNode, SubmitEvent } from 'react';
 import { EmoteArt } from '@nbg/art';
 import { EMOTES, FEEDBACK_DEVICES, FEEDBACK_FREQUENCIES, FEEDBACK_RATINGS, FEEDBACK_WHAT, FEEDBACK_WHERE, FEEDBACK_WISHES } from '@nbg/shared';
 import type { Emote, FeedbackArgs, FeedbackDevice, FeedbackFrequency, FeedbackWhat, FeedbackWhere, FeedbackWish } from '@nbg/shared';
@@ -74,6 +74,9 @@ function Choice({ name, legend, options, value, onChange, text, art }: Readonly<
   );
 }
 
+/** The drawing next to a level of the rating. Kept out of the page, so that it is not a new function at every render. */
+const ratingArt = (option: string) => <EmoteArt emote={RATING_EMOTES[Number(option) as keyof typeof RATING_EMOTES]} size={32} />;
+
 /**
  * The feedback form: multiple choice only. There is no text to write on purpose: nothing a person types reaches the
  * tracker, so there is nothing to moderate and nothing about the person to keep (see CLAUDE.md).
@@ -91,7 +94,7 @@ export default function FeedbackPage() {
   const report = reportOf(answers);
   const busy = status === 'sending' || status === 'waking';
 
-  const submit = async (event: FormEvent) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!report || busy) return;
 
@@ -115,9 +118,12 @@ export default function FeedbackPage() {
           <p className={cn(BAND, "p-4 text-base font-medium text-[var(--title-text)]")}>{t('feedback.diaryNote')}</p>
 
           {status === 'sent' ? (
-            <div role="status" className={cn(CARD, "flex flex-col items-start gap-3 p-5 sm:p-7")}>
-              <h2 className={cn(HEADING, "text-2xl")}>{t('feedback.sentTitle')}</h2>
-              <p className={BODY}>{t('feedback.sentText')}</p>
+            <div className={cn(CARD, "flex flex-col items-start gap-3 p-5 sm:p-7")}>
+              {/* <output> holds phrasing only: the two lines are spans shown as blocks. */}
+              <output className="flex flex-col gap-3">
+                <span className={cn(HEADING, "block text-2xl")}>{t('feedback.sentTitle')}</span>
+                <span className={cn(BODY, "block")}>{t('feedback.sentText')}</span>
+              </output>
               <button type="button" onClick={() => { setAnswers({ wishes: [] }); setStatus('idle'); }} className={BUTTON_SECONDARY}>{t('feedback.sendAnother')}</button>
             </div>
           ) : (
@@ -162,7 +168,7 @@ export default function FeedbackPage() {
                     value={answers.rating === undefined ? undefined : String(answers.rating)}
                     onChange={(rating) => set({ rating: Number(rating) })}
                     text={(option) => t(`feedback.options.rating.${option}`)}
-                    art={(option) => <EmoteArt emote={RATING_EMOTES[Number(option) as keyof typeof RATING_EMOTES]} size={32} />}
+                    art={ratingArt}
                   />
                   <fieldset className="min-w-0">
                     <legend className={LABEL}>{t('feedback.wishes')} <span className="font-medium text-[var(--subtitle-text)]">({t('feedback.optional')})</span></legend>
@@ -196,12 +202,12 @@ export default function FeedbackPage() {
                 </>
               )}
 
-              {status === 'sending' && <p role="status" className={cn(BODY, "text-sm")}>{t('feedback.sending')}</p>}
+              {status === 'sending' && <output className={cn(BODY, "block text-sm")}>{t('feedback.sending')}</output>}
               {status === 'waking' && (
-                <div role="status" className={cn(BAND, "flex flex-col gap-1 p-4")}>
-                  <p className="font-display text-lg font-extrabold text-[var(--title-text)]">{t('feedback.waking')}</p>
-                  <p className={cn(BODY, "text-sm")}>{t('feedback.wakingDetails')}</p>
-                </div>
+                <output className={cn(BAND, "flex flex-col gap-1 p-4")}>
+                  <span className="block font-display text-lg font-extrabold text-[var(--title-text)]">{t('feedback.waking')}</span>
+                  <span className={cn(BODY, "block text-sm")}>{t('feedback.wakingDetails')}</span>
+                </output>
               )}
               {status === 'too-many' && <p role="alert" className="text-sm font-bold text-[var(--title-text)]">{t('feedback.tooMany')}</p>}
               {status === 'day-full' && <p role="alert" className="text-sm font-bold text-[var(--title-text)]">{t('feedback.dayFull')}</p>}

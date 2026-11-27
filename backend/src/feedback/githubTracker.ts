@@ -143,8 +143,7 @@ export const createGithubTracker = ({ token, repo }: GithubConfig, fetchImpl: ty
 
   /** Adds a comment to the issue with this title, and opens it first if there is none. */
   const post = async (deadline: number, title: string, label: string, body: string, comment: string) => {
-    let number = await findOpen(deadline, title);
-    if (number === undefined) number = (await call<{ number: number }>(deadline, 'POST', '/issues', { title, body, labels: [label] })).number;
+    const number = (await findOpen(deadline, title)) ?? (await call<{ number: number }>(deadline, 'POST', '/issues', { title, body, labels: [label] })).number;
     remember(title, number);
     await call(deadline, 'POST', `/issues/${number}/comments`, { body: comment });
   };
@@ -163,7 +162,8 @@ export const createGithubTracker = ({ token, repo }: GithubConfig, fetchImpl: ty
     const run = tail
       .then(() => work(deadline))
       .then((): FilingResult => 'filed', (error: unknown): FilingResult => {
-        logger.warn(`Feedback: a GitHub call failed (${error instanceof GithubError && error.status ? `status ${error.status}` : 'no answer'}).`);
+        const status = error instanceof GithubError && error.status ? `status ${error.status}` : 'no answer';
+        logger.warn(`Feedback: a GitHub call failed (${status}).`);
         return 'failed';
       })
       .finally(() => { queued--; });

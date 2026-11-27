@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { feedbackArgsSchema } from '@nbg/shared';
+import type { FeedbackArgs } from '@nbg/shared';
 import { createRateLimiter, createKeyedRateLimiter } from '../sockets/rateLimiter';
 import type { AddressOf } from '../sockets/connectionLimits';
 import type { DailyLimit, FeedbackTracker } from './githubTracker';
@@ -97,43 +98,53 @@ export const createFeedbackHandler = (allowedOrigin: string, addressOf: AddressO
     res.end(JSON.stringify({ error: reason }));
   };
 
-  const handlePost = async (req: IncomingMessage, res: ServerResponse) => {
-    if (req.headers['content-type']?.split(';')[0].trim().toLowerCase() !== 'application/json') return reply(res, 400, 'invalid', cors);
-    if (!tracker) return reply(res, 503, 'unavailable', cors);
-
-    if (Number(req.headers['content-length']) > MAX_FEEDBACK_BYTES) return reply(res, 413, 'too-large', { ...cors, 'Connection': 'close' });
+  /** The report in the body, or the answer to give when there is none: the request is read only up to its bound. */
+  const readReport = async (req: IncomingMessage): Promise<FeedbackArgs | { status: number; reason: Reason; close?: boolean }> => {
+    if (Number(req.headers['content-length']) > MAX_FEEDBACK_BYTES) return { status: 413, reason: 'too-large', close: true };
     const body = await readBody(req);
-    if (body === 'too-large') {
-      res.once('finish', () => req.destroy());
-      return reply(res, 413, 'too-large', { ...cors, 'Connection': 'close' });
-    }
-    if (body === 'too-slow') {
-      res.once('finish', () => req.destroy());
-      return reply(res, 400, 'invalid', { ...cors, 'Connection': 'close' });
-    }
+    if (body === 'too-large') return { status: 413, reason: 'too-large', close: true };
+    if (body === 'too-slow') return { status: 400, reason: 'invalid', close: true };
 
-    let parsed;
     try {
-      parsed = feedbackArgsSchema.safeParse(JSON.parse(body.toString('utf8')));
+      const parsed = feedbackArgsSchema.safeParse(JSON.parse(body.toString('utf8')));
+      return parsed.success ? parsed.data : { status: 400, reason: 'invalid' };
     } catch {
-      return reply(res, 400, 'invalid', cors);
+      return { status: 400, reason: 'invalid' };
     }
-    if (!parsed.success) return reply(res, 400, 'invalid', cors);
-    const report = parsed.data;
+  };
 
-    // Counted once the report is valid: a broken request does not spend the allowance of everybody behind the same
-    // address (a family, a café), nor the budget of the day. The body is small and bounded, so reading it first is cheap.
+  /**
+   * Counted once the report is valid: a broken request does not spend the allowance of everybody behind the same
+   * address (a family, a café), nor the budget of the day. The body is small and bounded, so reading it first is cheap.
+   * Returns the reason of the refusal, or undefined when the report can be filed (and is counted).
+   */
+  const refusal = (req: IncomingMessage, report: FeedbackArgs): Reason | undefined => {
     const address = addressOf?.(req);
-    if (address !== undefined && !allowPerAddress(address)) return reply(res, 429, 'too-many', cors);
+    if (address !== undefined && !allowPerAddress(address)) return 'too-many';
     if (report.kind === 'bug' && !allowBug()) {
       dayFull('bugs');
-      return reply(res, 429, 'day-full', cors);
+      return 'day-full';
     }
     if (!allowReport()) {
       if (report.kind === 'bug') allowBug.refund();
       dayFull('reports');
-      return reply(res, 429, 'day-full', cors);
+      return 'day-full';
     }
+    return undefined;
+  };
+
+  const handlePost = async (req: IncomingMessage, res: ServerResponse) => {
+    if (req.headers['content-type']?.split(';')[0].trim().toLowerCase() !== 'application/json') return reply(res, 400, 'invalid', cors);
+    if (!tracker) return reply(res, 503, 'unavailable', cors);
+
+    const report = await readReport(req);
+    if ('reason' in report) {
+      if (report.close) res.once('finish', () => req.destroy());
+      return reply(res, report.status, report.reason, report.close ? { ...cors, 'Connection': 'close' } : cors);
+    }
+
+    const refused = refusal(req, report);
+    if (refused) return reply(res, 429, refused, cors);
 
     const result = await tracker.file(report);
     if (result !== 'filed') {

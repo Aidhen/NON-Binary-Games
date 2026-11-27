@@ -157,7 +157,7 @@ export const feedbackArgsSchema = z.discriminatedUnion('kind', [
   z.strictObject({
     kind: z.literal('opinion'),
     where: feedbackWhereSchema,
-    rating: z.number().int().min(FEEDBACK_RATINGS[0]).max(FEEDBACK_RATINGS[FEEDBACK_RATINGS.length - 1]),
+    rating: z.number().int().min(FEEDBACK_RATINGS[0]).max(FEEDBACK_RATINGS.at(-1)!),
     wishes: z.array(z.enum(FEEDBACK_WISHES)).max(FEEDBACK_WISHES.length).refine((wishes) => new Set(wishes).size === wishes.length).optional(),
     emote: emoteSchema.optional(),
   }),

@@ -27,6 +27,18 @@ You review, propose and draft. You do not edit application code: `fullstack` bui
 - **Gentle "danger".** Something that ends a game is never threatening: the Flower Field bee is asleep, blushing, with no stinger.
 - **Animals:** frontal heads that read by one strong silhouette (octopus dome and tentacles, penguin mask, owl eye discs and tufts, fox ears and pointed face, hedgehog spiky crown, koala round ears and big nose). The owner rejected a side profile (dolphin), a helmet-like head (turtle) and round-eared lookalikes (panda, otter, plus frog and rabbit).
 - **Identity over generic chrome:** the drawings are the site's strongest asset; the chrome should borrow their palette, not Tailwind defaults.
+- **Blush stays inside.** The outline sits above the blush of the cheeks, and the blush never touches or crosses the outline of a face.
+
+### Scenes with tile characters (learned on the tarot cards)
+
+- **No limbs.** Tile characters have no arms and no legs. Objects they "hold" (wand, scepter, lantern, flower) float close to the body, with a small gap, never stuck to it.
+- **No tangents.** Two shapes either overlap clearly or keep a visible gap (about 8px on a 300×400 drawing). Check every contact: a hat or crown on a head (it overlaps the top a little, without covering much of the face), a staff or sword against a throne or cloak, a cloak around a face, lightning near a tower, a figure on a floor, a crescent on a tiara.
+- **Symmetric skies.** Every sky has a few dots, and they are mirrored on the vertical axis (same colors on both sides), never scattered at random. Side elements that pair up (the tiles on the Wheel of Fortune) are mirrored too.
+- **One of each motif.** A detail that repeats the main symbol of the scene (a second heart between the Lovers) is clutter: drop it.
+- **Round things are not tiles.** A sun is the disc with its face, no tile behind it, with rays all the same size. A crescent moon is one clean path, with eyes, mouth and blush well inside it.
+- **Mouths stay visible.** When something sits in front of a character (the chariot's box), move the face up rather than hide the mouth.
+- **Text in a drawing is a path**, not a `<text>` with a font (the "z" of a sleeper, a "!").
+- **The owner's edited sheet is the spec.** When the owner paints over a preview sheet and sends it back, rebuild what it shows faithfully and apply the same change to every drawing it implies, then ask only about what the picture cannot say.
 
 ## What you look at
 

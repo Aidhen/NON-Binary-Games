@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fitMemoryGrid, memoryGapOf } from './boardStyles';
+import { BOARD_FIT, MEMORY_FIT, fitMemoryGrid, memoryGapOf } from './boardStyles';
 
 const heightOf = (cardWidth: number) => (cardWidth * 4) / 3;
 
@@ -60,5 +60,13 @@ describe('memoryGapOf', () => {
     expect(memoryGapOf(20)).toBe(3);
     expect(memoryGapOf(55)).toBeGreaterThanOrEqual(3);
     expect(memoryGapOf(55)).toBeLessThanOrEqual(8);
+  });
+});
+
+describe('the boxes the boards fit in', () => {
+  // dvh changes whenever a phone browser shows or hides its address bar while the page scrolls: the board would resize under the finger.
+  it.each([['BOARD_FIT', BOARD_FIT], ['MEMORY_FIT', MEMORY_FIT]])('%s follows the small viewport, which does not change while the page scrolls', (_, fit) => {
+    expect(fit).toContain('svh');
+    expect(fit).not.toMatch(/\b\d+dvh|\b\d+lvh|\b\d+vh/);
   });
 });

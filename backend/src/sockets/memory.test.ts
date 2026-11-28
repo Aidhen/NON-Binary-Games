@@ -135,7 +135,6 @@ describe('a room that plays the Memory', () => {
 
     it('matches two cards with the same face for good, and tells nobody who flipped them', async () => {
       const { roomId, first, second } = await twoPlayers();
-      const alias = rooms.get(roomId)!.aliases.get('memory-player-0-abcdef');
       const flipped = collect(second, 'memory:flipped');
       const matched = next(second, 'memory:matched');
       const mismatched = vi.fn();
@@ -223,6 +222,8 @@ describe('a room that plays the Memory', () => {
       first.emit('memory:flip', { index: 0 });
       first.emit('memory:flip', { index: 1 });
       await flush(first);
+      // The two cards of the first player reach the second one too: they are not what this test counts.
+      await flush(second);
       const flipped = collect(second, 'memory:flipped');
 
       second.emit('memory:flip', { index: 0 });
@@ -384,7 +385,8 @@ describe('a room that plays the Memory', () => {
       first.emit('memory:flip', { index: 2 });
       await flush(first);
       await flush(second);
-      const alias = (playerId: string) => rooms.get(roomId)!.aliases.get(playerId);
+      // The ids of the players depend on how many clients the file opened before this test: ask the client for its own.
+      const firstAlias = rooms.get(roomId)!.aliases.get((first.auth as { playerId: string }).playerId);
 
       const newcomer = await connect();
       const started = next(newcomer, 'game-started');
@@ -397,8 +399,9 @@ describe('a room that plays the Memory', () => {
         difficulty: 'easy',
         cards: 8,
         matched: [{ index: 0, face: 0 }, { index: 1, face: 0 }],
-        open: [{ index: 2, face: 1, alias: alias('memory-player-0-abcdef'), closesInMs: expect.any(Number) }],
+        open: [{ index: 2, face: 1, alias: firstAlias, closesInMs: expect.any(Number) }],
       });
+      expect(firstAlias).toBeDefined();
       expect(payload.open[0].closesInMs).toBeGreaterThan(0);
       expect(payload.open[0].closesInMs).toBeLessThanOrEqual(MEMORY_HAND_MS);
       const told = JSON.stringify(payload);

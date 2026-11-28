@@ -39,8 +39,8 @@ describe('flipCard', () => {
     const result = flipCard(game, 'p1', 'ana', 1, T0);
 
     expect(result).toMatchObject({ matched: [0, 1], mismatched: null, won: false });
-    expect(game.matched.get(0)).toBe('ana');
-    expect(game.matched.get(1)).toBe('ana');
+    expect(game.matched.has(0)).toBe(true);
+    expect(game.matched.has(1)).toBe(true);
     expect(game.hands.size).toBe(0);
     expect(game.locks).toEqual([]);
   });
@@ -100,7 +100,7 @@ describe('flipCard', () => {
 
     expect(flipCard(game, 'p2', 'bo', 3, T0)).toMatchObject({ matched: [2, 3] });
     expect(game.hands.get('p1')).toEqual({ index: 0, alias: 'ana', until: T0 + MEMORY_HAND_MS });
-    expect(game.matched.get(2)).toBe('bo');
+    expect(game.matched.has(2)).toBe(true);
   });
 
   it('refuses a matched card', () => {
@@ -217,7 +217,7 @@ describe('memoryStarted', () => {
       game: 'memory',
       difficulty: 'beginner',
       cards: 12,
-      matched: [{ index: 0, face: 0, alias: 'ana' }, { index: 1, face: 0, alias: 'ana' }],
+      matched: [{ index: 0, face: 0 }, { index: 1, face: 0 }],
       open: [{ index: 6, face: 3, alias: 'bo', closesInMs: MEMORY_HAND_MS }],
     });
   });

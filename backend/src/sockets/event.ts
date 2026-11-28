@@ -762,7 +762,7 @@ export const setupSocketHandlers = (io: GameServer) => {
       room.played = true;
       const channel = io.to(channelOf(roomId));
       channel.emit("memory:flipped", result.flipped);
-      if (result.matched) channel.emit("memory:matched", { indices: result.matched, alias });
+      if (result.matched) channel.emit("memory:matched", { indices: result.matched });
       if (result.mismatched) channel.emit("memory:mismatched", { indices: result.mismatched });
       if (result.won) channel.emit("game-won");
     }, allowEvent));

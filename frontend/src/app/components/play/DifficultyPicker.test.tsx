@@ -13,6 +13,16 @@ describe('DifficultyPicker', () => {
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(DIFFICULTIES.map((level) => `sudoku.${level}`));
   });
 
+  it('writes the labels a game gives to the levels, and still reports the level that is picked', () => {
+    const onDifficultyChange = vi.fn();
+    render(<DifficultyPicker currentDifficulty="easy" onDifficultyChange={onDifficultyChange} labelOf={(level) => `label ${level}`} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'label hard' }));
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(DIFFICULTIES.map((level) => `label ${level}`));
+    expect(onDifficultyChange).toHaveBeenCalledWith('hard');
+  });
+
   it('marks the current level, and only that one', () => {
     render(<DifficultyPicker currentDifficulty="medium" onDifficultyChange={() => {}} />);
 

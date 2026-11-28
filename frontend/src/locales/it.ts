@@ -99,6 +99,16 @@ export const it: Translations = {
     empty: "vuota"
   },
   memory: {
+    cleared: "Tutte le coppie trovate!",
+    compliment: "Avete girato tutto il mazzo, insieme.",
+    rules: "Come si gioca",
+    ruleFind: "Trovate le carte uguali: girate una carta, poi un'altra. Se sono uguali, restano scoperte.",
+    ruleTogether: "Giocate tutti insieme, senza turni. Ognuno tiene una carta alla volta.",
+    ruleMismatch: "Se non sono uguali, restano scoperte per un attimo e poi si rigirano. Una carta lasciata scoperta si rigira da sola dopo qualche secondo.",
+    counter: "{found}/{total} coppie",
+    pairs: "{n} coppie",
+    card: "Carta {n}",
+    board: "Carte del Memory",
     // One entry per card, under the id of its drawing (see art/src/memory/drawings.tsx).
     cards: {
       "fool": {
@@ -279,6 +289,9 @@ export const it: Translations = {
     wordSearch: {
       title: "Crucipuzzle"
     },
+    memory: {
+      title: "Memory"
+    },
     mystery: {
       title: "Scatola misteriosa"
     }
@@ -381,6 +394,11 @@ export const it: Translations = {
       description: "Trovate le parole nascoste nella griglia. Ogni parola trovata resta segnata nel tuo colore.",
       rule3: "Cinque livelli, dalla griglia 6×6 alla 12×12, con più direzioni man mano che crescono.",
       rule4: "Parole in italiano o in inglese: la stanza può passare dall'una all'altra."
+    },
+    memory: {
+      tagline: "Coppie da trovare insieme",
+      description: "Girate le carte e trovate le coppie, tutti insieme e senza turni. Con calma.",
+      rule4: "Cinque livelli, da 6 a 22 coppie."
     }
   },
   rooms: {
@@ -464,6 +482,7 @@ export const it: Translations = {
         "takuzu": "Takuzu",
         "flower-field": "Campo fiorito",
         "word-search": "Crucipuzzle",
+        "memory": "Memory",
         "table": "Il tavolo, dove si sceglie il gioco",
         "room-and-invite": "Stanze e inviti",
         "rest-of-site": "Il resto del sito",

@@ -2,6 +2,7 @@
 import { FLOWER_HIDDEN } from '@nbg/shared';
 import type { GameId, PlayerProfile, SudokuPuzzle } from '@nbg/shared';
 import { FlowerFieldBoardUI } from '../flower-field/FlowerFieldBoardUI';
+import { MemoryBoardUI } from '../memory/MemoryBoardUI';
 import { SudokuBoardUI } from '../sudoku/SudokuBoardUI';
 import { TakuzuBoardUI } from '../takuzu/TakuzuBoardUI';
 import { WordSearchBoardUI } from '../word-search/WordSearchBoardUI';
@@ -46,6 +47,12 @@ const WORDS_FOUND = [
   { word: 'STAR', alias: 'first', from: { r: 3, c: 0 }, to: { r: 3, c: 3 } },
 ];
 
+// A table of 16 cards (a 4×4 square, like the other previews): two are face up in the colors of the two players, one pair is found.
+const MEMORY_FACES_UP = { 2: 18, 9: 17, 4: 3, 11: 3 };
+const MEMORY_MATCHED = new Set([4, 11]);
+const MEMORY_HELD = { 2: { alias: 'first', closesInMs: 10000 }, 9: { alias: 'second', closesInMs: 10000 } };
+const MEMORY_NOTHING: ReadonlySet<number> = new Set();
+
 const board = (game: GameId) => {
   switch (game) {
     case 'sudoku':
@@ -56,6 +63,13 @@ const board = (game: GameId) => {
       return <FlowerFieldBoardUI size={6} grid={FLOWER_GRID} flags={FLOWER_FLAGS} mines={[]} exploded={null} selectedCell={[1, 3]} isOver={false} onCellClick={nothing} othersSelections={{ second: [5, 0] }} profiles={PROFILES} />;
     case 'word-search':
       return <WordSearchBoardUI size={6} grid={WORDS_GRID} found={WORDS_FOUND} profiles={PROFILES} isOver={false} onSelect={nothing} />;
+    case 'memory':
+      return (
+        // The board fills its box: a square, so that the preview is as tall as the others.
+        <div className="aspect-square w-full">
+          <MemoryBoardUI cards={16} faces={MEMORY_FACES_UP} matched={MEMORY_MATCHED} locked={MEMORY_NOTHING} held={MEMORY_HELD} pending={null} self="first" profiles={PROFILES} onFlip={nothing} />
+        </div>
+      );
   }
 };
 

@@ -97,6 +97,16 @@ export const en = {
     empty: "empty"
   },
   memory: {
+    cleared: "Every pair found!",
+    compliment: "You turned over the whole deck together.",
+    rules: "How it works",
+    ruleFind: "Find the matching cards: turn one, then another. If they match, they stay up.",
+    ruleTogether: "Everybody plays at once, with no turns. Each of you holds one card at a time.",
+    ruleMismatch: "If they do not match, they stay up for a moment and then turn back. A card you leave face up turns back by itself after a few seconds.",
+    counter: "{found}/{total} pairs",
+    pairs: "{n} pairs",
+    card: "Card {n}",
+    board: "Memory cards",
     // One entry per card, under the id of its drawing (see art/src/memory/drawings.tsx).
     cards: {
       "fool": {
@@ -277,6 +287,9 @@ export const en = {
     wordSearch: {
       title: "Word Search"
     },
+    memory: {
+      title: "Memory"
+    },
     mystery: {
       title: "Mystery box"
     }
@@ -379,6 +392,11 @@ export const en = {
       description: "Find the words hidden in the grid. Every word you find is marked in your color.",
       rule3: "Five levels, from 6×6 to 12×12, with more directions as they grow.",
       rule4: "Words in English or Italian: the room can switch between the two."
+    },
+    memory: {
+      tagline: "Matching pairs, found together",
+      description: "Turn the cards and find the pairs, all at the same time. No turns, no hurry.",
+      rule4: "Five levels, from 6 to 22 pairs."
     }
   },
   rooms: {
@@ -462,6 +480,7 @@ export const en = {
         "takuzu": "Takuzu",
         "flower-field": "Flower Field",
         "word-search": "Word Search",
+        "memory": "Memory",
         "table": "The table, where a game is chosen",
         "room-and-invite": "Rooms and invitations",
         "rest-of-site": "The rest of the site",

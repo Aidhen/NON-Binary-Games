@@ -66,6 +66,7 @@ In a cloud session where the Docker daemon is not available, run the same npm co
 - The owner is learning Node.js. Explain the reasoning behind non-obvious backend choices. When they say they want to write a part themselves, describe the approach and review their code instead of writing it.
 - Be direct and critical, like a senior colleague in a code review. Say when an idea is weak and what you would do instead.
 - Use gender-neutral language when referring to the owner or to players.
+- Screen-reader support is not planned for now: do not propose or build live regions, announcements or long descriptions. Plain buttons, labels and keyboard focus stay.
 
 ## Git
 

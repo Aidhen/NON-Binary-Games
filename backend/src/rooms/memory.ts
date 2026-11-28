@@ -6,7 +6,7 @@ export const createMemory = (difficulty: DifficultyLevel): MemoryGame => ({
   id: 'memory',
   difficulty,
   deck: generateMemory(difficulty),
-  matched: new Map(),
+  matched: new Set(),
   hands: new Map(),
   locks: [],
   status: 'playing',
@@ -21,7 +21,7 @@ export const memoryStarted = (game: MemoryGame, now: number = Date.now()): Memor
   game: 'memory',
   difficulty: game.difficulty,
   cards: game.deck.length,
-  matched: [...game.matched].map(([index, alias]) => ({ index, face: game.deck[index], alias })),
+  matched: [...game.matched].map((index) => ({ index, face: game.deck[index] })),
   open: [...game.hands.values()]
     .filter(({ until }) => until > now)
     .map(({ index, alias, until }) => ({ index, face: game.deck[index], alias, closesInMs: until - now })),
@@ -71,8 +71,8 @@ export const flipCard = (game: MemoryGame, playerId: string, alias: string, inde
 
   game.hands.delete(playerId);
   if (game.deck[first.index] === face) {
-    game.matched.set(first.index, alias);
-    game.matched.set(index, alias);
+    game.matched.add(first.index);
+    game.matched.add(index);
     const won = game.matched.size === game.deck.length;
     if (won) game.status = 'won';
     return { flipped, matched: [first.index, index], mismatched: null, won };

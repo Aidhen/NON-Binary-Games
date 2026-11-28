@@ -1,7 +1,7 @@
 import type { SudokuPuzzle, Difficulty } from './games/sudoku/types';
 import type { TakuzuGrid } from './games/takuzu/types';
 import type { FlowerCellChange, FlowerGrid, FlowerStatus } from './games/flower-field/types';
-import type { MemoryCardOpen, MemoryCardShown } from './games/memory/types';
+import type { MemoryCardMatched, MemoryCardOpen, MemoryCardShown } from './games/memory/types';
 import type { WordLanguage, WordSearchGrid } from './games/word-search/types';
 import type { Emote } from './emotes';
 import type { GameId } from './games';
@@ -126,8 +126,8 @@ export interface MemoryStartedPayload {
   difficulty: DifficultyLevel;
   /** How many cards lie on the table, matched or not. They are told apart by their place, from 0. */
   cards: number;
-  /** The pairs found, both cards of each, with who found them (by alias). */
-  matched: MemoryCardShown[];
+  /** The pairs found, both cards of each. Who found them is not told. */
+  matched: MemoryCardMatched[];
   /** The cards somebody holds face up right now, one at most for each player, with the time each one has left. */
   open: MemoryCardOpen[];
 }
@@ -167,7 +167,7 @@ export interface ServerToClientEvents {
   /** A card turned face up, to everybody in the room, the player who flipped it included. */
   "memory:flipped": (data: MemoryCardShown) => void;
   /** The second card was the pair of the first: both stay face up for good. */
-  "memory:matched": (data: { indices: [number, number]; alias: string }) => void;
+  "memory:matched": (data: { indices: [number, number] }) => void;
   /** The second card was another one: both are shown for MEMORY_MISMATCH_MS and then turn, and nobody can flip them until then. Follows the second `memory:flipped`. */
   "memory:mismatched": (data: { indices: [number, number] }) => void;
   /** The player who held this card face up left the room: it turns back. */

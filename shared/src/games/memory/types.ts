@@ -11,7 +11,13 @@ export const MEMORY_MISMATCH_MS = 1200;
  */
 export const MEMORY_HAND_MS = 10_000;
 
-/** A card of the deck as the players see it once it is face up: where it lies, which drawing it has and who flipped or matched it, by alias. */
+/** A card of a pair found: where it lies and which drawing it has. Nobody is told who found it: the game has no credit. */
+export interface MemoryCardMatched {
+  index: number;
+  face: number;
+}
+
+/** A card of the deck as the players see it once it is flipped: where it lies, which drawing it has and who flipped it, by alias. */
 export interface MemoryCardShown {
   index: number;
   face: number;

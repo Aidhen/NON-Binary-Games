@@ -82,7 +82,7 @@ export interface MemoryGame {
   /** The face of each card, by its place. */
   deck: number[];
   /** The cards found, by place: who found each pair (by alias). Both cards of a pair are here. */
-  matched: Map<number, string>;
+  matched: Set<number>;
   /** The card each player holds face up, by player id. At most one each, gone when they flip a second one, leave, or hold it past `until`. */
   hands: Map<string, MemoryHand>;
   /** The pairs that did not match and are still locked. Each card is in one lock at most, and the ones that ran out are dropped at the next flip. */

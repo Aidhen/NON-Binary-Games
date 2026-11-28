@@ -133,7 +133,7 @@ describe('a room that plays the Memory', () => {
       expect(rooms.get(roomId)?.played).toBe(true);
     });
 
-    it('matches two cards with the same face for good, and credits the player who flipped them', async () => {
+    it('matches two cards with the same face for good, and tells nobody who flipped them', async () => {
       const { roomId, first, second } = await twoPlayers();
       const alias = rooms.get(roomId)!.aliases.get('memory-player-0-abcdef');
       const flipped = collect(second, 'memory:flipped');
@@ -144,7 +144,7 @@ describe('a room that plays the Memory', () => {
       first.emit('memory:flip', { index: 0 });
       first.emit('memory:flip', { index: 1 });
 
-      expect(await matched).toEqual({ indices: [0, 1], alias });
+      expect(await matched).toEqual({ indices: [0, 1] });
       expect(flipped.map(({ index }) => index)).toEqual([0, 1]);
       await flush(second);
       expect(mismatched).not.toHaveBeenCalled();
@@ -396,7 +396,7 @@ describe('a room that plays the Memory', () => {
         game: 'memory',
         difficulty: 'easy',
         cards: 8,
-        matched: [{ index: 0, face: 0, alias: alias('memory-player-0-abcdef') }, { index: 1, face: 0, alias: alias('memory-player-0-abcdef') }],
+        matched: [{ index: 0, face: 0 }, { index: 1, face: 0 }],
         open: [{ index: 2, face: 1, alias: alias('memory-player-0-abcdef'), closesInMs: expect.any(Number) }],
       });
       expect(payload.open[0].closesInMs).toBeGreaterThan(0);

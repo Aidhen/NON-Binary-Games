@@ -96,6 +96,10 @@
   --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
   --lid-flower-field: #3f9e8f;
   --lid-word-search: #f2b544;
+  --lid-memory: #a58bf0;
+  /* The felt the cards lie on, and the rim that outlines a card on it. */
+  --memory-felt: #d4ccdd;
+  --memory-rim: #3A2E3F;
   --box-inside: #a79fb5;
   --box-soon-1: #d5ccdf;
   --box-soon-2: #bfdbfe;
@@ -171,6 +175,10 @@
   --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
   --lid-flower-field: #338a7c;
   --lid-word-search: #e0a236;
+  --lid-memory: #8f74e0;
+  /* The felt the cards lie on, and the rim that outlines a card on it. */
+  --memory-felt: #334155;
+  --memory-rim: rgba(255, 247, 232, 0.75);
   --box-inside: #0f172a;
   --box-soon-1: #334155;
   --box-soon-2: #1e3a8a;
@@ -243,6 +251,10 @@
   --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
   --lid-flower-field: #4e9a82;
   --lid-word-search: #e3b24a;
+  --lid-memory: #9a84c9;
+  /* The felt the cards lie on, and the rim that outlines a card on it. */
+  --memory-felt: #d9c9a3;
+  --memory-rim: #4a3c31;
   --box-inside: #b8ad9e;
   --box-soon-1: #d1bfae;
   --box-soon-2: #e7d395;
@@ -317,6 +329,10 @@
   --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
   --lid-flower-field: #2f8f80;
   --lid-word-search: #e8ac3a;
+  --lid-memory: #8467d6;
+  /* The felt the cards lie on, and the rim that outlines a card on it. */
+  --memory-felt: #262626;
+  --memory-rim: rgba(255, 247, 232, 0.75);
   --box-inside: #222222;
   --box-soon-1: #222222;
   --box-soon-2: #393939;
@@ -394,6 +410,10 @@
   --lid-takuzu: linear-gradient(135deg, var(--lid-takuzu-a) 50%, var(--lid-takuzu-b) 50%);
   --lid-flower-field: #3f9e8f;
   --lid-word-search: #f7d84a;
+  --lid-memory: #b39cf5;
+  /* The felt the cards lie on, and the rim that outlines a card on it. */
+  --memory-felt: #444444;
+  --memory-rim: rgba(255, 247, 232, 0.75);
   --box-inside: #0d0d0d;
   /* The accent is too close to the surfaces of this theme to be a focus ring: the yellow of the flag is not. */
   --focus-ring: #fcf434;
@@ -529,3 +549,66 @@ body::after {
     animation: bee-flutter 2s ease-in-out infinite;
   }
 }
+
+/* Memory: a card turns on its vertical axis. Only transform and opacity move. */
+.memory-flip { perspective: 700px; }
+
+.memory-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 320ms cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+.memory-card[data-up="true"] .memory-inner {
+  transform: rotateY(180deg);
+  transition-duration: 380ms;
+}
+
+.memory-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 8% / 6%;
+  box-shadow: 0 0 0 2px var(--memory-rim), var(--shadow-paper-sm);
+}
+
+.memory-face > svg { display: block; width: 100%; height: 100%; border-radius: inherit; }
+.memory-front { transform: rotateY(180deg); }
+/* A card that is matched lies flat: no shadow lifting it from the felt. */
+.memory-card[data-state="matched"] .memory-face { box-shadow: 0 0 0 2px var(--memory-rim); }
+
+@keyframes memory-lift-open { 50% { translate: 0 -3px; } }
+@keyframes memory-lift-close { 50% { translate: 0 -3px; } }
+@keyframes memory-wobble { 0% { rotate: -2deg; } 50% { rotate: 2deg; } 100% { rotate: 0deg; } }
+@keyframes memory-pulse { 0% { scale: 1; } 40% { scale: 1.05; } 100% { scale: 1; } }
+@keyframes memory-star {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0px), -6px) scale(1); opacity: 0; }
+}
+@keyframes memory-ring-fade { to { opacity: 0.4; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .memory-flip[data-lift="open"] { animation: memory-lift-open 380ms cubic-bezier(0.3, 0.7, 0.3, 1); }
+  .memory-flip[data-lift="close"] { animation: memory-lift-close 320ms cubic-bezier(0.3, 0.7, 0.3, 1); }
+  /* After the flip: the two cards of a pair that did not match shake their head, a little. */
+  .memory-card[data-state="locked"] { animation: memory-wobble 360ms ease-in-out 380ms; }
+  .memory-card[data-celebrate="true"] { animation: memory-pulse 420ms cubic-bezier(0.34, 1.4, 0.64, 1) 380ms; }
+  .memory-star { animation: memory-star 600ms ease-out 380ms both; }
+}
+
+/* No turning for those who ask for less motion: the two sides cross-fade. */
+@media (prefers-reduced-motion: reduce) {
+  .memory-inner { transform: none !important; transition: none; }
+  .memory-face { backface-visibility: visible; -webkit-backface-visibility: visible; transition: opacity 150ms; }
+  .memory-front { transform: none; opacity: 0; }
+  .memory-card[data-up="true"] .memory-front { opacity: 1; }
+  .memory-card[data-up="true"] .memory-back { opacity: 0; }
+  .memory-star { display: none; }
+}
+
+/* The ring of a card somebody holds fades in its last seconds, before the card turns back. */
+.memory-ring { animation: memory-ring-fade 3000ms linear forwards; }

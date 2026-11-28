@@ -98,11 +98,11 @@ export function MemoryBoardUI({ cards, faces, matched, locked, held, celebrating
       <div ref={boxRef} className="absolute inset-2.5 sm:inset-4" />
       <div className="absolute inset-0 flex items-start justify-center">
         <div className={cn(BOARD_TRAY, 'h-auto w-auto bg-[var(--memory-felt)] p-2.5 sm:p-4')}>
-          <div
-            role="group"
+          {/* A fieldset is a group by itself, with no role to add; its default border, padding and minimum width go. */}
+          <fieldset
             aria-label={t('memory.board')}
             data-columns={columns}
-            className="flex flex-wrap justify-center"
+            className="m-0 flex min-w-0 flex-wrap justify-center border-0 p-0"
             style={{ width: columns * cardWidth + (columns - 1) * gap, gap }}
           >
             {Array.from({ length: cards }, (_, index) => {
@@ -126,7 +126,7 @@ export function MemoryBoardUI({ cards, faces, matched, locked, held, celebrating
                 />
               );
             })}
-          </div>
+          </fieldset>
         </div>
       </div>
     </div>

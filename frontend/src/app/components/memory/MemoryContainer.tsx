@@ -180,7 +180,7 @@ export function MemoryContainer({ roomId }: Readonly<{ roomId: string }>) {
     if (table.matched.has(index) || table.locked.has(index) || Object.hasOwn(table.held, index)) return;
 
     setTable({ ...table, pending: index });
-    later('pending', PENDING_MS, () => setTable((now) => (now && now.pending === index ? { ...now, pending: null } : now)));
+    later('pending', PENDING_MS, () => setTable((now) => (now?.pending === index ? { ...now, pending: null } : now)));
     getSocket().emit('memory:flip', { index });
   };
 

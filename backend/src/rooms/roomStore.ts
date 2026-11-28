@@ -61,14 +61,43 @@ export interface WordSearchGame {
   status: 'playing' | 'won';
 }
 
+/** A card some player holds face up: it is not resolved until they flip a second one. */
+export interface MemoryHand {
+  index: number;
+  alias: string;
+  /** When the card goes back down by itself (ms timestamp, see MEMORY_HAND_MS). */
+  until: number;
+}
+
+/** Two cards that did not match: nobody can flip them until `until` (ms timestamp). */
+export interface MemoryLock {
+  indices: [number, number];
+  until: number;
+}
+
+/** The state of a Memory that a room is playing. The deck, with the face of every card, never leaves the server. */
+export interface MemoryGame {
+  id: 'memory';
+  difficulty: DifficultyLevel;
+  /** The face of each card, by its place. */
+  deck: number[];
+  /** The cards found, by place: who found each pair (by alias). Both cards of a pair are here. */
+  matched: Set<number>;
+  /** The card each player holds face up, by player id. At most one each, gone when they flip a second one, leave, or hold it past `until`. */
+  hands: Map<string, MemoryHand>;
+  /** The pairs that did not match and are still locked. Each card is in one lock at most, and the ones that ran out are dropped at the next flip. */
+  locks: MemoryLock[];
+  status: 'playing' | 'won';
+}
+
 /** A game where the players write a value in a cell: it is what `cell-update` works on. */
 export type ValueGridGame = SudokuGame | TakuzuGame;
 
 /** A game played on a square grid of cells: it is what `select-cell` and `restart-game` work on. */
 export type GridGame = ValueGridGame | FlowerFieldGame | WordSearchGame;
 
-/** The game a room has open. A new game adds its own state here, told apart by `id`. */
-export type RoomGame = GridGame;
+/** The game a room has open. A new game adds its own state here, told apart by `id`. The Memory is not played on a grid: `select-cell` does not apply to it. */
+export type RoomGame = GridGame | MemoryGame;
 
 export interface RoomState {
   /** Null while the players are still choosing (see `votes`). Once chosen it stays until the room votes to go back to the table (see `tableVotes`). */

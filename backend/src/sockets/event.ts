@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { Server, Socket, DefaultEventsMap } from "socket.io";
-import { cellUpdateArgsSchema, sudokuMistakesArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, playerIdSchema, wordSearchLanguageArgsSchema, wordSearchSelectArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema, voteTableArgsSchema } from "@nbg/shared";
+import { cellUpdateArgsSchema, sudokuMistakesArgsSchema, flowerFieldCellArgsSchema, flowerFieldModeArgsSchema, memoryFlipArgsSchema, playerIdSchema, wordSearchLanguageArgsSchema, wordSearchSelectArgsSchema, checkWinCondition, countInitialFilledCells, EMOTE_COOLDOWN_MS, generateSudoku, generateTakuzu, MAX_PLAYERS_PER_ROOM, TAKUZU_SYMBOLS, joinRoomArgsSchema, restartGameArgsSchema, selectCellArgsSchema, sendEmoteArgsSchema, setColorArgsSchema, toggleNoteArgsSchema, voteGameArgsSchema, voteTableArgsSchema } from "@nbg/shared";
 import type { ClientToServerEvents, DifficultyLevel, GameId, GameStartedPayload, ServerToClientEvents, SocketData, SudokuStartedPayload } from "@nbg/shared";
 import { safeHandler } from "./safeHandler";
 import { logger } from "../logger";
@@ -8,6 +8,7 @@ import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter";
 import { RoomStore } from "../rooms/roomStore";
 import type { GridGame, RoomGame, RoomState, SudokuGame, TakuzuGame, ValueGridGame } from "../rooms/roomStore";
 import { createFlowerField, flowerFieldStarted, isRevealable, minesOf, revealCell, setExplosive, toggleFlag } from "../rooms/flowerField";
+import { closeHandOf, createMemory, flipCard, memoryStarted } from "../rooms/memory";
 import { createWordSearch, selectWord, wordSearchStarted } from "../rooms/wordSearch";
 import { assignProfile, colorIsFree, snapshotPlayers } from "../rooms/profiles";
 import { chosenGame, snapshotLobby, wantsTable } from "../rooms/lobby";
@@ -63,6 +64,7 @@ const createGame: Record<GameId, (difficulty: DifficultyLevel, previous?: RoomGa
   takuzu: createTakuzu,
   'flower-field': createFlowerField,
   'word-search': createWordSearch,
+  memory: createMemory,
 };
 
 /** The solution is not sent: see SudokuStartedPayload. */
@@ -90,6 +92,7 @@ const gameStarted = (game: RoomGame): GameStartedPayload => {
     case 'takuzu': return takuzuStarted(game);
     case 'flower-field': return flowerFieldStarted(game);
     case 'word-search': return wordSearchStarted(game);
+    case 'memory': return memoryStarted(game);
   }
 };
 
@@ -181,6 +184,9 @@ const removePlayer = (io: GameServer, roomId: string, room: RoomState, playerId:
   const tableVoteGone = room.tableVotes.delete(playerId);
   const alias = room.aliases.get(playerId);
   const channel = io.to(channelOf(roomId));
+  // A card nobody can turn back is a card the others cannot play: it goes down with the player who held it.
+  const closed = room.game?.id === 'memory' ? closeHandOf(room.game, playerId) : null;
+  if (closed !== null) channel.emit("memory:closed", { index: closed });
   if (alias) channel.emit("player-disconnected", alias);
   channel.emit("players-updated", { players: snapshotPlayers(room) });
   if (room.players.size > 0) onPlayerLeft(roomId, room, tableVoteGone);
@@ -245,12 +251,20 @@ const getCurrentRoom = (socket: GameSocket) => {
   return { roomId, room, alias };
 };
 
-/** The same, for the events of a game played on a grid: they mean nothing in a room that is playing another kind of game, or none. */
-const getCurrentGridGame = (socket: GameSocket) => {
+/** The same, for the events of any game: they mean nothing in a room that is not playing one. */
+const getCurrentGame = (socket: GameSocket) => {
   const current = getCurrentRoom(socket);
   if (!current?.room.game) return undefined;
 
   return { ...current, game: current.room.game };
+};
+
+/** The same, for the events of a game played on a grid: they mean nothing in a room that is playing another kind of game, or none. */
+const getCurrentGridGame = (socket: GameSocket) => {
+  const current = getCurrentGame(socket);
+  if (!current || current.game.id === 'memory') return undefined;
+
+  return { ...current, game: current.game };
 };
 
 /** The same, for the events of a game where the players write a value in a cell (the Sudoku and the Takuzu). */
@@ -274,6 +288,14 @@ const sudokuMistakesOf = (game: SudokuGame): [number, number][] => {
 const getCurrentFlowerField = (socket: GameSocket) => {
   const current = getCurrentRoom(socket);
   if (current?.room.game?.id !== 'flower-field') return undefined;
+
+  return { ...current, game: current.room.game };
+};
+
+/** The same, for the events of the Memory. */
+const getCurrentMemory = (socket: GameSocket) => {
+  const current = getCurrentRoom(socket);
+  if (current?.room.game?.id !== 'memory') return undefined;
 
   return { ...current, game: current.room.game };
 };
@@ -306,8 +328,8 @@ export const setupSocketHandlers = (io: GameServer) => {
   const allowRoomCreation = createKeyedRateLimiter(roomCreationLimit.max, roomCreationLimit.windowMs);
   const allowRestart = createKeyedRateLimiter(restartLimit.max, restartLimit.windowMs);
 
-  /** The Flower Field lays its mines on the first cell: opening or restarting it makes no board, so it is not charged. */
-  const makesBoardOnStart = (id: GameId): boolean => id !== 'flower-field';
+  /** The Flower Field lays its mines on the first cell, and a deck of the Memory is a shuffle: opening or restarting them makes no board, so it is not charged. */
+  const makesBoardOnStart = (id: GameId): boolean => id !== 'flower-field' && id !== 'memory';
 
   /** Charges one board to `key` and to the server. False, with nothing charged, when either has none left. */
   const chargeBoard = (key: string): boolean => {
@@ -636,7 +658,7 @@ export const setupSocketHandlers = (io: GameServer) => {
 
     socket.on("restart-game", safeHandler(restartGameArgsSchema, (difficulty) => {
       // The same game again: choosing another one is done at the table, after the room has voted to go back to it.
-      const current = getCurrentGridGame(socket);
+      const current = getCurrentGame(socket);
       if (!current) return;
       const { roomId, room, game: playing } = current;
 
@@ -725,6 +747,24 @@ export const setupSocketHandlers = (io: GameServer) => {
       if (playing.language === language) return;
       // A new puzzle costs what a restart costs, and is paid the same way.
       replaceBoard(roomId, room, () => createWordSearch(playing.difficulty, { ...playing, language }));
+    }, allowEvent));
+
+    socket.on("memory:flip", safeHandler(memoryFlipArgsSchema, ({ index }) => {
+      const current = getCurrentMemory(socket);
+      if (!current) return;
+      const { roomId, room, game, alias } = current;
+
+      if (index >= game.deck.length) return;
+
+      const result = flipCard(game, socket.data.playerId, alias, index, Date.now());
+      if (!result) return;
+
+      room.played = true;
+      const channel = io.to(channelOf(roomId));
+      channel.emit("memory:flipped", result.flipped);
+      if (result.matched) channel.emit("memory:matched", { indices: result.matched });
+      if (result.mismatched) channel.emit("memory:mismatched", { indices: result.mismatched });
+      if (result.won) channel.emit("game-won");
     }, allowEvent));
 
     // Fire and forget: the sender already shows its own emote, so only the others are notified.

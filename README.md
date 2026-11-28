@@ -28,7 +28,7 @@ Both sides run on free plans: the frontend on Vercel, the backend on Render. The
 
 It is a **monorepo** managed with `npm workspaces`, separating the client from the game logic:
 
-- **`@nbg/shared`**: pure TypeScript core logic. The engines of the four games (generators and validators), the Socket.IO event contracts, the [zod](https://zod.dev) schemas that validate every client payload (the TypeScript types are inferred from them) and the shared list of emotes.
+- **`@nbg/shared`**: pure TypeScript core logic. The engines of the five games (generators and validators), the Socket.IO event contracts, the [zod](https://zod.dev) schemas that validate every client payload (the TypeScript types are inferred from them) and the shared list of emotes.
 - **`@nbg/art`**: the drawings of the project as React components: the logo and the emotes.
 - **`@nbg/backend`**: Node.js and Socket.IO server. Rooms, real-time synchronization, shared notes, win detection and emote relaying (validated, with a cooldown).
 - **`@nbg/frontend`**: Next.js and React, styled with Tailwind CSS (themes are CSS variables) and no UI component library.
@@ -39,9 +39,9 @@ Tooling: **Vitest** for unit, component and integration tests (the server tests 
 
 ---
 
-## Current status: v0.10.0-alpha
+## Current status: v0.11.0-alpha
 
-Four games are playable online. What changed in each version is in the [releases](https://github.com/Aidhen/NON-Binary-Games/releases); news for the players is in the Diary on the site.
+Five games are playable online. What changed in each version is in the [releases](https://github.com/Aidhen/NON-Binary-Games/releases); news for the players is in the Diary on the site.
 
 ### Next
 
@@ -49,7 +49,6 @@ Four games are playable online. What changed in each version is in the [releases
 - [ ] Ask the room before a new game or a language change discards a Word Search in progress ([#86](https://github.com/Aidhen/NON-Binary-Games/issues/86)).
 
 **Games**
-- [ ] A Memory game with tarot cards.
 - [ ] Harder Sudoku levels that still never need a guess ([#62](https://github.com/Aidhen/NON-Binary-Games/issues/62)).
 - [ ] A third language for the interface and the word lists ([#76](https://github.com/Aidhen/NON-Binary-Games/issues/76)).
 

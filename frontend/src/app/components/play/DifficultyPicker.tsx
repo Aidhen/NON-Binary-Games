@@ -8,10 +8,12 @@ import { optionClass } from './optionClass';
 interface DifficultyPickerProps {
   currentDifficulty: DifficultyLevel;
   onDifficultyChange: (level: DifficultyLevel) => void;
+  /** What a level is called, when the name of the level is not enough (the Memory says how many pairs it has). */
+  labelOf?: (level: DifficultyLevel) => string;
 }
 
 /** The levels a new game can start at: every game has the same five, so its settings start with this. */
-export function DifficultyPicker({ currentDifficulty, onDifficultyChange }: Readonly<DifficultyPickerProps>) {
+export function DifficultyPicker({ currentDifficulty, onDifficultyChange, labelOf }: Readonly<DifficultyPickerProps>) {
   const { t } = useTranslation();
 
   return (
@@ -29,7 +31,7 @@ export function DifficultyPicker({ currentDifficulty, onDifficultyChange }: Read
             onClick={() => onDifficultyChange(level)}
             className={cn(index < 2 ? "col-span-3" : "col-span-2", "capitalize", optionClass(currentDifficulty === level))}
           >
-            {t(`sudoku.${level}`)}
+            {labelOf ? labelOf(level) : t(`sudoku.${level}`)}
           </button>
         ))}
       </div>

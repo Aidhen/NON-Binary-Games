@@ -34,4 +34,9 @@ export const GAME_GUIDES: Readonly<Record<GameId, GameGuide>> = {
     descriptionKey: 'gamesPage.wordSearch.description',
     ruleKeys: ['wordSearch.ruleFind', 'wordSearch.ruleDrag', 'gamesPage.wordSearch.rule3', 'gamesPage.wordSearch.rule4'],
   },
+  memory: {
+    taglineKey: 'gamesPage.memory.tagline',
+    descriptionKey: 'gamesPage.memory.description',
+    ruleKeys: ['memory.ruleFind', 'memory.ruleTogether', 'memory.ruleMismatch', 'gamesPage.memory.rule4'],
+  },
 };

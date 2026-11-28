@@ -1,0 +1,288 @@
+[
+  {
+    "file": "01-fool.svg",
+    "id": "fool",
+    "tarot": "0",
+    "name": {
+      "en": "The Fool",
+      "it": "Il Matto"
+    },
+    "alt": {
+      "en": "A happy teal tile with a little flower stands at the edge of a cliff under the sun, while a puppy jumps beside it",
+      "it": "Una faccina verde acqua felice, con il fagotto sulla spalla e un fiore in mano, sul bordo di un dirupo sotto il sole, con un cagnolino che salta"
+    }
+  },
+  {
+    "file": "02-magician.svg",
+    "id": "magician",
+    "tarot": "I",
+    "name": {
+      "en": "The Magician",
+      "it": "Il Bagatto"
+    },
+    "alt": {
+      "en": "A yellow tile with an infinity-shaped hat and a magic wand, above a table with a cup, a coin, a die and a sword",
+      "it": "Una faccina gialla con il cappello a forma di infinito alza la bacchetta sopra un tavolo con coppa, moneta, dado e spada"
+    }
+  },
+  {
+    "file": "03-high-priestess.svg",
+    "id": "high-priestess",
+    "tarot": "II",
+    "name": {
+      "en": "The High Priestess",
+      "it": "La Papessa"
+    },
+    "alt": {
+      "en": "A serene purple tile with a tiara and a crescent moon, wrapped in a veil, with an open book, between two columns",
+      "it": "Una faccina viola serena con la tiara e la luna, avvolta nel velo, tiene un libro aperto tra due colonne"
+    }
+  },
+  {
+    "file": "04-empress.svg",
+    "id": "empress",
+    "tarot": "III",
+    "name": {
+      "en": "The Empress",
+      "it": "L'Imperatrice"
+    },
+    "alt": {
+      "en": "A smiling orange tile with a crown on a throne, with a scepter, a shield with the Venus sign and ears of wheat",
+      "it": "Una faccina arancione sorridente con la corona, su un trono tra le spighe, tiene uno scudo a cuore e uno scettro"
+    }
+  },
+  {
+    "file": "05-emperor.svg",
+    "id": "emperor",
+    "tarot": "IV",
+    "name": {
+      "en": "The Emperor",
+      "it": "L'Imperatore"
+    },
+    "alt": {
+      "en": "A stern blue tile with a crown on a throne with ram heads, holding a scepter",
+      "it": "Una faccina azzurra seria con la corona, seduta su un trono con le teste d'ariete, tiene lo scettro e il globo"
+    }
+  },
+  {
+    "file": "06-hierophant.svg",
+    "id": "hierophant",
+    "tarot": "V",
+    "name": {
+      "en": "The Hierophant",
+      "it": "Il Papa"
+    },
+    "alt": {
+      "en": "A calm yellow tile with a white tiara and a staff with a cross, in front of two small tiles",
+      "it": "Una faccina gialla benedicente con la tiara e il bastone con la croce, davanti a due faccine piccole"
+    }
+  },
+  {
+    "file": "07-lovers.svg",
+    "id": "lovers",
+    "tarot": "VI",
+    "name": {
+      "en": "The Lovers",
+      "it": "Gli Amanti"
+    },
+    "alt": {
+      "en": "Two tiles, one teal and one orange, close together and in love, under a winged heart shooting an arrow",
+      "it": "Due faccine, una verde acqua e una arancione, vicine e innamorate, con un cuoricino alato che scocca una freccia dall'alto"
+    }
+  },
+  {
+    "file": "08-chariot.svg",
+    "id": "chariot",
+    "tarot": "VII",
+    "name": {
+      "en": "The Chariot",
+      "it": "Il Carro"
+    },
+    "alt": {
+      "en": "A proud purple tile with a crown rides a chariot under a starry canopy, pulled by a light tile and a dark tile",
+      "it": "Una faccina viola fiera con la corona guida il carro sotto un baldacchino di stelle, trainato da due faccine piccole, una chiara e una scura"
+    }
+  },
+  {
+    "file": "09-justice.svg",
+    "id": "justice",
+    "tarot": "VIII",
+    "name": {
+      "en": "Justice",
+      "it": "La Giustizia"
+    },
+    "alt": {
+      "en": "A calm yellow tile with a crown on a throne, with the scales and a sword",
+      "it": "Una faccina gialla calma con la corona, tiene in una mano la bilancia e nell'altra la spada"
+    }
+  },
+  {
+    "file": "10-hermit.svg",
+    "id": "hermit",
+    "tarot": "IX",
+    "name": {
+      "en": "The Hermit",
+      "it": "L'Eremita"
+    },
+    "alt": {
+      "en": "A thoughtful blue tile in a hood walks at night with a lantern and a staff",
+      "it": "Una faccina azzurra assorta, con il cappuccio, cammina nella notte con la lanterna e il bastone"
+    }
+  },
+  {
+    "file": "11-wheel-of-fortune.svg",
+    "id": "wheel-of-fortune",
+    "tarot": "X",
+    "name": {
+      "en": "Wheel of Fortune",
+      "it": "La Ruota della Fortuna"
+    },
+    "alt": {
+      "en": "A big orange wheel with three tiles: one on top with a crown, one rising and smiling, one falling and surprised",
+      "it": "Una grande ruota arancione che gira, con tre faccine: una in cima con la corona, una che sale sorridente, una che scende stupita"
+    }
+  },
+  {
+    "file": "12-strength.svg",
+    "id": "strength",
+    "tarot": "XI",
+    "name": {
+      "en": "Strength",
+      "it": "La Forza"
+    },
+    "alt": {
+      "en": "A purple tile with an infinity-shaped hat rests calmly above a serene lion with a big mane",
+      "it": "Una faccina viola con il cappello a forma di infinito appoggia dolcemente le mani sulla criniera di un leone sereno"
+    }
+  },
+  {
+    "file": "13-hanged-man.svg",
+    "id": "hanged-man",
+    "tarot": "XII",
+    "name": {
+      "en": "The Hanged Man",
+      "it": "L'Appeso"
+    },
+    "alt": {
+      "en": "A calm teal tile hangs upside down from a beam, with a golden halo",
+      "it": "Una faccina verde acqua appesa a testa in giù a una trave, tranquilla, con un'aureola dorata"
+    }
+  },
+  {
+    "file": "14-death.svg",
+    "id": "death",
+    "tarot": "XIII",
+    "name": {
+      "en": "Death",
+      "it": "La Morte"
+    },
+    "alt": {
+      "en": "A sleepy lilac tile in a hood with a scythe, while a sprout grows from the ground: an end that makes room for something new",
+      "it": "Una faccina lilla assonnata con il cappuccio e la falce, mentre dal terreno spunta un germoglio: la fine che lascia spazio al nuovo"
+    }
+  },
+  {
+    "file": "15-temperance.svg",
+    "id": "temperance",
+    "tarot": "XIV",
+    "name": {
+      "en": "Temperance",
+      "it": "La Temperanza"
+    },
+    "alt": {
+      "en": "A winged blue tile pours water calmly from one cup into the other",
+      "it": "Una faccina azzurra con le ali versa con calma l'acqua da una coppa all'altra"
+    }
+  },
+  {
+    "file": "16-devil.svg",
+    "id": "devil",
+    "tarot": "XV",
+    "name": {
+      "en": "The Devil",
+      "it": "Il Diavolo"
+    },
+    "alt": {
+      "en": "A cheeky purple tile with horns and bat wings, with two small tiles tied by a loose rope they could untie whenever they like",
+      "it": "Una faccina viola birichina con le corna e le ali da pipistrello, con due faccine piccole legate da una corda lenta che potrebbero sciogliere quando vogliono"
+    }
+  },
+  {
+    "file": "17-tower.svg",
+    "id": "tower",
+    "tarot": "XVI",
+    "name": {
+      "en": "The Tower",
+      "it": "La Torre"
+    },
+    "alt": {
+      "en": "A tower struck by lightning loses its crown while two surprised tiles jump off",
+      "it": "Una torre colpita da un fulmine perde la corona, mentre due faccine stupite saltano giù"
+    }
+  },
+  {
+    "file": "18-star.svg",
+    "id": "star",
+    "tarot": "XVII",
+    "name": {
+      "en": "The Star",
+      "it": "La Stella"
+    },
+    "alt": {
+      "en": "Under a big star and seven little ones, a teal tile pours water from two jugs into a pond",
+      "it": "Sotto una grande stella e sette stelline, una faccina verde acqua versa l'acqua da due brocche in uno stagno"
+    }
+  },
+  {
+    "file": "19-moon.svg",
+    "id": "moon",
+    "tarot": "XVIII",
+    "name": {
+      "en": "The Moon",
+      "it": "La Luna"
+    },
+    "alt": {
+      "en": "A sleepy yellow crescent moon between two towers; below, two tiles sing to it in front of a pond",
+      "it": "Una falce di luna gialla assonnata tra due torri; sotto, due faccine le cantano contro e un granchietto esce dallo stagno"
+    }
+  },
+  {
+    "file": "20-sun.svg",
+    "id": "sun",
+    "tarot": "XIX",
+    "name": {
+      "en": "The Sun",
+      "it": "Il Sole"
+    },
+    "alt": {
+      "en": "A big smiling yellow sun with its rays; below, two tiles in front of a brick wall",
+      "it": "Un grande sole giallo raggiante e sorridente; sotto, due faccine si tengono per mano davanti a un muretto"
+    }
+  },
+  {
+    "file": "21-judgement.svg",
+    "id": "judgement",
+    "tarot": "XX",
+    "name": {
+      "en": "Judgement",
+      "it": "Il Giudizio"
+    },
+    "alt": {
+      "en": "A winged blue tile on a cloud blows a long golden trumpet, and three tiles rise happily from their boxes",
+      "it": "Una faccina azzurra con le ali, su una nuvola, suona una lunga tromba dorata verso il basso, e tre faccine escono felici dalle loro casse a braccia alzate"
+    }
+  },
+  {
+    "file": "22-world.svg",
+    "id": "world",
+    "tarot": "XXI",
+    "name": {
+      "en": "The World",
+      "it": "Il Mondo"
+    },
+    "alt": {
+      "en": "A purple tile dances inside a green wreath, with four tiles in the corners",
+      "it": "Una faccina viola danza dentro una ghirlanda verde, con quattro faccine agli angoli"
+    }
+  }
+]

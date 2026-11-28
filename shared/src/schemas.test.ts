@@ -6,6 +6,7 @@ import {
   flowerFieldModeArgsSchema,
   gameIdSchema,
   joinRoomArgsSchema,
+  memoryFlipArgsSchema,
   MAX_ROOM_ID_LENGTH,
   restartGameArgsSchema,
   roomIdSchema,
@@ -272,5 +273,24 @@ describe('wordSearchLanguageArgsSchema', () => {
     for (const value of garbage) expect(wordSearchLanguageArgsSchema.safeParse([value]).success).toBe(false);
     expect(wordSearchLanguageArgsSchema.safeParse([]).success).toBe(false);
     expect(wordSearchLanguageArgsSchema.safeParse([{ language: 'en' }, 'it']).success).toBe(false);
+  });
+});
+
+describe('memoryFlipArgsSchema', () => {
+  it('accepts the place of a card, and only that', () => {
+    expect(memoryFlipArgsSchema.safeParse([{ index: 0 }]).success).toBe(true);
+    expect(memoryFlipArgsSchema.safeParse([{ index: 43 }]).success).toBe(true);
+    expect(memoryFlipArgsSchema.safeParse([{ index: 3 }, () => undefined]).success).toBe(false);
+    expect(memoryFlipArgsSchema.safeParse([]).success).toBe(false);
+  });
+
+  it('rejects garbage, negative and fractional places, and a missing one', () => {
+    for (const value of garbage) expect(memoryFlipArgsSchema.safeParse([value]).success).toBe(false);
+    expect(memoryFlipArgsSchema.safeParse([{ index: -1 }]).success).toBe(false);
+    expect(memoryFlipArgsSchema.safeParse([{ index: 0.5 }]).success).toBe(false);
+    expect(memoryFlipArgsSchema.safeParse([{ index: '1' }]).success).toBe(false);
+    expect(memoryFlipArgsSchema.safeParse([{ index: Number.NaN }]).success).toBe(false);
+    expect(memoryFlipArgsSchema.safeParse([{ index: Infinity }]).success).toBe(false);
+    expect(memoryFlipArgsSchema.safeParse([{}]).success).toBe(false);
   });
 });

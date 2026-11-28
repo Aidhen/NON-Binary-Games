@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { MAX_PLAYERS_PER_ROOM } from '@nbg/shared';
 import type { GameId } from '@nbg/shared';
 import { FlowerFieldCover } from './covers/FlowerFieldCover';
+import { MemoryCover } from './covers/MemoryCover';
 import { MysteryCover } from './covers/MysteryCover';
 import { SudokuCover } from './covers/SudokuCover';
 import { TakuzuCover } from './covers/TakuzuCover';
@@ -51,6 +52,15 @@ export const GAMES: readonly GameEntry[] = [
     minPlayers: 1,
     maxPlayers: MAX_PLAYERS_PER_ROOM,
     Game: lazy(() => import('../word-search/WordSearchContainer').then((module) => ({ default: module.WordSearchContainer }))),
+  },
+  {
+    id: 'memory',
+    status: 'available',
+    titleKey: 'games.memory.title',
+    Cover: MemoryCover,
+    minPlayers: 1,
+    maxPlayers: MAX_PLAYERS_PER_ROOM,
+    Game: lazy(() => import('../memory/MemoryContainer').then((module) => ({ default: module.MemoryContainer }))),
   },
   { id: 'mystery-2', status: 'soon', titleKey: 'games.mystery.title', Cover: MysteryCover, minPlayers: 1, maxPlayers: MAX_PLAYERS_PER_ROOM },
 ];

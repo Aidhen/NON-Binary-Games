@@ -96,6 +96,109 @@ export const en = {
     cell: "Row {row}, column {column}: {value}",
     empty: "empty"
   },
+  memory: {
+    cleared: "Every pair found!",
+    compliment: "You turned over the whole deck together.",
+    rules: "How it works",
+    ruleFind: "Find the matching cards: turn one, then another. If they match, they stay up.",
+    ruleTogether: "Everybody plays at once, with no turns. Each of you holds one card at a time.",
+    ruleMismatch: "If they do not match, they stay up for a moment and then turn back. A card you leave face up turns back by itself after a few seconds.",
+    counter: "{found}/{total} pairs",
+    pairs: "{n} pairs",
+    card: "Card {n}",
+    board: "Memory cards",
+    // One entry per card, under the id of its drawing (see art/src/memory/drawings.tsx).
+    cards: {
+      "fool": {
+        name: "The Fool",
+        alt: "A happy teal tile with a little flower stands at the edge of a cliff under the sun, while a puppy jumps beside it"
+      },
+      "magician": {
+        name: "The Magician",
+        alt: "A yellow tile with an infinity-shaped hat and a magic wand, above a table with a cup, a coin, a die and a sword"
+      },
+      "high-priestess": {
+        name: "The High Priestess",
+        alt: "A serene purple tile with a tiara and a crescent moon, wrapped in a veil, with an open book, between two columns"
+      },
+      "empress": {
+        name: "The Empress",
+        alt: "A smiling orange tile with a crown on a throne, with a scepter, a shield with the Venus sign and ears of wheat"
+      },
+      "emperor": {
+        name: "The Emperor",
+        alt: "A stern blue tile with a crown on a throne with ram heads, holding a scepter"
+      },
+      "hierophant": {
+        name: "The Hierophant",
+        alt: "A calm yellow tile with a white tiara and a staff with a cross, in front of two small tiles"
+      },
+      "lovers": {
+        name: "The Lovers",
+        alt: "Two tiles, one teal and one orange, close together and in love, under a winged heart shooting an arrow"
+      },
+      "chariot": {
+        name: "The Chariot",
+        alt: "A proud purple tile with a crown rides a chariot under a starry canopy, pulled by a light tile and a dark tile"
+      },
+      "justice": {
+        name: "Justice",
+        alt: "A calm yellow tile with a crown on a throne, with the scales and a sword"
+      },
+      "hermit": {
+        name: "The Hermit",
+        alt: "A thoughtful blue tile in a hood walks at night with a lantern and a staff"
+      },
+      "wheel-of-fortune": {
+        name: "Wheel of Fortune",
+        alt: "A big orange wheel with three tiles: one on top with a crown, one rising and smiling, one falling and surprised"
+      },
+      "strength": {
+        name: "Strength",
+        alt: "A purple tile with an infinity-shaped hat rests calmly above a serene lion with a big mane"
+      },
+      "hanged-man": {
+        name: "The Hanged Man",
+        alt: "A calm teal tile hangs upside down from a beam, with a golden halo"
+      },
+      "death": {
+        name: "Death",
+        alt: "A sleepy lilac tile in a hood with a scythe, while a sprout grows from the ground: an end that makes room for something new"
+      },
+      "temperance": {
+        name: "Temperance",
+        alt: "A winged blue tile pours water calmly from one cup into the other"
+      },
+      "devil": {
+        name: "The Devil",
+        alt: "A cheeky purple tile with horns and bat wings, with two small tiles tied by a loose rope they could untie whenever they like"
+      },
+      "tower": {
+        name: "The Tower",
+        alt: "A tower struck by lightning loses its crown while two surprised tiles jump off"
+      },
+      "star": {
+        name: "The Star",
+        alt: "Under a big star and seven little ones, a teal tile pours water from two jugs into a pond"
+      },
+      "moon": {
+        name: "The Moon",
+        alt: "A sleepy yellow crescent moon between two towers; below, two tiles sing to it in front of a pond"
+      },
+      "sun": {
+        name: "The Sun",
+        alt: "A big smiling yellow sun with its rays; below, two tiles in front of a brick wall"
+      },
+      "judgement": {
+        name: "Judgement",
+        alt: "A winged blue tile on a cloud blows a long golden trumpet, and three tiles rise happily from their boxes"
+      },
+      "world": {
+        name: "The World",
+        alt: "A purple tile dances inside a green wreath, with four tiles in the corners"
+      }
+    }
+  },
   players: {
     title: "Players in this room",
     you: "you",
@@ -183,6 +286,9 @@ export const en = {
     },
     wordSearch: {
       title: "Word Search"
+    },
+    memory: {
+      title: "Memory"
     },
     mystery: {
       title: "Mystery box"
@@ -286,6 +392,11 @@ export const en = {
       description: "Find the words hidden in the grid. Every word you find is marked in your color.",
       rule3: "Five levels, from 6×6 to 12×12, with more directions as they grow.",
       rule4: "Words in English or Italian: the room can switch between the two."
+    },
+    memory: {
+      tagline: "Matching pairs, found together",
+      description: "Turn the cards and find the pairs, all at the same time. No turns, no hurry.",
+      rule4: "Five levels, from 6 to 22 pairs."
     }
   },
   rooms: {
@@ -369,6 +480,7 @@ export const en = {
         "takuzu": "Takuzu",
         "flower-field": "Flower Field",
         "word-search": "Word Search",
+        "memory": "Memory",
         "table": "The table, where a game is chosen",
         "room-and-invite": "Rooms and invitations",
         "rest-of-site": "The rest of the site",
